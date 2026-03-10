@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, subscriptions, emailAccounts, briefingLogs } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,87 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateUser(id: number, data: Partial<InsertUser>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ ...data, updatedAt: new Date() }).where(eq(users.id, id));
+}
+
+// ─── Subscriptions ────────────────────────────────────────────────────────────
+
+export async function getSubscriptionByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function upsertSubscription(userId: number, data: Partial<typeof subscriptions.$inferInsert>) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await getSubscriptionByUserId(userId);
+  if (existing) {
+    await db.update(subscriptions).set({ ...data, updatedAt: new Date() }).where(eq(subscriptions.userId, userId));
+  } else {
+    await db.insert(subscriptions).values({ userId, plan: "trial", status: "trialing", ...data });
+  }
+}
+
+export async function getSubscriptionByStripeId(stripeSubscriptionId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getSubscriptionByStripeCustomerId(stripeCustomerId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(subscriptions).where(eq(subscriptions.stripeCustomerId, stripeCustomerId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+// ─── Email Accounts ───────────────────────────────────────────────────────────
+
+export async function getEmailAccountsByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(emailAccounts).where(and(eq(emailAccounts.userId, userId), eq(emailAccounts.isActive, true)));
+}
+
+export async function insertEmailAccount(data: typeof emailAccounts.$inferInsert) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(emailAccounts).values(data);
+}
+
+export async function updateEmailAccount(id: number, data: Partial<typeof emailAccounts.$inferInsert>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(emailAccounts).set({ ...data, updatedAt: new Date() }).where(eq(emailAccounts.id, id));
+}
+
+export async function deactivateEmailAccount(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(emailAccounts).set({ isActive: false, updatedAt: new Date() })
+    .where(and(eq(emailAccounts.id, id), eq(emailAccounts.userId, userId)));
+}
+
+// ─── Briefing Logs ────────────────────────────────────────────────────────────
+
+export async function getBriefingLogsByUserId(userId: number, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(briefingLogs)
+    .where(eq(briefingLogs.userId, userId))
+    .orderBy(desc(briefingLogs.createdAt))
+    .limit(limit);
+}
