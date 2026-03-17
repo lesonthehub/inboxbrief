@@ -6,70 +6,108 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Shield, MessageSquare, ChevronRight, ChevronLeft, Check, Building2, Mail, Target } from "lucide-react";
+import {
+  Shield, MessageSquare, ChevronRight, ChevronLeft, Check,
+  Building2, Users, Inbox, Phone, Gift, Globe
+} from "lucide-react";
 
-type EmailVolume = "under_50" | "50_200" | "200_500" | "over_500";
-type PrimaryGoal = "lead_tracking" | "client_updates" | "general_inbox" | "all_of_above";
+type UserRole = "solo_owner" | "team_lead" | "executive" | "operations" | "other";
+type TeamSize = "just_me" | "2_5" | "6_15" | "16_plus";
+type InboxChallenge = "missing_leads" | "client_follow_up" | "too_much_volume" | "team_coordination";
 
 const STEPS = [
   {
     id: 1,
-    icon: <Building2 className="w-6 h-6" />,
-    title: "What type of business do you run?",
-    subtitle: "This helps Grok understand your email context and prioritize the right messages.",
+    icon: Building2,
+    title: "What best describes your role?",
+    subtitle: "This helps us understand your business context and surface the most relevant emails for you.",
   },
   {
     id: 2,
-    icon: <Mail className="w-6 h-6" />,
-    title: "How many emails do you receive daily?",
-    subtitle: "We'll recommend the right plan to match your inbox volume.",
+    icon: Users,
+    title: "How many people are on your team?",
+    subtitle: "We'll recommend the right plan and configure briefings that work for your team size.",
   },
   {
     id: 3,
-    icon: <Target className="w-6 h-6" />,
-    title: "What's your primary goal with InboxBrief?",
-    subtitle: "We'll tune the AI to surface what matters most to you.",
+    icon: Inbox,
+    title: "What's your biggest inbox challenge?",
+    subtitle: "We'll tune your briefings to solve the exact problem costing you time and money.",
+  },
+  {
+    id: 4,
+    icon: Globe,
+    title: "What language should your briefings be in?",
+    subtitle: "Your SMS briefings will be delivered in this language, regardless of what language your emails are written in.",
   },
 ];
 
-const EMAIL_VOLUME_OPTIONS: { value: EmailVolume; label: string; desc: string }[] = [
-  { value: "under_50", label: "Under 50", desc: "Light inbox — Starter plan works great" },
-  { value: "50_200", label: "50–200", desc: "Moderate volume — Pro plan recommended" },
-  { value: "200_500", label: "200–500", desc: "High volume — Pro or Business plan" },
-  { value: "over_500", label: "500+", desc: "Power user — Business plan required" },
+const ROLE_OPTIONS: { value: UserRole; label: string; desc: string }[] = [
+  { value: "solo_owner", label: "Solo Business Owner", desc: "I run the show — every email matters" },
+  { value: "team_lead", label: "Team Lead / Manager", desc: "I oversee a team and need visibility" },
+  { value: "executive", label: "Executive / Director", desc: "High-level decisions, low inbox time" },
+  { value: "operations", label: "Operations / Admin", desc: "I manage workflows and communications" },
+  { value: "other", label: "Other", desc: "Something else entirely" },
 ];
 
-const GOAL_OPTIONS: { value: PrimaryGoal; label: string; desc: string }[] = [
-  { value: "lead_tracking", label: "Track Leads & Inquiries", desc: "Never miss a potential client reaching out" },
-  { value: "client_updates", label: "Client Project Updates", desc: "Stay on top of ongoing client communications" },
-  { value: "general_inbox", label: "General Inbox Control", desc: "Tame the chaos and get a daily digest" },
-  { value: "all_of_above", label: "All of the Above", desc: "Full business intelligence in one briefing" },
+const TEAM_SIZE_OPTIONS: { value: TeamSize; label: string; desc: string; recommended: string }[] = [
+  { value: "just_me", label: "Just Me", desc: "Solo proprietor or freelancer", recommended: "Solo plan" },
+  { value: "2_5", label: "2–5 people", desc: "Small team or partnership", recommended: "Pro plan" },
+  { value: "6_15", label: "6–15 people", desc: "Growing small business", recommended: "Business plan" },
+  { value: "16_plus", label: "16+ people", desc: "Established organization", recommended: "Enterprise plan" },
+];
+
+const CHALLENGE_OPTIONS: { value: InboxChallenge; label: string; desc: string }[] = [
+  { value: "missing_leads", label: "Missing Leads & Inquiries", desc: "New clients reach out but I don't respond fast enough" },
+  { value: "client_follow_up", label: "Client Follow-Up Delays", desc: "Existing clients wait too long for replies" },
+  { value: "too_much_volume", label: "Inbox Overwhelm", desc: "Too many emails — I can't find what matters" },
+  { value: "team_coordination", label: "Team Communication Gaps", desc: "Important team emails get lost in the noise" },
+];
+
+const LANGUAGE_OPTIONS = [
+  { value: "en", label: "English", flag: "🇺🇸" },
+  { value: "es", label: "Español", flag: "🇪🇸" },
+  { value: "fr", label: "Français", flag: "🇫🇷" },
+  { value: "de", label: "Deutsch", flag: "🇩🇪" },
+  { value: "pt", label: "Português", flag: "🇧🇷" },
+  { value: "ja", label: "日本語", flag: "🇯🇵" },
+  { value: "zh", label: "中文", flag: "🇨🇳" },
+  { value: "ar", label: "العربية", flag: "🇸🇦" },
 ];
 
 const BUSINESS_TYPES = [
   "Real Estate", "Consulting", "Freelance / Creative", "Retail / E-commerce",
   "Legal / Accounting", "Healthcare", "Construction / Trades", "Marketing Agency",
-  "Financial Services", "Other",
+  "Financial Services", "Restaurant / Food", "Fitness / Wellness", "Other",
 ];
 
 export default function Onboarding() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [, navigate] = useLocation();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0); // 0 = business type intro
   const [businessType, setBusinessType] = useState("");
   const [customBusiness, setCustomBusiness] = useState("");
-  const [emailVolume, setEmailVolume] = useState<EmailVolume | null>(null);
-  const [primaryGoal, setPrimaryGoal] = useState<PrimaryGoal | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [teamSize, setTeamSize] = useState<TeamSize | null>(null);
+  const [inboxChallenge, setInboxChallenge] = useState<InboxChallenge | null>(null);
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [referralCode, setReferralCode] = useState("");
+  const [showReferral, setShowReferral] = useState(false);
+  const [preferredLanguage, setPreferredLanguage] = useState("en");
 
   const { data: onboardingStatus } = trpc.onboarding.getStatus.useQuery(undefined, {
     enabled: isAuthenticated,
   });
 
+  const validateCode = trpc.referral.validateCode.useQuery(
+    { code: referralCode },
+    { enabled: referralCode.length >= 6 }
+  );
+
   const completeMutation = trpc.onboarding.complete.useMutation({
-    onSuccess: () => {
-      toast.success("Welcome to InboxBrief! Your 7-day Business trial has started.");
+    onSuccess: (data) => {
+      toast.success("Welcome to InboxBrief! Your 7-day free trial has started.");
       navigate("/dashboard");
     },
     onError: (err) => {
@@ -89,37 +127,46 @@ export default function Onboarding() {
     }
   }, [onboardingStatus]);
 
+  const totalSteps = 5; // business type + 3 qualifying questions + language/phone
+  const currentProgress = step === 0 ? 1 : step + 1;
+
   const handleNext = () => {
-    if (step === 1 && !businessType) {
+    if (step === 0 && !businessType) {
       toast.error("Please select your business type");
       return;
     }
-    if (step === 2 && !emailVolume) {
-      toast.error("Please select your email volume");
+    if (step === 1 && !userRole) {
+      toast.error("Please select your role");
       return;
     }
-    if (step < 3) setStep(step + 1);
+    if (step === 2 && !teamSize) {
+      toast.error("Please select your team size");
+      return;
+    }
+    if (step < 4) setStep(step + 1);
   };
 
   const validatePhone = (val: string) => {
     const digits = val.replace(/\D/g, "");
-    if (digits.length < 10) return "Please enter a valid 10-digit US phone number";
+    if (digits.length < 10) return "Please enter a valid 10-digit phone number";
     return "";
   };
 
   const handleSubmit = () => {
-    if (!primaryGoal) { toast.error("Please select your primary goal"); return; }
     const err = validatePhone(phone);
     if (err) { setPhoneError(err); return; }
-    if (!emailVolume) return;
+    if (!userRole || !teamSize || !inboxChallenge) return;
 
     const finalBusiness = businessType === "Other" ? customBusiness || "Other" : businessType;
 
     completeMutation.mutate({
       phone: phone.replace(/\D/g, ""),
       businessType: finalBusiness,
-      emailVolume,
-      primaryGoal,
+      userRole,
+      teamSize,
+      inboxChallenge,
+      preferredLanguage,
+      referralCode: referralCode.toUpperCase() || undefined,
     });
   };
 
@@ -131,63 +178,59 @@ export default function Onboarding() {
     );
   }
 
-  const currentStep = STEPS[step - 1];
+  const currentStepData = step > 0 ? STEPS[step - 1] : null;
+  const StepIcon = currentStepData?.icon ?? Building2;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-border/40">
+      <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border/40">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <MessageSquare className="w-4 h-4 text-white" />
           </div>
           <span className="font-bold text-lg" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground encrypted-badge px-3 py-1.5 rounded-full">
-          <Shield className="w-3.5 h-3.5" />
-          Data Encrypted
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground border border-border/40 px-3 py-1.5 rounded-full">
+          <Shield className="w-3.5 h-3.5 text-green-400" />
+          <span className="hidden sm:inline">Data Encrypted</span>
         </div>
       </div>
 
-      {/* Progress */}
-      <div className="px-6 pt-6">
+      {/* Progress bar */}
+      <div className="px-4 sm:px-6 pt-4">
         <div className="max-w-lg mx-auto">
-          <div className="flex items-center gap-2 mb-2">
-            {STEPS.map((s) => (
-              <div key={s.id} className="flex items-center gap-2 flex-1">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                  s.id < step ? "bg-primary text-white" : s.id === step ? "bg-primary/20 border-2 border-primary text-primary" : "bg-muted text-muted-foreground"
-                }`}>
-                  {s.id < step ? <Check className="w-4 h-4" /> : s.id}
-                </div>
-                {s.id < STEPS.length && (
-                  <div className={`flex-1 h-0.5 rounded-full transition-all ${s.id < step ? "bg-primary" : "bg-border"}`} />
-                )}
-              </div>
+          <div className="flex items-center gap-1.5 mb-1">
+            {Array.from({ length: totalSteps }).map((_, i) => (
+              <div
+                key={i}
+                className={`flex-1 h-1 rounded-full transition-all duration-300 ${
+                  i < currentProgress ? "bg-primary" : "bg-border"
+                }`}
+              />
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">Step {step} of {STEPS.length}</p>
+          <p className="text-xs text-muted-foreground">Step {currentProgress} of {totalSteps}</p>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex items-start justify-center px-6 py-10">
+      <div className="flex-1 flex items-start justify-center px-4 sm:px-6 py-8">
         <div className="w-full max-w-lg">
-          <div className="glass-card rounded-2xl p-8">
-            {/* Step header */}
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center text-primary">
-                {currentStep.icon}
-              </div>
-            </div>
-            <h2 className="text-2xl font-bold mb-2 mt-4" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
-              {currentStep.title}
-            </h2>
-            <p className="text-muted-foreground text-sm mb-8">{currentStep.subtitle}</p>
+          <div className="bg-card border border-border/40 rounded-2xl p-6 sm:p-8 shadow-xl">
 
-            {/* Step 1: Business Type */}
-            {step === 1 && (
-              <div className="space-y-3">
+            {/* Step 0: Business Type */}
+            {step === 0 && (
+              <>
+                <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center text-primary mb-4">
+                  <Building2 className="w-6 h-6" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+                  What type of business do you run?
+                </h2>
+                <p className="text-muted-foreground text-sm mb-6">
+                  This helps us understand your email context and prioritize the right messages.
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   {BUSINESS_TYPES.map((bt) => (
                     <button
@@ -195,7 +238,7 @@ export default function Onboarding() {
                       onClick={() => setBusinessType(bt)}
                       className={`p-3 rounded-xl text-sm text-left transition-all border ${
                         businessType === bt
-                          ? "border-primary bg-primary/15 text-foreground"
+                          ? "border-primary bg-primary/15 text-foreground font-medium"
                           : "border-border/50 bg-muted/30 text-muted-foreground hover:border-primary/40 hover:text-foreground"
                       }`}
                     >
@@ -208,58 +251,114 @@ export default function Onboarding() {
                     placeholder="Describe your business..."
                     value={customBusiness}
                     onChange={(e) => setCustomBusiness(e.target.value)}
-                    className="mt-3 bg-input border-border text-foreground placeholder:text-muted-foreground"
+                    className="mt-3 bg-input border-border"
                   />
                 )}
-              </div>
+              </>
             )}
 
-            {/* Step 2: Email Volume */}
-            {step === 2 && (
-              <div className="space-y-3">
-                {EMAIL_VOLUME_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setEmailVolume(opt.value)}
-                    className={`w-full p-4 rounded-xl text-left transition-all border flex items-center justify-between ${
-                      emailVolume === opt.value
-                        ? "border-primary bg-primary/15"
-                        : "border-border/50 bg-muted/30 hover:border-primary/40"
-                    }`}
-                  >
-                    <div>
-                      <p className="font-semibold text-foreground">{opt.label} emails/day</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
-                    </div>
-                    {emailVolume === opt.value && (
-                      <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                        <Check className="w-3 h-3 text-white" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Step 3: Primary Goal + Phone */}
-            {step === 3 && (
-              <div className="space-y-4">
-                <div className="space-y-3">
-                  {GOAL_OPTIONS.map((opt) => (
+            {/* Step 1: Role (Q1) */}
+            {step === 1 && (
+              <>
+                <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center text-primary mb-4">
+                  <StepIcon className="w-6 h-6" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+                  {currentStepData?.title}
+                </h2>
+                <p className="text-muted-foreground text-sm mb-6">{currentStepData?.subtitle}</p>
+                <div className="space-y-2">
+                  {ROLE_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
-                      onClick={() => setPrimaryGoal(opt.value)}
+                      onClick={() => setUserRole(opt.value)}
                       className={`w-full p-4 rounded-xl text-left transition-all border flex items-center justify-between ${
-                        primaryGoal === opt.value
+                        userRole === opt.value
                           ? "border-primary bg-primary/15"
                           : "border-border/50 bg-muted/30 hover:border-primary/40"
                       }`}
                     >
                       <div>
-                        <p className="font-semibold text-foreground">{opt.label}</p>
+                        <p className="font-semibold text-foreground text-sm">{opt.label}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
                       </div>
-                      {primaryGoal === opt.value && (
+                      {userRole === opt.value && (
+                        <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Step 2: Team Size (Q2) */}
+            {step === 2 && (
+              <>
+                <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center text-primary mb-4">
+                  <StepIcon className="w-6 h-6" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+                  {currentStepData?.title}
+                </h2>
+                <p className="text-muted-foreground text-sm mb-6">{currentStepData?.subtitle}</p>
+                <div className="space-y-2">
+                  {TEAM_SIZE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setTeamSize(opt.value)}
+                      className={`w-full p-4 rounded-xl text-left transition-all border flex items-center justify-between ${
+                        teamSize === opt.value
+                          ? "border-primary bg-primary/15"
+                          : "border-border/50 bg-muted/30 hover:border-primary/40"
+                      }`}
+                    >
+                      <div>
+                        <p className="font-semibold text-foreground text-sm">{opt.label}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-primary/70 font-medium hidden sm:block">{opt.recommended}</span>
+                        {teamSize === opt.value && (
+                          <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Step 3: Inbox Challenge (Q3) */}
+            {step === 3 && (
+              <>
+                <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center text-primary mb-4">
+                  <Inbox className="w-6 h-6" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+                  {currentStepData?.title}
+                </h2>
+                <p className="text-muted-foreground text-sm mb-6">{currentStepData?.subtitle}</p>
+
+                <div className="space-y-2 mb-6">
+                  {CHALLENGE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setInboxChallenge(opt.value)}
+                      className={`w-full p-4 rounded-xl text-left transition-all border flex items-center justify-between ${
+                        inboxChallenge === opt.value
+                          ? "border-primary bg-primary/15"
+                          : "border-border/50 bg-muted/30 hover:border-primary/40"
+                      }`}
+                    >
+                      <div>
+                        <p className="font-semibold text-foreground text-sm">{opt.label}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+                      </div>
+                      {inboxChallenge === opt.value && (
                         <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                           <Check className="w-3 h-3 text-white" />
                         </div>
@@ -268,65 +367,141 @@ export default function Onboarding() {
                   ))}
                 </div>
 
-                <div className="pt-2">
-                  <label className="text-sm font-medium text-foreground mb-2 block">
+              </>
+            )}
+
+            {/* Step 4: Language + Phone + Referral */}
+            {step === 4 && (
+              <>
+                <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center text-primary mb-4">
+                  <Globe className="w-6 h-6" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+                  {STEPS[3].title}
+                </h2>
+                <p className="text-muted-foreground text-sm mb-5">{STEPS[3].subtitle}</p>
+
+                {/* Language selection */}
+                <div className="grid grid-cols-2 gap-2 mb-6">
+                  {LANGUAGE_OPTIONS.map((lang) => (
+                    <button
+                      key={lang.value}
+                      onClick={() => setPreferredLanguage(lang.value)}
+                      className={`p-3 rounded-xl text-left transition-all border flex items-center gap-2 ${
+                        preferredLanguage === lang.value
+                          ? "border-primary bg-primary/15"
+                          : "border-border/50 bg-muted/30 hover:border-primary/40"
+                      }`}
+                    >
+                      <span className="text-xl">{lang.flag}</span>
+                      <span className="text-sm font-medium text-foreground">{lang.label}</span>
+                      {preferredLanguage === lang.value && (
+                        <Check className="w-3.5 h-3.5 text-primary ml-auto" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Phone number */}
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-primary" />
                     Your mobile number for SMS briefings
                   </label>
                   <Input
                     type="tel"
-                    placeholder="(555) 000-0000"
+                    placeholder="+1 (555) 000-0000"
                     value={phone}
                     onChange={(e) => {
                       setPhone(e.target.value);
                       setPhoneError("");
                     }}
-                    className="bg-input border-border text-foreground placeholder:text-muted-foreground"
+                    className={`bg-input border-border ${phoneError ? "border-red-500" : ""}`}
                   />
-                  {phoneError && <p className="text-destructive text-xs mt-1">{phoneError}</p>}
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    US numbers only. Standard SMS rates may apply.
-                  </p>
+                  {phoneError && <p className="text-xs text-red-400 mt-1">{phoneError}</p>}
+                  <p className="text-xs text-muted-foreground mt-1">Standard SMS rates may apply</p>
                 </div>
-              </div>
+
+                {/* Referral code (collapsible) */}
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowReferral(!showReferral)}
+                    className="flex items-center gap-1.5 text-xs text-primary/70 hover:text-primary transition-colors"
+                  >
+                    <Gift className="w-3.5 h-3.5" />
+                    Have a referral code? (optional)
+                  </button>
+                  {showReferral && (
+                    <div className="mt-2">
+                      <Input
+                        placeholder="Enter referral code"
+                        value={referralCode}
+                        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                        className="bg-input border-border uppercase"
+                        maxLength={16}
+                      />
+                      {referralCode.length >= 6 && (
+                        <p className={`text-xs mt-1 ${validateCode.data?.valid ? "text-green-400" : "text-muted-foreground"}`}>
+                          {validateCode.isLoading ? "Checking..." :
+                            validateCode.data?.valid
+                              ? `Valid code from ${validateCode.data.referrerName ?? "a friend"}`
+                              : "Code not found"}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
 
             {/* Navigation */}
             <div className="flex items-center justify-between mt-8">
-              {step > 1 ? (
-                <Button variant="ghost" onClick={() => setStep(step - 1)} className="text-muted-foreground hover:text-foreground">
-                  <ChevronLeft className="w-4 h-4 mr-1" /> Back
+              {step > 0 ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => setStep(step - 1)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Back
                 </Button>
-              ) : <div />}
+              ) : (
+                <div />
+              )}
 
-              {step < 3 ? (
-                <Button className="btn-primary-glow text-white border-0" onClick={handleNext}>
-                  Continue <ChevronRight className="w-4 h-4 ml-1" />
+              {step < 4 ? (
+                <Button onClick={handleNext} className="bg-primary hover:bg-primary/90 text-white px-6">
+                  Continue
+                  <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
                 <Button
-                  className="btn-primary-glow text-white border-0 px-6"
                   onClick={handleSubmit}
                   disabled={completeMutation.isPending}
+                  className="bg-primary hover:bg-primary/90 text-white px-6"
                 >
                   {completeMutation.isPending ? (
                     <span className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Starting trial...
+                      Setting up...
                     </span>
                   ) : (
-                    <>Start My Free Trial <ChevronRight className="w-4 h-4 ml-1" /></>
+                    <span className="flex items-center gap-2">
+                      Start Free Trial
+                      <ChevronRight className="w-4 h-4" />
+                    </span>
                   )}
                 </Button>
               )}
             </div>
           </div>
 
-          {/* Trial badge */}
-          <div className="mt-6 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30 text-primary text-sm">
-              <Shield className="w-4 h-4" />
-              <span>7-day Business trial starts immediately — no card needed</span>
-            </div>
+          {/* Trial notice */}
+          <div className="mt-4 text-center">
+            <p className="text-xs text-muted-foreground">
+              Your 7-day free trial includes full access to all features. No credit card required to start.
+            </p>
           </div>
         </div>
       </div>

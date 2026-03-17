@@ -79,16 +79,20 @@ describe("AES-256-GCM Encryption", () => {
 // ─── Plans / Tier Logic Tests ─────────────────────────────────────────────────
 
 describe("Subscription Plans", () => {
-  it("starter plan has email limit of 50", () => {
-    expect(getEmailLimit("starter")).toBe(50);
+  it("solo plan has email limit of 25", () => {
+    expect(getEmailLimit("solo")).toBe(25);
   });
 
-  it("pro plan has email limit of 200", () => {
-    expect(getEmailLimit("pro")).toBe(200);
+  it("pro plan has email limit of 75", () => {
+    expect(getEmailLimit("pro")).toBe(75);
   });
 
-  it("business plan has unlimited emails (-1)", () => {
-    expect(getEmailLimit("business")).toBe(-1);
+  it("business plan has email limit of 150", () => {
+    expect(getEmailLimit("business")).toBe(150);
+  });
+
+  it("enterprise plan has unlimited emails (-1)", () => {
+    expect(getEmailLimit("enterprise")).toBe(-1);
   });
 
   it("trial plan has unlimited emails (-1)", () => {
@@ -120,7 +124,8 @@ describe("Subscription Plans", () => {
       expect(plan.id).toBeDefined();
       expect(plan.name).toBeDefined();
       expect(typeof plan.emailLimit).toBe("number");
-      expect(plan.smsPerDay).toBeGreaterThan(0);
+      // smsPerDay can be -1 for unlimited (enterprise/trial)
+      expect(typeof plan.smsPerDay).toBe("number");
       expect(Array.isArray(plan.features)).toBe(true);
       expect(plan.features.length).toBeGreaterThan(0);
     }
@@ -134,8 +139,8 @@ describe("Subscription Plans", () => {
     expect(PLANS.trial.price).toBe(0);
   });
 
-  it("starter plan costs $9/month", () => {
-    expect(PLANS.starter.price).toBe(9);
+  it("solo plan costs $9/month", () => {
+    expect(PLANS.solo.price).toBe(9);
   });
 
   it("pro plan costs $19/month", () => {
@@ -146,12 +151,12 @@ describe("Subscription Plans", () => {
     expect(PLANS.business.price).toBe(39);
   });
 
-  it("business plan has more SMS/day than starter", () => {
-    expect(PLANS.business.smsPerDay).toBeGreaterThan(PLANS.starter.smsPerDay);
+  it("business plan has more SMS/day than solo", () => {
+    expect(PLANS.business.smsPerDay).toBeGreaterThan(PLANS.solo.smsPerDay);
   });
 
-  it("trial plan gives business-tier email access", () => {
-    expect(PLANS.trial.emailLimit).toBe(PLANS.business.emailLimit);
+  it("trial plan gives unlimited email access", () => {
+    expect(PLANS.trial.emailLimit).toBe(-1);
   });
 });
 
@@ -237,16 +242,16 @@ describe("auth.me", () => {
 // ─── Subscription Plans Endpoint ─────────────────────────────────────────────
 
 describe("subscription.getPlans", () => {
-  it("returns all 4 plans publicly", async () => {
+  it("returns all 4 paid plans publicly", async () => {
     const { ctx } = createMockContext(null);
     const caller = appRouter.createCaller(ctx);
     const plans = await caller.subscription.getPlans();
     expect(plans).toHaveLength(4);
     const ids = plans.map((p) => p.id);
-    expect(ids).toContain("trial");
-    expect(ids).toContain("starter");
+    expect(ids).toContain("solo");
     expect(ids).toContain("pro");
     expect(ids).toContain("business");
+    expect(ids).toContain("enterprise");
   });
 
   it("all returned plans have price info", async () => {
@@ -255,7 +260,8 @@ describe("subscription.getPlans", () => {
     const plans = await caller.subscription.getPlans();
     for (const plan of plans) {
       expect(plan.priceLabel).toBeDefined();
-      expect(plan.smsPerDay).toBeGreaterThan(0);
+      // smsPerDay can be -1 for unlimited (enterprise)
+      expect(typeof plan.smsPerDay).toBe("number");
     }
   });
 });

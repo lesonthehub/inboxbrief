@@ -1,29 +1,43 @@
+import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { Shield, Zap, Clock, MessageSquare, Lock, ChevronRight, Star, CheckCircle } from "lucide-react";
+import {
+  Shield, Zap, Clock, MessageSquare, Lock, ChevronRight,
+  Star, CheckCircle, Globe, Users, Gift, RefreshCw
+} from "lucide-react";
 
 const FEATURES = [
   {
     icon: <Zap className="w-5 h-5" />,
-    title: "AI-Powered Triage",
-    desc: "Grok 3 reads your inbox and surfaces only what matters — client leads, urgent requests, and key updates.",
+    title: "Intelligent Email Triage",
+    desc: "Your inbox is scanned automatically. Client leads, urgent requests, and key updates rise to the top — everything else is filtered out.",
   },
   {
     icon: <MessageSquare className="w-5 h-5" />,
-    title: "SMS in Seconds",
-    desc: "One tap sends a crisp 1–2 message briefing to your phone. No app to open. No inbox to dread.",
+    title: "Natural SMS Briefings",
+    desc: "Briefings sound like a trusted assistant wrote them: 'You have 3 applicants for the Manager role, 2 new client inquiries, and 1 invoice due Friday.'",
   },
   {
     icon: <Clock className="w-5 h-5" />,
-    title: "Your Schedule",
-    desc: "Set it to arrive with your morning coffee, after lunch, or on demand — you control when you're briefed.",
+    title: "Your Schedule, Your Way",
+    desc: "Set briefings to arrive with your morning coffee, after lunch, or tap the button on demand. You decide when you're informed.",
   },
   {
     icon: <Lock className="w-5 h-5" />,
     title: "Zero-Trust Encryption",
-    desc: "AES-256-GCM encrypts every email snippet and token before it touches our database. We never store plaintext.",
+    desc: "AES-256-GCM encrypts every email snippet and access token before it touches our database. We never store your emails in plaintext.",
+  },
+  {
+    icon: <Users className="w-5 h-5" />,
+    title: "Built for Teams Too",
+    desc: "On Business and Enterprise plans, each team member gets their own personalized briefing on their own schedule — managed from one dashboard.",
+  },
+  {
+    icon: <RefreshCw className="w-5 h-5" />,
+    title: "Self-Adjusting Briefings",
+    desc: "Rate each briefing and tell us what to change. More concise? More detail? Focus on invoices? Your briefings learn and adapt over time.",
   },
 ];
 
@@ -33,9 +47,39 @@ const TESTIMONIALS = [
   { name: "Diane L.", role: "Boutique Owner", quote: "My VA used to do this. InboxBrief does it better, faster, and at a fraction of the cost." },
 ];
 
+const LANGUAGES = [
+  { flag: "🇺🇸", lang: "English" },
+  { flag: "🇪🇸", lang: "Español" },
+  { flag: "🇫🇷", lang: "Français" },
+  { flag: "🇩🇪", lang: "Deutsch" },
+  { flag: "🇧🇷", lang: "Português" },
+  { flag: "🇯🇵", lang: "日本語" },
+  { flag: "🇨🇳", lang: "中文" },
+  { flag: "🇸🇦", lang: "العربية" },
+];
+
+const SMS_EXAMPLES = [
+  {
+    lang: "English",
+    flag: "🇺🇸",
+    text: "You have 3 applicants for the Store Manager role, 2 new client inquiries, and a contract renewal from Apex Corp due Friday. 14 general emails filtered.",
+  },
+  {
+    lang: "Español",
+    flag: "🇪🇸",
+    text: "Tienes 3 candidatos para el puesto de Gerente, 2 nuevas consultas de clientes, y una renovación de contrato de Apex Corp con vencimiento el viernes.",
+  },
+  {
+    lang: "Français",
+    flag: "🇫🇷",
+    text: "Vous avez 3 candidats pour le poste de Directeur, 2 nouvelles demandes clients, et un renouvellement de contrat d'Apex Corp à rendre vendredi.",
+  },
+];
+
 export default function Home() {
   const { isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
+  const [activeSmsLang, setActiveSmsLang] = useState(0);
 
   const handleGetStarted = () => {
     if (isAuthenticated) {
@@ -49,92 +93,163 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
-        <div className="container flex items-center justify-between h-16">
+        <div className="container flex items-center justify-between h-14 sm:h-16">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center glow-indigo-sm">
-              <MessageSquare className="w-4 h-4 text-white" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary flex items-center justify-center">
+              <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
             </div>
-            <span className="font-bold text-lg text-foreground" style={{fontFamily:'Space Grotesk,sans-serif'}}>InboxBrief</span>
+            <span className="font-bold text-base sm:text-lg text-foreground" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" onClick={() => navigate("/pricing")}>Pricing</Button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground hidden sm:inline-flex"
+              onClick={() => navigate("/pricing")}
+            >
+              Pricing
+            </Button>
             {isAuthenticated ? (
-              <Button size="sm" className="btn-primary-glow text-white border-0" onClick={() => navigate("/dashboard")}>Dashboard</Button>
+              <Button
+                size="sm"
+                className="bg-primary hover:bg-primary/90 text-white border-0"
+                onClick={() => navigate("/dashboard")}
+              >
+                Dashboard
+              </Button>
             ) : (
-              <Button size="sm" className="btn-primary-glow text-white border-0" onClick={handleGetStarted}>Start Free Trial</Button>
+              <Button
+                size="sm"
+                className="bg-primary hover:bg-primary/90 text-white border-0"
+                onClick={handleGetStarted}
+              >
+                Start Free Trial
+              </Button>
             )}
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-20 px-4">
+      <section className="pt-24 sm:pt-32 pb-16 sm:pb-20 px-4">
         <div className="container text-center max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-sm font-medium mb-8">
-            <Star className="w-3.5 h-3.5 fill-current" />
-            <span>1 week free — Business tier, no card required</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8">
+            <Star className="w-3.5 h-3.5 fill-current flex-shrink-0" />
+            <span>1 week free — full access, no card required</span>
           </div>
-          <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6" style={{fontFamily:'Space Grotesk,sans-serif',letterSpacing:'-0.02em'}}>
+          <h1
+            className="text-4xl sm:text-5xl md:text-7xl font-bold leading-tight mb-5 sm:mb-6"
+            style={{ fontFamily: "Space Grotesk, sans-serif", letterSpacing: "-0.02em" }}
+          >
             Your inbox,{" "}
             <span className="text-gradient">briefed to your phone</span>
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            InboxBrief uses Grok AI to read your Gmail or Outlook, filter out the noise, and text you a crisp briefing — encrypted end-to-end, delivered on your schedule.
+          <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed">
+            InboxBrief reads your Gmail or Outlook, filters out the noise, and texts you a natural-sounding briefing — encrypted end-to-end, delivered on your schedule, in your language.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-            <Button size="lg" className="btn-primary-glow text-white border-0 text-lg px-8 py-6 h-auto" onClick={handleGetStarted} disabled={loading}>
-              💬 Start Free — 7 Days Business Access
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-10 sm:mb-12">
+            <Button
+              size="lg"
+              className="bg-primary hover:bg-primary/90 text-white border-0 text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30"
+              onClick={handleGetStarted}
+              disabled={loading}
+            >
+              💬 Start Free — 7 Days Full Access
               <ChevronRight className="w-5 h-5 ml-1" />
             </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8 py-6 h-auto border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/50 bg-transparent" onClick={() => navigate("/pricing")}>
+            <Button
+              size="lg"
+              variant="outline"
+              className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 h-auto border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/50 bg-transparent w-full sm:w-auto"
+              onClick={() => navigate("/pricing")}
+            >
               View Plans
             </Button>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-green-400" /><span>AES-256-GCM Encrypted</span></div>
-            <div className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-400" /><span>No credit card for trial</span></div>
-            <div className="flex items-center gap-1.5"><Lock className="w-4 h-4 text-green-400" /><span>Zero plaintext storage</span></div>
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /><span>AES-256-GCM Encrypted</span></div>
+            <div className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /><span>No credit card for trial</span></div>
+            <div className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /><span>8 languages supported</span></div>
           </div>
         </div>
       </section>
 
-      {/* SMS Preview */}
-      <section className="py-16 px-4">
+      {/* SMS Preview — multi-language switcher */}
+      <section className="py-12 sm:py-16 px-4">
         <div className="container max-w-lg mx-auto">
-          <div className="glass-card rounded-2xl p-6 glow-indigo">
+          <p className="text-center text-xs text-muted-foreground mb-3 uppercase tracking-wider font-medium">Example briefing</p>
+
+          {/* Language tabs */}
+          <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
+            {SMS_EXAMPLES.map((ex, i) => (
+              <button
+                key={ex.lang}
+                onClick={() => setActiveSmsLang(i)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                  activeSmsLang === i
+                    ? "border-primary bg-primary/15 text-primary"
+                    : "border-border/40 text-muted-foreground hover:border-primary/40"
+                }`}
+              >
+                <span>{ex.flag}</span>
+                <span>{ex.lang}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-card border border-border/40 rounded-2xl p-5 sm:p-6 shadow-xl shadow-primary/5">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-primary" />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground">InboxBrief</p>
                 <p className="text-xs text-muted-foreground">Today, 8:02 AM</p>
               </div>
-              <div className="ml-auto encrypted-badge px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
+              <div className="ml-auto flex items-center gap-1 border border-green-500/30 bg-green-500/10 px-2 py-0.5 rounded-full text-xs font-medium text-green-400">
                 <Shield className="w-3 h-3" />
-                Encrypted
+                <span className="hidden sm:inline">Encrypted</span>
               </div>
             </div>
-            <div className="bg-primary/10 rounded-xl p-4 text-sm text-foreground leading-relaxed border border-primary/20">
-              InboxBrief: 3 HP emails — Johnson & Co req. proposal by Fri; Maria Chen re: contract renewal; new lead from website form. 12 gen emails. (3 HP, 12 gen)
+            <div className="bg-primary/10 rounded-xl p-3 sm:p-4 text-sm text-foreground leading-relaxed border border-primary/20 min-h-[80px] transition-all">
+              {SMS_EXAMPLES[activeSmsLang].text}
             </div>
-            <p className="text-xs text-muted-foreground mt-3 text-center">↑ Example briefing — 287 characters, 1 SMS</p>
+            <p className="text-xs text-muted-foreground mt-3 text-center">
+              {SMS_EXAMPLES[activeSmsLang].flag} Delivered in {SMS_EXAMPLES[activeSmsLang].lang} · Under 320 characters · 1 SMS
+            </p>
           </div>
         </div>
       </section>
 
       {/* Features */}
-      <section className="py-20 px-4">
+      <section className="py-16 sm:py-20 px-4">
         <div className="container">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{fontFamily:'Space Grotesk,sans-serif'}}>Built for the <span className="text-gradient">solo operator</span></h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">No IT team. No inbox zero obsession. Just the emails that actually move your business.</p>
+          <div className="text-center mb-10 sm:mb-14">
+            <h2
+              className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4"
+              style={{ fontFamily: "Space Grotesk, sans-serif" }}
+            >
+              Built for the <span className="text-gradient">solo operator</span>
+            </h2>
+            <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto">
+              No IT team. No inbox zero obsession. Just the emails that actually move your business.
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
             {FEATURES.map((f) => (
-              <div key={f.title} className="glass-card rounded-xl p-6 hover:border-primary/40 transition-colors">
-                <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center text-primary mb-4">{f.icon}</div>
-                <h3 className="font-semibold text-lg text-foreground mb-2" style={{fontFamily:'Space Grotesk,sans-serif'}}>{f.title}</h3>
+              <div
+                key={f.title}
+                className="bg-card border border-border/40 rounded-xl p-5 sm:p-6 hover:border-primary/40 transition-colors"
+              >
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/15 flex items-center justify-center text-primary mb-3 sm:mb-4">
+                  {f.icon}
+                </div>
+                <h3
+                  className="font-semibold text-base sm:text-lg text-foreground mb-2"
+                  style={{ fontFamily: "Space Grotesk, sans-serif" }}
+                >
+                  {f.title}
+                </h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">{f.desc}</p>
               </div>
             ))}
@@ -142,16 +257,80 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Multi-language section */}
+      <section className="py-16 sm:py-20 px-4 bg-card/30 border-y border-border/40">
+        <div className="container max-w-3xl mx-auto text-center">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Globe className="w-6 h-6 text-primary" />
+          </div>
+          <h2
+            className="text-2xl sm:text-3xl font-bold mb-3"
+            style={{ fontFamily: "Space Grotesk, sans-serif" }}
+          >
+            Briefings in your language
+          </h2>
+          <p className="text-muted-foreground text-sm sm:text-base mb-8 max-w-xl mx-auto">
+            Set your preferred language during onboarding and every briefing will be delivered in that language — no matter what language the emails were written in.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+            {LANGUAGES.map((l) => (
+              <div
+                key={l.lang}
+                className="flex items-center gap-2 px-3 py-2 rounded-full bg-card border border-border/40 text-sm text-foreground"
+              >
+                <span>{l.flag}</span>
+                <span>{l.lang}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-4">More languages added regularly based on user requests.</p>
+        </div>
+      </section>
+
+      {/* Referral callout */}
+      <section className="py-12 sm:py-16 px-4">
+        <div className="container max-w-2xl mx-auto">
+          <div className="bg-card border border-border/40 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+            <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Gift className="w-7 h-7 text-primary" />
+            </div>
+            <div className="text-center sm:text-left">
+              <h3
+                className="font-bold text-lg sm:text-xl text-foreground mb-1"
+                style={{ fontFamily: "Space Grotesk, sans-serif" }}
+              >
+                Earn $5 for every referral
+              </h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Share your unique code with other small business owners. When they subscribe, you both get credit toward your next billing cycle.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials */}
-      <section className="py-20 px-4">
+      <section className="py-16 sm:py-20 px-4">
         <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-12" style={{fontFamily:'Space Grotesk,sans-serif'}}>What small business owners say</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <h2
+            className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12"
+            style={{ fontFamily: "Space Grotesk, sans-serif" }}
+          >
+            What small business owners say
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
             {TESTIMONIALS.map((t) => (
-              <div key={t.name} className="glass-card rounded-xl p-6">
-                <div className="flex gap-0.5 mb-4">{[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-primary text-primary" />)}</div>
-                <p className="text-foreground text-sm leading-relaxed mb-4 italic">"{t.quote}"</p>
-                <div><p className="font-semibold text-sm text-foreground">{t.name}</p><p className="text-xs text-muted-foreground">{t.role}</p></div>
+              <div key={t.name} className="bg-card border border-border/40 rounded-xl p-5 sm:p-6">
+                <div className="flex gap-0.5 mb-3 sm:mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <p className="text-foreground text-sm leading-relaxed mb-3 sm:mb-4 italic">"{t.quote}"</p>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.role}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -159,29 +338,52 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 px-4">
+      <section className="py-16 sm:py-24 px-4">
         <div className="container max-w-2xl mx-auto text-center">
-          <div className="glass-card rounded-2xl p-10 glow-indigo">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{fontFamily:'Space Grotesk,sans-serif'}}>Ready to reclaim your mornings?</h2>
-            <p className="text-muted-foreground mb-8">Start your free 7-day Business trial. Full access, no credit card, cancel anytime.</p>
-            <Button size="lg" className="btn-primary-glow text-white border-0 text-lg px-10 py-6 h-auto" onClick={handleGetStarted}>
+          <div className="bg-card border border-primary/20 rounded-2xl p-8 sm:p-10 shadow-xl shadow-primary/10">
+            <h2
+              className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4"
+              style={{ fontFamily: "Space Grotesk, sans-serif" }}
+            >
+              Ready to reclaim your mornings?
+            </h2>
+            <p className="text-muted-foreground mb-6 sm:mb-8 text-sm sm:text-base">
+              Start your free 7-day trial. Full access, no credit card, cancel anytime.
+            </p>
+            <Button
+              size="lg"
+              className="bg-primary hover:bg-primary/90 text-white border-0 text-base sm:text-lg px-8 sm:px-10 py-5 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30"
+              onClick={handleGetStarted}
+            >
               💬 Get My First Briefing Free
             </Button>
-            <p className="text-xs text-muted-foreground mt-4">Secured by AES-256-GCM · Powered by Grok 3 · Delivered by Twilio</p>
+            <p className="text-xs text-muted-foreground mt-4">
+              Secured with AES-256-GCM encryption · Delivered via SMS · 16 Star Collective
+            </p>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/40 py-8 px-4">
-        <div className="container flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-border/40 py-6 sm:py-8 px-4">
+        <div className="container flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center"><MessageSquare className="w-3 h-3 text-primary" /></div>
+            <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center">
+              <MessageSquare className="w-3 h-3 text-primary" />
+            </div>
             <span className="text-sm text-muted-foreground">InboxBrief · 16 Star Collective</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Shield className="w-3.5 h-3.5 text-green-400" />
-            <span>All data encrypted at rest with AES-256-GCM</span>
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+            <button
+              onClick={() => navigate("/pricing")}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Pricing
+            </button>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Shield className="w-3.5 h-3.5 text-green-400" />
+              <span>AES-256-GCM Encrypted</span>
+            </div>
           </div>
         </div>
       </footer>

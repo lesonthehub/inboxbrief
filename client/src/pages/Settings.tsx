@@ -93,18 +93,18 @@ export default function Settings() {
               <span className="font-bold" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
             </div>
           </button>
-          <div className="encrypted-badge px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5">
+          <div className="hidden sm:flex items-center gap-1.5 border border-green-500/30 bg-green-500/10 px-3 py-1.5 rounded-full text-xs font-medium text-green-400">
             <Shield className="w-3.5 h-3.5" />
             Data Encrypted
           </div>
         </div>
       </nav>
 
-      <div className="container py-8 max-w-2xl mx-auto space-y-6">
+      <div className="container py-5 sm:py-8 max-w-2xl mx-auto space-y-5 px-4">
         <h1 className="text-2xl font-bold" style={{ fontFamily: "Space Grotesk, sans-serif" }}>Settings</h1>
 
         {/* Account Info */}
-        <div className="glass-card rounded-xl p-6">
+        <div className="bg-card border border-border/40 rounded-xl p-5 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <User className="w-4 h-4 text-primary" />
             <h2 className="font-semibold text-foreground" style={{ fontFamily: "Space Grotesk, sans-serif" }}>Account</h2>
@@ -122,7 +122,7 @@ export default function Settings() {
         </div>
 
         {/* Notification Settings */}
-        <div className="glass-card rounded-xl p-6">
+        <div className="bg-card border border-border/40 rounded-xl p-5 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <Bell className="w-4 h-4 text-primary" />
             <h2 className="font-semibold text-foreground" style={{ fontFamily: "Space Grotesk, sans-serif" }}>SMS & Notifications</h2>
@@ -153,7 +153,7 @@ export default function Settings() {
               <p className="text-xs text-muted-foreground mt-1">Used to schedule automated briefings at the right local time.</p>
             </div>
             <Button
-              className="btn-primary-glow text-white border-0"
+              className="bg-primary hover:bg-primary/90 text-white border-0"
               onClick={handleSave}
               disabled={saving}
             >
@@ -168,7 +168,7 @@ export default function Settings() {
         </div>
 
         {/* Subscription */}
-        <div className="glass-card rounded-xl p-6">
+        <div className="bg-card border border-border/40 rounded-xl p-5 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <CreditCard className="w-4 h-4 text-primary" />
             <h2 className="font-semibold text-foreground" style={{ fontFamily: "Space Grotesk, sans-serif" }}>Subscription</h2>
@@ -199,9 +199,8 @@ export default function Settings() {
             <div className="flex gap-3">
               {!subStatus?.isActive || subStatus.plan === "trial" ? (
                 <Button
-                  className="btn-primary-glow text-white border-0 flex-1"
-                  onClick={() => navigate("/pricing")}
-                >
+                  className="bg-primary hover:bg-primary/90 text-white border-0 flex-1"
+                  onClick={() => navigate("/pricing")}>
                   {subStatus?.plan === "trial" ? "Upgrade Plan" : "Choose a Plan"}
                 </Button>
               ) : null}
@@ -220,7 +219,7 @@ export default function Settings() {
         </div>
 
         {/* Security */}
-        <div className="glass-card rounded-xl p-6">
+        <div className="bg-card border border-border/40 rounded-xl p-5 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <Lock className="w-4 h-4 text-primary" />
             <h2 className="font-semibold text-foreground" style={{ fontFamily: "Space Grotesk, sans-serif" }}>Security & Privacy</h2>
@@ -230,7 +229,7 @@ export default function Settings() {
               { label: "Encryption", value: "AES-256-GCM at rest", badge: "Active" },
               { label: "Email token storage", value: "Encrypted before database write", badge: "Secure" },
               { label: "Plaintext retention", value: "Zero — wiped after summarization", badge: "Zero" },
-              { label: "SMS delivery", value: "Twilio encrypted transport", badge: "TLS 1.3" },
+              { label: "SMS delivery", value: "Encrypted transport (TLS 1.3)", badge: "TLS 1.3" },
             ].map(({ label, value, badge }) => (
               <div key={label} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
                 <div>

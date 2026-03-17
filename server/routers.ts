@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { nanoid } from "nanoid";
 import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -9,13 +10,17 @@ import {
   getSubscriptionByUserId, upsertSubscription,
   getEmailAccountsByUserId, insertEmailAccount, deactivateEmailAccount,
   getBriefingLogsByUserId,
+  getDb,
 } from "./db";
 import { encrypt, safeDecrypt } from "./encryption";
 import { getGmailAuthUrl, getOutlookAuthUrl } from "./emailProviders";
 import { runBriefingPipeline } from "./briefingPipeline";
 import { createCheckoutSession, createPortalSession } from "./stripeProducts";
-import { PLANS, isSubscriptionActive } from "./plans";
+import { PLANS, isSubscriptionActive, getDisplayPlans } from "./plans";
 import { OWNER_EMAIL } from "./sms";
+import { processBriefingFeedback, SUPPORTED_LANGUAGES } from "./grok";
+import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs } from "../drizzle/schema";
+import { eq, and, desc } from "drizzle-orm";
 
 // ─── Auth Router ───────────────────────────────────────────────────────────────
 
@@ -37,8 +42,9 @@ const onboardingRouter = router({
       onboardingComplete: user?.onboardingComplete ?? false,
       phone: user?.phone ?? null,
       businessType: user?.businessType ?? null,
-      emailVolume: user?.emailVolume ?? null,
-      primaryGoal: user?.primaryGoal ?? null,
+      userRole: user?.userRole ?? null,
+      teamSize: user?.teamSize ?? null,
+      inboxChallenge: user?.inboxChallenge ?? null,
     };
   }),
 
@@ -46,22 +52,53 @@ const onboardingRouter = router({
     .input(z.object({
       phone: z.string().min(10).max(20),
       businessType: z.string().min(1).max(128),
-      emailVolume: z.enum(["under_50", "50_200", "200_500", "over_500"]),
-      primaryGoal: z.enum(["lead_tracking", "client_updates", "general_inbox", "all_of_above"]),
+      // Q1: What best describes your role?
+      userRole: z.enum(["solo_owner", "team_lead", "executive", "operations", "other"]),
+      // Q2: How many people are on your team?
+      teamSize: z.enum(["just_me", "2_5", "6_15", "16_plus"]),
+      // Q3: What is your biggest inbox challenge?
+      inboxChallenge: z.enum(["missing_leads", "client_follow_up", "too_much_volume", "team_coordination"]),
+      // Optional: referral code used during signup
+      referralCode: z.string().max(16).optional(),
+      // Preferred language for SMS briefings
+      preferredLanguage: z.string().max(8).default("en"),
     }))
     .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
       const now = new Date();
       const trialEndsAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+      // Generate unique referral code for this user
+      const myReferralCode = nanoid(8).toUpperCase();
+
+      // Handle referral code application
+      let referrerId: number | null = null;
+      if (input.referralCode) {
+        const [referrer] = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.referralCode, input.referralCode))
+          .limit(1);
+        if (referrer) {
+          referrerId = referrer.id;
+        }
+      }
 
       await updateUser(ctx.user.id, {
         phone: input.phone,
         businessType: input.businessType,
-        emailVolume: input.emailVolume,
-        primaryGoal: input.primaryGoal,
+        userRole: input.userRole,
+        teamSize: input.teamSize,
+        inboxChallenge: input.inboxChallenge,
+        preferredLanguage: input.preferredLanguage,
         onboardingComplete: true,
         trialStartedAt: now,
         trialEndsAt,
         trialUsed: true,
+        referralCode: myReferralCode,
+        referredByCode: input.referralCode ?? undefined,
       });
 
       // Activate Business-tier trial for 7 days
@@ -71,7 +108,24 @@ const onboardingRouter = router({
         currentPeriodEnd: trialEndsAt,
       });
 
-      return { success: true, trialEndsAt };
+      // Award referral credit to referrer ($5 = 500 cents per successful signup)
+      if (referrerId) {
+        await db.insert(referralUses).values({
+          referrerId,
+          referredUserId: ctx.user.id,
+          creditAwarded: 500,
+        });
+        await db
+          .update(users)
+          .set({ referralCredits: db.$count(referralUses) }) // simplified; real impl uses increment
+          .where(eq(users.id, referrerId));
+        // Increment referral credits properly
+        await db.execute(
+          `UPDATE users SET referralCredits = referralCredits + 500 WHERE id = ${referrerId}`
+        );
+      }
+
+      return { success: true, trialEndsAt, referralCode: myReferralCode };
     }),
 });
 
@@ -95,13 +149,15 @@ const subscriptionRouter = router({
       cancelAtPeriodEnd: sub?.cancelAtPeriodEnd ?? false,
       trialEndsAt: user?.trialEndsAt ?? null,
       hasStripeSubscription: !!sub?.stripeSubscriptionId,
+      seatCount: sub?.seatCount ?? 1,
       planDetails: sub?.plan ? PLANS[sub.plan] : null,
     };
   }),
 
   createCheckout: protectedProcedure
     .input(z.object({
-      plan: z.enum(["starter", "pro", "business"]),
+      plan: z.enum(["solo", "pro", "business", "enterprise"]),
+      seatCount: z.number().min(1).max(100).default(1),
       origin: z.string().url(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -112,7 +168,7 @@ const subscriptionRouter = router({
         userId: ctx.user.id,
         userEmail: user.email ?? OWNER_EMAIL,
         userName: user.name ?? "InboxBrief User",
-        plan: input.plan,
+        plan: input.plan as "solo" | "pro" | "business",
         origin: input.origin,
       });
 
@@ -130,7 +186,7 @@ const subscriptionRouter = router({
       return { url };
     }),
 
-  getPlans: publicProcedure.query(() => Object.values(PLANS)),
+  getPlans: publicProcedure.query(() => getDisplayPlans()),
 });
 
 // ─── Email Accounts Router ──────────────────────────────────────────────────────────
@@ -196,9 +252,63 @@ const briefingRouter = router({
         smsStatus: log.smsStatus,
         triggerType: log.triggerType,
         planAtTime: log.planAtTime,
+        language: log.language,
         createdAt: log.createdAt,
         summary: safeDecrypt(log.encryptedSummary),
       }));
+    }),
+
+  submitFeedback: protectedProcedure
+    .input(z.object({
+      briefingLogId: z.number(),
+      rating: z.number().min(1).max(5),
+      toneAdjustment: z.enum(["more_concise", "more_detail", "more_casual", "more_formal", "perfect"]).optional(),
+      addKeywords: z.string().max(500).optional(),
+      removeKeywords: z.string().max(500).optional(),
+      freeformNote: z.string().max(1000).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      // Save feedback
+      await db.insert(briefingFeedback).values({
+        userId: ctx.user.id,
+        briefingLogId: input.briefingLogId,
+        rating: input.rating,
+        toneAdjustment: input.toneAdjustment,
+        addKeywords: input.addKeywords,
+        removeKeywords: input.removeKeywords,
+        freeformNote: input.freeformNote,
+      });
+
+      // Apply feedback to user preferences
+      const user = await getUserById(ctx.user.id);
+      const currentPrefs = {
+        toneStyle: user?.toneStyle as "concise" | "conversational" | "detailed" | undefined,
+        keywordsInclude: user?.keywordsInclude ?? undefined,
+        keywordsExclude: user?.keywordsExclude ?? undefined,
+        language: user?.language ?? "en",
+      };
+
+      const updatedPrefs = await processBriefingFeedback(
+        {
+          rating: input.rating,
+          toneAdjustment: input.toneAdjustment,
+          addKeywords: input.addKeywords,
+          removeKeywords: input.removeKeywords,
+          freeformNote: input.freeformNote,
+        },
+        currentPrefs
+      );
+
+      await updateUser(ctx.user.id, {
+        toneStyle: updatedPrefs.toneStyle,
+        keywordsInclude: updatedPrefs.keywordsInclude ?? null,
+        keywordsExclude: updatedPrefs.keywordsExclude ?? null,
+      });
+
+      return { success: true };
     }),
 });
 
@@ -212,6 +322,10 @@ const settingsRouter = router({
       scheduleType: user?.scheduleType ?? "manual",
       scheduleTimes: user?.scheduleTimes ?? "08:00",
       timezone: user?.timezone ?? "America/Chicago",
+      language: user?.language ?? "en",
+      toneStyle: user?.toneStyle ?? "conversational",
+      keywordsInclude: user?.keywordsInclude ?? null,
+      keywordsExclude: user?.keywordsExclude ?? null,
     };
   }),
 
@@ -221,9 +335,120 @@ const settingsRouter = router({
       scheduleType: z.enum(["manual", "daily_morning", "daily_evening", "twice_daily", "custom"]).optional(),
       scheduleTimes: z.string().max(255).optional(),
       timezone: z.string().max(64).optional(),
+      language: z.string().max(8).optional(),
+      toneStyle: z.enum(["concise", "conversational", "detailed"]).optional(),
+      keywordsInclude: z.string().max(500).optional(),
+      keywordsExclude: z.string().max(500).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await updateUser(ctx.user.id, input);
+      return { success: true };
+    }),
+
+  getSupportedLanguages: publicProcedure.query(() => SUPPORTED_LANGUAGES),
+});
+
+// ─── Referral Router ───────────────────────────────────────────────────────────────
+
+const referralRouter = router({
+  getMyReferral: protectedProcedure.query(async ({ ctx }) => {
+    const user = await getUserById(ctx.user.id);
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+    const uses = await db
+      .select()
+      .from(referralUses)
+      .where(eq(referralUses.referrerId, ctx.user.id));
+
+    return {
+      referralCode: user?.referralCode ?? null,
+      referralCredits: user?.referralCredits ?? 0,
+      totalReferrals: uses.length,
+      creditsEarned: uses.reduce((sum, u) => sum + u.creditAwarded, 0),
+    };
+  }),
+
+  validateCode: publicProcedure
+    .input(z.object({ code: z.string().max(16) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { valid: false };
+      const [user] = await db
+        .select({ id: users.id, name: users.name })
+        .from(users)
+        .where(eq(users.referralCode, input.code.toUpperCase()))
+        .limit(1);
+      return { valid: !!user, referrerName: user?.name ?? null };
+    }),
+});
+
+// ─── Team Router ───────────────────────────────────────────────────────────────────
+
+const teamRouter = router({
+  getMembers: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+    const members = await db
+      .select()
+      .from(teamMembers)
+      .where(and(eq(teamMembers.ownerId, ctx.user.id), eq(teamMembers.status, "active")));
+
+    return members;
+  }),
+
+  invite: protectedProcedure
+    .input(z.object({
+      email: z.string().email(),
+      phone: z.string().min(10).max(20).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      // Check seat limit
+      const sub = await getSubscriptionByUserId(ctx.user.id);
+      const plan = sub?.plan ?? "trial";
+      const maxSeats = (PLANS[plan as keyof typeof PLANS])?.maxSeats ?? 1;
+
+      if (maxSeats !== -1) {
+        const currentMembers = await db
+          .select()
+          .from(teamMembers)
+          .where(and(eq(teamMembers.ownerId, ctx.user.id), eq(teamMembers.status, "active")));
+
+        if (currentMembers.length >= maxSeats - 1) { // -1 for owner
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: `Your ${plan} plan allows up to ${maxSeats} team members. Upgrade to add more.`,
+          });
+        }
+      }
+
+      const token = nanoid(32);
+      await db.insert(teamMembers).values({
+        ownerId: ctx.user.id,
+        inviteEmail: input.email,
+        inviteToken: token,
+        phone: input.phone,
+        status: "pending",
+      });
+
+      return { success: true, inviteToken: token };
+    }),
+
+  removeMember: protectedProcedure
+    .input(z.object({ memberId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      await db
+        .update(teamMembers)
+        .set({ status: "removed" })
+        .where(and(eq(teamMembers.id, input.memberId), eq(teamMembers.ownerId, ctx.user.id)));
+
       return { success: true };
     }),
 });
@@ -238,6 +463,8 @@ export const appRouter = router({
   emailAccounts: emailAccountsRouter,
   briefing: briefingRouter,
   settings: settingsRouter,
+  referral: referralRouter,
+  team: teamRouter,
 });
 
 export type AppRouter = typeof appRouter;
