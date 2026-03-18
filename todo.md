@@ -102,3 +102,46 @@
 - [ ] Buy domain name (inboxbrief.com or 16starcollective.com) via Settings → Domains in Management UI
 - [ ] Set up Google Workspace for InboxBrief (lesterantoine@16starcollective.com)
 - [ ] Configure DNS records for custom domain in Manus Settings → Domains
+
+## Round 3 Changes
+
+### International SMS Pricing
+- [x] Market research: Twilio international SMS costs vs US baseline (5-11x higher than US)
+- [x] Add country selector to onboarding and settings (phone number country)
+- [x] Add international SMS surcharge logic to subscription pricing (+$5/month)
+- [x] Update Stripe checkout to add surcharge for non-US numbers
+- [x] Show surcharge clearly in pricing UI and checkout
+
+### Enterprise Tier Redesign
+- [x] Remove price from Enterprise tier on pricing page
+- [x] Replace Enterprise checkout button with "Contact Us" CTA
+- [x] Build Enterprise contact form (name, company, team size, needs, email)
+- [x] Wire contact form to owner notification (lesterantoine@16starcollective.com)
+- [x] Add /enterprise route for contact form
+
+### Legal Protection
+- [x] Create Terms of Service page (/terms) with liability limitation, dispute resolution, no-warranty clauses
+- [x] Create Privacy Policy page (/privacy)
+- [x] Add pre-purchase agreement modal (must accept ToS before Stripe checkout opens)
+- [x] Add ToS/Privacy links to footer and onboarding
+- [x] Add "By subscribing you agree to our Terms of Service" to all checkout flows
+
+### Team Invitation Email Flow
+- [x] DB: team_members table with inviteToken, inviteTokenExpiresAt fields
+- [x] tRPC: sendInvite mutation (generates token, sends notification email)
+- [x] Build /invite/[token] accept page (shows team name, accept button, redirects to onboarding)
+- [x] tRPC: acceptInvite mutation (validates token, creates team membership)
+- [x] Show pending/accepted/expired status in team dashboard tab
+
+### Referral Dashboard
+- [x] Full referral tab in dashboard: unique code, copy button, share link
+- [x] Show referral stats: total referrals, successful sign-ups, credits earned, credits available
+- [x] tRPC: getReferralStats query (count uses, sum credits)
+- [x] Apply referral credits to next billing cycle (Stripe coupon or balance)
+
+### Briefing Feedback UI
+- [x] Per-briefing star rating (1-5) in briefing history list
+- [x] Tone preference picker (concise / balanced / detailed)
+- [x] Keyword include/exclude fields
+- [x] tRPC: submitFeedback, getMyPreferences, updatePreferences
+- [x] Pipeline: incorporate preferences into next briefing AI prompt

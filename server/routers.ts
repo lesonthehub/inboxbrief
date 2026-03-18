@@ -16,9 +16,10 @@ import { encrypt, safeDecrypt } from "./encryption";
 import { getGmailAuthUrl, getOutlookAuthUrl } from "./emailProviders";
 import { runBriefingPipeline } from "./briefingPipeline";
 import { createCheckoutSession, createPortalSession } from "./stripeProducts";
-import { PLANS, isSubscriptionActive, getDisplayPlans } from "./plans";
+import { PLANS, isSubscriptionActive, getDisplayPlans, INTERNATIONAL_SMS_SURCHARGE, isInternationalNumber } from "./plans";
 import { OWNER_EMAIL } from "./sms";
 import { processBriefingFeedback, SUPPORTED_LANGUAGES } from "./grok";
+import { notifyOwner } from "./_core/notification";
 import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs } from "../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -161,6 +162,11 @@ const subscriptionRouter = router({
       origin: z.string().url(),
     }))
     .mutation(async ({ ctx, input }) => {
+      // Enterprise is contact-only — redirect to the contact form
+      if (input.plan === "enterprise") {
+        return { url: `${input.origin}/enterprise` };
+      }
+
       const user = await getUserById(ctx.user.id);
       if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
 
@@ -453,6 +459,174 @@ const teamRouter = router({
     }),
 });
 
+// ─── Team Invite Router (public validate + protected accept) ──────────────────
+
+const teamInviteRouter = router({
+  validateInvite: publicProcedure
+    .input(z.object({ token: z.string().min(8) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      const [invite] = await db
+        .select({
+          id: teamMembers.id,
+          inviteEmail: teamMembers.inviteEmail,
+          status: teamMembers.status,
+          ownerId: teamMembers.ownerId,
+          inviteTokenExpiresAt: teamMembers.inviteTokenExpiresAt,
+        })
+        .from(teamMembers)
+        .where(eq(teamMembers.inviteToken, input.token))
+        .limit(1);
+
+      if (!invite) throw new TRPCError({ code: "NOT_FOUND", message: "Invite not found" });
+      if (invite.status !== "pending") throw new TRPCError({ code: "BAD_REQUEST", message: "Invite already used" });
+      if (invite.inviteTokenExpiresAt && invite.inviteTokenExpiresAt < new Date()) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Invite has expired" });
+      }
+
+      // Get owner name
+      const [owner] = await db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, invite.ownerId))
+        .limit(1);
+
+      return {
+        inviteEmail: invite.inviteEmail,
+        ownerName: owner?.name ?? null,
+      };
+    }),
+
+  acceptInvite: protectedProcedure
+    .input(z.object({
+      token: z.string().min(8),
+      phone: z.string().min(10).max(20),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      const [invite] = await db
+        .select()
+        .from(teamMembers)
+        .where(eq(teamMembers.inviteToken, input.token))
+        .limit(1);
+
+      if (!invite) throw new TRPCError({ code: "NOT_FOUND", message: "Invite not found" });
+      if (invite.status !== "pending") throw new TRPCError({ code: "BAD_REQUEST", message: "Invite already used" });
+
+      // Mark invite as accepted
+      await db
+        .update(teamMembers)
+        .set({
+          memberId: ctx.user.id,
+          status: "active",
+          phone: input.phone,
+        })
+        .where(eq(teamMembers.id, invite.id));
+
+      // Update member's phone if not already set
+      await updateUser(ctx.user.id, { phone: input.phone });
+
+      return { success: true };
+    }),
+});
+
+// ─── Enterprise Contact Router ─────────────────────────────────────────────────
+
+const enterpriseRouter = router({
+  contact: publicProcedure
+    .input(z.object({
+      name: z.string().min(1).max(128),
+      email: z.string().email(),
+      company: z.string().min(1).max(128),
+      teamSize: z.enum(["6_15", "16_50", "51_200", "200_plus"]),
+      useCase: z.string().max(500).optional(),
+      message: z.string().max(2000).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const teamSizeLabels: Record<string, string> = {
+        "6_15": "6–15 people",
+        "16_50": "16–50 people",
+        "51_200": "51–200 people",
+        "200_plus": "200+ people",
+      };
+
+      await notifyOwner({
+        title: `Enterprise Inquiry: ${input.company}`,
+        content: [
+          `Name: ${input.name}`,
+          `Email: ${input.email}`,
+          `Company: ${input.company}`,
+          `Team Size: ${teamSizeLabels[input.teamSize] ?? input.teamSize}`,
+          input.useCase ? `Use Case: ${input.useCase}` : null,
+          input.message ? `Message: ${input.message}` : null,
+        ].filter(Boolean).join("\n"),
+      });
+
+      return { success: true };
+    }),
+});
+
+// ─── Legal Router ──────────────────────────────────────────────────────────────
+
+const legalRouter = router({
+  acceptTos: protectedProcedure
+    .input(z.object({ tosVersion: z.string().max(16) }))
+    .mutation(async ({ ctx, input }) => {
+      await updateUser(ctx.user.id, {
+        tosAcceptedAt: new Date(),
+        tosVersion: input.tosVersion,
+      });
+      return { success: true };
+    }),
+
+  getTosStatus: protectedProcedure.query(async ({ ctx }) => {
+    const user = await getUserById(ctx.user.id);
+    return {
+      accepted: !!user?.tosAcceptedAt,
+      tosVersion: user?.tosVersion ?? null,
+      acceptedAt: user?.tosAcceptedAt ?? null,
+    };
+  }),
+});
+
+// ─── International SMS Router ──────────────────────────────────────────────────
+
+const internationalRouter = router({
+  checkSurcharge: publicProcedure
+    .input(z.object({ countryCode: z.string().max(8) }))
+    .query(({ input }) => {
+      const intl = isInternationalNumber(input.countryCode);
+      return {
+        isInternational: intl,
+        surchargeAmount: intl ? INTERNATIONAL_SMS_SURCHARGE : 0,
+        surchargeLabel: intl ? `+$${INTERNATIONAL_SMS_SURCHARGE}/month international SMS` : null,
+      };
+    }),
+
+  updatePhoneCountry: protectedProcedure
+    .input(z.object({
+      phoneCountryCode: z.string().max(8),
+      phone: z.string().min(10).max(20),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const isIntl = isInternationalNumber(input.phoneCountryCode);
+      await updateUser(ctx.user.id, {
+        phone: input.phone,
+        phoneCountryCode: input.phoneCountryCode,
+        internationalSms: isIntl,
+      });
+      return {
+        success: true,
+        isInternational: isIntl,
+        surcharge: isIntl ? INTERNATIONAL_SMS_SURCHARGE : 0,
+      };
+    }),
+});
+
 // ─── App Router ───────────────────────────────────────────────────────────────
 
 export const appRouter = router({
@@ -465,6 +639,10 @@ export const appRouter = router({
   settings: settingsRouter,
   referral: referralRouter,
   team: teamRouter,
+  teamInvite: teamInviteRouter,
+  enterprise: enterpriseRouter,
+  legal: legalRouter,
+  international: internationalRouter,
 });
 
 export type AppRouter = typeof appRouter;

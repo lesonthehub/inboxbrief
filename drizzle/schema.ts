@@ -43,6 +43,14 @@ export const users = mysqlTable("users", {
   keywordsInclude: text("keywordsInclude"), // comma-separated
   keywordsExclude: text("keywordsExclude"), // comma-separated
 
+  // International SMS surcharge flag
+  internationalSms: boolean("internationalSms").default(false).notNull(),
+  phoneCountryCode: varchar("phoneCountryCode", { length: 8 }).default("+1"),
+
+  // Legal agreements
+  tosAcceptedAt: timestamp("tosAcceptedAt"),
+  tosVersion: varchar("tosVersion", { length: 16 }),
+
   // Trial tracking
   trialStartedAt: timestamp("trialStartedAt"),
   trialEndsAt: timestamp("trialEndsAt"),
@@ -96,6 +104,7 @@ export const teamMembers = mysqlTable("team_members", {
   memberId: int("memberId"),           // null until they accept invite
   inviteEmail: varchar("inviteEmail", { length: 320 }).notNull(),
   inviteToken: varchar("inviteToken", { length: 64 }).unique(),
+  inviteTokenExpiresAt: timestamp("inviteTokenExpiresAt"),
   status: mysqlEnum("status", ["pending", "active", "removed"]).default("pending").notNull(),
   phone: varchar("phone", { length: 32 }), // member's SMS number
   createdAt: timestamp("createdAt").defaultNow().notNull(),

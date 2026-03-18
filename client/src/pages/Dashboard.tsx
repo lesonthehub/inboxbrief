@@ -10,7 +10,7 @@ import {
   Shield, MessageSquare, Settings, LogOut, Plus, Trash2,
   Clock, CheckCircle, XCircle, AlertCircle, Zap, Mail,
   Calendar, Lock, Gift, Star, Users, ThumbsUp, ThumbsDown,
-  Globe, ChevronDown, Copy, Check
+  Globe, ChevronDown, Copy, Check, Send, UserPlus, ExternalLink
 } from "lucide-react";
 
 const SCHEDULE_OPTIONS = [
@@ -166,6 +166,11 @@ export default function Dashboard() {
   const [feedbackLogId, setFeedbackLogId] = useState<number | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
   const [activeTab, setActiveTab] = useState<"briefings" | "team" | "referral">("briefings");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [generatedInviteLink, setGeneratedInviteLink] = useState<string | null>(null);
+  const [copiedInviteLink, setCopiedInviteLink] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -194,6 +199,26 @@ export default function Dashboard() {
       toast.success("Schedule updated");
       utils.settings.get.invalidate();
       setShowSchedule(false);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const inviteMember = trpc.team.invite.useMutation({
+    onSuccess: (data) => {
+      const link = `${window.location.origin}/invite/${data.inviteToken}`;
+      setGeneratedInviteLink(link);
+      setInviteEmail("");
+      setInvitePhone("");
+      toast.success("Invite link generated! Share it with your team member.");
+      utils.team.getMembers.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const removeMember = trpc.team.removeMember.useMutation({
+    onSuccess: () => {
+      toast.success("Team member removed");
+      utils.team.getMembers.invalidate();
     },
     onError: (err) => toast.error(err.message),
   });
@@ -587,40 +612,130 @@ export default function Dashboard() {
           {activeTab === "team" && isTeamPlan && (
             <div className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-muted-foreground">
-                  Manage team members who receive their own briefings.
-                </p>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Team Members</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Each member receives their own SMS briefings.</p>
+                </div>
                 <Button
                   size="sm"
                   className="bg-primary hover:bg-primary/90 text-white border-0 text-xs"
-                  onClick={() => toast.info("Team invite — coming soon. Each member will receive their own SMS briefings.")}
+                  onClick={() => { setShowInviteForm(!showInviteForm); setGeneratedInviteLink(null); }}
                 >
-                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  <UserPlus className="w-3.5 h-3.5 mr-1" />
                   Invite
                 </Button>
               </div>
+
+              {/* Invite Form */}
+              {showInviteForm && !generatedInviteLink && (
+                <div className="mb-4 p-4 bg-muted/20 border border-border/40 rounded-xl space-y-3">
+                  <p className="text-xs font-semibold text-foreground">Send an invite link</p>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Team member email *</label>
+                    <Input
+                      type="email"
+                      placeholder="colleague@company.com"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      className="bg-input border-border text-sm h-9"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Their phone number (optional)</label>
+                    <Input
+                      type="tel"
+                      placeholder="+1 555 000 0000"
+                      value={invitePhone}
+                      onChange={(e) => setInvitePhone(e.target.value)}
+                      className="bg-input border-border text-sm h-9"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="bg-primary hover:bg-primary/90 text-white border-0 text-xs"
+                      disabled={!inviteEmail || inviteMember.isPending}
+                      onClick={() => inviteMember.mutate({ email: inviteEmail, phone: invitePhone || undefined })}
+                    >
+                      <Send className="w-3.5 h-3.5 mr-1" />
+                      {inviteMember.isPending ? "Generating..." : "Generate Invite Link"}
+                    </Button>
+                    <Button size="sm" variant="ghost" className="text-xs text-muted-foreground" onClick={() => setShowInviteForm(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Generated Invite Link */}
+              {generatedInviteLink && (
+                <div className="mb-4 p-4 bg-green-500/5 border border-green-500/20 rounded-xl space-y-3">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                    <p className="text-sm font-semibold text-green-400">Invite link ready!</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Share this link with your team member. It expires in 7 days.</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-muted/30 border border-border/40 rounded-lg px-3 py-2 text-xs font-mono text-foreground/70 truncate">
+                      {generatedInviteLink}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-border/60 flex-shrink-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedInviteLink);
+                        setCopiedInviteLink(true);
+                        setTimeout(() => setCopiedInviteLink(false), 2000);
+                        toast.success("Link copied!");
+                      }}
+                    >
+                      {copiedInviteLink ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-xs text-muted-foreground"
+                    onClick={() => { setGeneratedInviteLink(null); setShowInviteForm(false); }}
+                  >
+                    Done
+                  </Button>
+                </div>
+              )}
+
               {teamMembers && teamMembers.length > 0 ? (
                 <div className="space-y-2">
                   {teamMembers.map((m) => (
                     <div key={m.id} className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border/30">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{m.inviteEmail}</p>
-                        <p className="text-xs text-muted-foreground capitalize">{m.status}</p>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{m.inviteEmail}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{m.phone ? `${m.phone} · ` : ""}{m.status}</p>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full border ${
-                        m.status === "active"
-                          ? "text-green-400 bg-green-400/10 border-green-400/30"
-                          : "text-yellow-400 bg-yellow-400/10 border-yellow-400/30"
-                      }`}>
-                        {m.status}
-                      </span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${
+                          m.status === "active"
+                            ? "text-green-400 bg-green-400/10 border-green-400/30"
+                            : "text-yellow-400 bg-yellow-400/10 border-yellow-400/30"
+                        }`}>
+                          {m.status}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-red-400 p-1.5"
+                          onClick={() => removeMember.mutate({ memberId: m.id })}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <Users className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No team members yet. Invite your first member.</p>
+                  <p className="text-sm text-muted-foreground">No team members yet. Invite your first member above.</p>
                 </div>
               )}
             </div>

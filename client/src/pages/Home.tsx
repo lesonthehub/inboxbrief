@@ -380,6 +380,24 @@ export default function Home() {
             >
               Pricing
             </button>
+            <button
+              onClick={() => navigate("/enterprise")}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Enterprise
+            </button>
+            <button
+              onClick={() => navigate("/terms")}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Terms
+            </button>
+            <button
+              onClick={() => navigate("/privacy")}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Privacy
+            </button>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Shield className="w-3.5 h-3.5 text-green-400" />
               <span>AES-256-GCM Encrypted</span>

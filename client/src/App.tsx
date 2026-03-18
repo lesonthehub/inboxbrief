@@ -9,6 +9,10 @@ import Onboarding from "./pages/Onboarding";
 import Pricing from "./pages/Pricing";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Enterprise from "./pages/Enterprise";
+import AcceptInvite from "./pages/AcceptInvite";
 
 function Router() {
   return (
@@ -18,6 +22,10 @@ function Router() {
       <Route path="/pricing" component={Pricing} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/settings" component={Settings} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/enterprise" component={Enterprise} />
+      <Route path="/invite/:token" component={AcceptInvite} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

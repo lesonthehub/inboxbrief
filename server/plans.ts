@@ -10,6 +10,15 @@
  *
  * Competitor benchmarks: Superhuman $30/user, Fyxer $30-50/user, SaneBox $7-36/user
  * InboxBrief differentiator: SMS delivery + E2EE + no-inbox-login UX
+ *
+ * International SMS surcharge rationale (Twilio outbound rates):
+ * - US/Canada: $0.0083/SMS (baseline)
+ * - UK: $0.0420/SMS (~5× baseline)
+ * - Australia/Mexico: $0.0515/SMS (~6× baseline)
+ * - France: $0.0798/SMS (~10× baseline)
+ * - Germany/Italy: $0.0940/SMS (~11× baseline)
+ * A flat +$5/month surcharge covers costs at all tiers while remaining competitive.
+ * Competitors (Omnisend, Klaviyo, Textus) all charge international surcharges.
  */
 
 export type PlanId = "trial" | "solo" | "pro" | "business" | "enterprise";
@@ -17,7 +26,7 @@ export type PlanId = "trial" | "solo" | "pro" | "business" | "enterprise";
 export interface Plan {
   id: PlanId;
   name: string;
-  price: number;           // USD per month (0 = free trial)
+  price: number;           // USD per month (0 = free trial, -1 = contact us)
   priceLabel: string;
   pricePerSeat?: string;   // shown for team plans
   emailLimit: number;      // Max emails read per briefing (-1 = unlimited)
@@ -28,6 +37,17 @@ export interface Plan {
   trialDays: number;
   highlighted: boolean;
   badge?: string;
+  contactOnly?: boolean;   // Enterprise: no price listed, contact form instead
+}
+
+/** International SMS surcharge: +$5/month for non-US/Canada numbers */
+export const INTERNATIONAL_SMS_SURCHARGE = 5; // USD/month
+
+/** Country codes that do NOT incur the surcharge (US and Canada) */
+export const DOMESTIC_COUNTRY_CODES = ["+1"];
+
+export function isInternationalNumber(countryCode: string): boolean {
+  return !DOMESTIC_COUNTRY_CODES.includes(countryCode);
 }
 
 export const PLANS: Record<PlanId, Plan> = {
@@ -57,7 +77,7 @@ export const PLANS: Record<PlanId, Plan> = {
     name: "Solo",
     price: 9,
     priceLabel: "$9/month",
-    emailLimit: 25,        // ~25 actionable emails/day for solo proprietors
+    emailLimit: 25,
     smsPerDay: 2,
     maxSeats: 1,
     features: [
@@ -77,7 +97,7 @@ export const PLANS: Record<PlanId, Plan> = {
     name: "Pro",
     price: 19,
     priceLabel: "$19/month",
-    emailLimit: 75,        // ~75 actionable emails/day for active professionals
+    emailLimit: 75,
     smsPerDay: 5,
     maxSeats: 1,
     features: [
@@ -100,7 +120,7 @@ export const PLANS: Record<PlanId, Plan> = {
     price: 39,
     priceLabel: "$39/month",
     pricePerSeat: "Up to 5 team members",
-    emailLimit: 150,       // ~150 emails/day across a small team
+    emailLimit: 150,
     smsPerDay: 10,
     maxSeats: 5,
     features: [
@@ -123,29 +143,31 @@ export const PLANS: Record<PlanId, Plan> = {
   enterprise: {
     id: "enterprise",
     name: "Enterprise",
-    price: 79,
-    priceLabel: "$79/month",
+    price: -1,              // Contact us — no public price
+    priceLabel: "Custom pricing",
     pricePerSeat: "Unlimited team members",
-    emailLimit: -1,        // Unlimited
-    smsPerDay: -1,         // Unlimited
-    maxSeats: -1,          // Unlimited
+    emailLimit: -1,
+    smsPerDay: -1,
+    maxSeats: -1,
     features: [
       "Unlimited emails per briefing",
       "Unlimited SMS briefings/day",
       "Unlimited team members",
       "Gmail & Outlook integration",
-      "Smart priority filtering",
+      "Dedicated account manager",
       "Custom SMS schedule per member",
-      "Team briefing dashboard",
-      "Full briefing history & analytics",
+      "Team briefing dashboard & analytics",
+      "Full briefing history",
       "AES-256-GCM encryption",
-      "Dedicated support",
-      "Custom onboarding",
+      "SLA-backed uptime",
+      "Custom onboarding & training",
+      "Volume pricing",
     ],
     stripePriceId: process.env.STRIPE_PRICE_ENTERPRISE ?? null,
     trialDays: 0,
     highlighted: false,
-    badge: "Unlimited",
+    badge: "Custom",
+    contactOnly: true,      // No checkout — show contact form instead
   },
 };
 
@@ -180,4 +202,21 @@ export function getPlanByPriceId(priceId: string): PlanId | null {
 /** Returns plans suitable for display on the pricing page (excludes trial). */
 export function getDisplayPlans(): Plan[] {
   return ["solo", "pro", "business", "enterprise"].map(id => PLANS[id as PlanId]);
+}
+
+/**
+ * Calculates the total monthly price for a user including international surcharge.
+ * Returns { base, surcharge, total, isInternational }
+ */
+export function calculateMonthlyPrice(plan: PlanId, countryCode: string): {
+  base: number;
+  surcharge: number;
+  total: number;
+  isInternational: boolean;
+} {
+  const base = PLANS[plan].price;
+  if (base < 0) return { base: 0, surcharge: 0, total: 0, isInternational: false };
+  const intl = isInternationalNumber(countryCode);
+  const surcharge = intl ? INTERNATIONAL_SMS_SURCHARGE : 0;
+  return { base, surcharge, total: base + surcharge, isInternational: intl };
 }
