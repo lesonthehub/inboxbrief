@@ -358,7 +358,7 @@ export default function Home() {
               💬 Get My First Briefing Free
             </Button>
             <p className="text-xs text-muted-foreground mt-4">
-              Secured with AES-256-GCM encryption · Delivered via SMS · 16 Star Collective
+              Secured with AES-256-GCM encryption · Delivered via SMS · End-to-end encrypted
             </p>
           </div>
         </div>
@@ -371,7 +371,7 @@ export default function Home() {
             <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center">
               <MessageSquare className="w-3 h-3 text-primary" />
             </div>
-            <span className="text-sm text-muted-foreground">InboxBrief · 16 Star Collective</span>
+            <span className="text-sm text-muted-foreground">© {new Date().getFullYear()} InboxBrief. All rights reserved.</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             <button

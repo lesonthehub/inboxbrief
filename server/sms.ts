@@ -62,3 +62,10 @@ export function isValidPhone(phone: string): boolean {
   const digits = phone.replace(/\D/g, "");
   return digits.length === 10 || (digits.length === 11 && digits.startsWith("1"));
 }
+
+/**
+ * Generic SMS sender (alias for sendSmsBriefing, used by phone verification).
+ */
+export async function sendSms(toPhone: string, message: string): Promise<SmsSendResult> {
+  return sendSmsBriefing(toPhone, message);
+}

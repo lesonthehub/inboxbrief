@@ -8,6 +8,14 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { registerStripeWebhook, startSmsScheduler } from "../webhookAndScheduler.js";
+import {
+  helmetMiddleware,
+  globalRateLimit,
+  sanitizeBodyMiddleware,
+  validateOriginMiddleware,
+  securityResponseHeaders,
+} from "../security";
+import { registerEmailOAuthRoutes } from "../emailOAuthRoutes";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -35,11 +43,26 @@ async function startServer() {
   // ⚠️ Stripe webhook MUST be registered BEFORE express.json() middleware
   registerStripeWebhook(app);
 
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // ─── Security Middleware (applied in order) ───────────────────────────────
+  // 1. Helmet: sets secure HTTP headers (CSP, HSTS, X-Frame-Options, etc.)
+  app.use(helmetMiddleware);
+  // 2. Global rate limiter: 200 req/min per IP
+  app.use(globalRateLimit);
+  // 3. Security response headers (no-store cache control)
+  app.use("/api", securityResponseHeaders);
+  // 4. Origin validation for state-changing requests
+  app.use(validateOriginMiddleware);
+
+  // Configure body parser with reasonable size limit (reduced from 50mb to prevent DoS)
+  app.use(express.json({ limit: "2mb" }));
+  app.use(express.urlencoded({ limit: "2mb", extended: true }));
+  // 5. Input sanitization: strip XSS payloads from all body fields
+  app.use(sanitizeBodyMiddleware);
+
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  // Email provider OAuth routes (Gmail, Outlook)
+  registerEmailOAuthRoutes(app);
   // tRPC API
   app.use(
     "/api/trpc",

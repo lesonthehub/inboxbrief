@@ -108,7 +108,7 @@ export function TosAgreementModal({ open, onClose, onAccepted, planName, priceLa
                   className="mt-0.5 flex-shrink-0"
                 />
                 <Label htmlFor="liability-check" className="text-xs text-foreground/80 leading-relaxed cursor-pointer">
-                  I understand that InboxBrief is provided "as-is" without warranties. 16 Star Collective LLC's total liability is limited to the amount paid in the prior 3 months, and they are not liable for missed emails, missed leads, or business losses.
+                  I understand that InboxBrief is provided "as-is" without warranties. InboxBrief's total liability is limited to the amount paid in the prior 3 months, and they are not liable for missed emails, missed leads, or business losses.
                 </Label>
               </div>
 
@@ -134,7 +134,7 @@ export function TosAgreementModal({ open, onClose, onAccepted, planName, priceLa
                   className="mt-0.5 flex-shrink-0"
                 />
                 <Label htmlFor="refund-check" className="text-xs text-foreground/80 leading-relaxed cursor-pointer">
-                  I understand that all subscription fees are non-refundable. If I have an issue, I will contact lesterantoine@16starcollective.com for one-on-one resolution before pursuing any other action.
+                  I understand that all subscription fees are non-refundable. If I have an issue, I will contact support@inboxbrief.com for one-on-one resolution before pursuing any other action.
                 </Label>
               </div>
             </div>

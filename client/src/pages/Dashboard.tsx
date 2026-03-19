@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { PhoneVerificationModal } from "@/components/PhoneVerificationModal";
 import {
   Shield, MessageSquare, Settings, LogOut, Plus, Trash2,
   Clock, CheckCircle, XCircle, AlertCircle, Zap, Mail,
@@ -171,6 +172,7 @@ export default function Dashboard() {
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [generatedInviteLink, setGeneratedInviteLink] = useState<string | null>(null);
   const [copiedInviteLink, setCopiedInviteLink] = useState(false);
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -250,6 +252,8 @@ export default function Dashboard() {
   }
 
   const isActive = subStatus?.isActive;
+  const phoneVerified = subStatus?.phoneVerified ?? false;
+  const userPhone = subStatus?.phone ?? user?.email ?? "";
   const planName = subStatus?.plan === "trial" ? "Free Trial" : (subStatus?.planDetails?.name ?? "No Plan");
   const trialDaysLeft = subStatus?.trialEndsAt
     ? Math.max(0, Math.ceil((new Date(subStatus.trialEndsAt).getTime() - Date.now()) / 86400000))
@@ -264,6 +268,11 @@ export default function Dashboard() {
     }
     if (!emailAccounts || emailAccounts.length === 0) {
       toast.error("Connect an email account first.");
+      return;
+    }
+    // Phone verification gate — must verify before first briefing or after number change
+    if (!phoneVerified) {
+      setShowPhoneVerification(true);
       return;
     }
     triggerBriefing.mutate();
@@ -293,6 +302,20 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Phone Verification Modal */}
+      {showPhoneVerification && userPhone && (
+        <PhoneVerificationModal
+          open={showPhoneVerification}
+          phone={userPhone}
+          onVerified={() => {
+            setShowPhoneVerification(false);
+            utils.subscription.getStatus.invalidate();
+            toast.success("Phone verified! Sending your briefing now...");
+            triggerBriefing.mutate();
+          }}
+          onClose={() => setShowPhoneVerification(false)}
+        />
+      )}
       {/* Top Nav */}
       <nav className="border-b border-border/40 bg-background/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="container flex items-center justify-between h-14 sm:h-16">

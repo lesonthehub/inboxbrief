@@ -6,7 +6,8 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Shield, MessageSquare, ArrowLeft, User, Bell, CreditCard, Lock } from "lucide-react";
+import { Shield, MessageSquare, ArrowLeft, User, Bell, CreditCard, Lock, CheckCircle, Phone } from "lucide-react";
+import { PhoneVerificationModal } from "@/components/PhoneVerificationModal";
 
 const TIMEZONES = [
   "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
@@ -21,6 +22,8 @@ export default function Settings() {
   const [phone, setPhone] = useState("");
   const [timezone, setTimezone] = useState("America/Chicago");
   const [saving, setSaving] = useState(false);
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
+  const [pendingPhone, setPendingPhone] = useState<string | null>(null);
 
   const utils = trpc.useUtils();
   const { data: settings } = trpc.settings.get.useQuery(undefined, { enabled: isAuthenticated });
@@ -30,6 +33,7 @@ export default function Settings() {
     onSuccess: () => {
       toast.success("Settings saved");
       utils.settings.get.invalidate();
+      utils.subscription.getStatus.invalidate();
       setSaving(false);
     },
     onError: (err) => {
@@ -60,7 +64,22 @@ export default function Settings() {
 
   const handleSave = () => {
     setSaving(true);
+    const originalPhone = settings?.phone ?? "";
+    // If phone number changed, require re-verification before saving
+    if (phone !== originalPhone && phone.length >= 10) {
+      setPendingPhone(phone);
+      setShowPhoneVerification(true);
+      setSaving(false);
+      return;
+    }
     updateSettings.mutate({ phone, timezone });
+  };
+
+  const handlePhoneVerified = () => {
+    setShowPhoneVerification(false);
+    // Save settings with the newly verified phone
+    updateSettings.mutate({ phone: pendingPhone ?? phone, timezone });
+    setPendingPhone(null);
   };
 
   if (authLoading) {
@@ -75,9 +94,25 @@ export default function Settings() {
   const trialDaysLeft = subStatus?.trialEndsAt
     ? Math.max(0, Math.ceil((new Date(subStatus.trialEndsAt).getTime() - Date.now()) / 86400000))
     : null;
+  const isPhoneVerified = subStatus?.phoneVerified ?? false;
+  const isInternational = phone && !phone.replace(/\D/g, "").startsWith("1");
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Phone Verification Modal */}
+      {showPhoneVerification && pendingPhone && (
+        <PhoneVerificationModal
+          open={showPhoneVerification}
+          phone={pendingPhone}
+          onVerified={handlePhoneVerified}
+          onClose={() => {
+            setShowPhoneVerification(false);
+            setPendingPhone(null);
+            setSaving(false);
+          }}
+        />
+      )}
+
       {/* Nav */}
       <nav className="border-b border-border/40 bg-background/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="container flex items-center justify-between h-16">
@@ -130,14 +165,39 @@ export default function Settings() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">Mobile Number</label>
-              <Input
-                type="tel"
-                placeholder="(555) 000-0000"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="bg-input border-border text-foreground placeholder:text-muted-foreground"
-              />
-              <p className="text-xs text-muted-foreground mt-1">US numbers only. This is where your briefings are delivered.</p>
+              <div className="relative">
+                <Input
+                  type="tel"
+                  placeholder="+1 (555) 000-0000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="bg-input border-border text-foreground placeholder:text-muted-foreground pr-10"
+                />
+                {isPhoneVerified && phone === (settings?.phone ?? "") && (
+                  <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-400" />
+                )}
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-xs text-muted-foreground">
+                  Include country code for international numbers (e.g. +44 for UK).
+                </p>
+                {isPhoneVerified && phone === (settings?.phone ?? "") ? (
+                  <span className="text-xs text-green-400 flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" /> Verified
+                  </span>
+                ) : (
+                  <span className="text-xs text-yellow-400 flex items-center gap-1">
+                    <Phone className="w-3 h-3" /> Verification required on save
+                  </span>
+                )}
+              </div>
+              {isInternational && (
+                <div className="mt-2 p-2.5 rounded-lg bg-indigo-950/40 border border-indigo-500/20">
+                  <p className="text-xs text-indigo-300">
+                    International number detected — a <strong>+$5/month</strong> surcharge applies to cover carrier costs outside the US/Canada.
+                  </p>
+                </div>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">Timezone</label>
@@ -155,9 +215,9 @@ export default function Settings() {
             <Button
               className="bg-primary hover:bg-primary/90 text-white border-0"
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || updateSettings.isPending}
             >
-              {saving ? (
+              {saving || updateSettings.isPending ? (
                 <span className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Saving...
@@ -230,6 +290,7 @@ export default function Settings() {
               { label: "Email token storage", value: "Encrypted before database write", badge: "Secure" },
               { label: "Plaintext retention", value: "Zero — wiped after summarization", badge: "Zero" },
               { label: "SMS delivery", value: "Encrypted transport (TLS 1.3)", badge: "TLS 1.3" },
+              { label: "Phone verification", value: isPhoneVerified ? "Verified via OTP" : "Not yet verified", badge: isPhoneVerified ? "Verified" : "Pending" },
             ].map(({ label, value, badge }) => (
               <div key={label} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
                 <div>
@@ -239,6 +300,19 @@ export default function Settings() {
                 <span className="encrypted-badge px-2 py-0.5 rounded-full text-xs font-medium">{badge}</span>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Legal */}
+        <div className="bg-card border border-border/40 rounded-xl p-5 sm:p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Shield className="w-4 h-4 text-primary" />
+            <h2 className="font-semibold text-foreground" style={{ fontFamily: "Space Grotesk, sans-serif" }}>Legal</h2>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <a href="/terms" className="text-sm text-primary hover:underline">Terms of Service</a>
+            <span className="text-muted-foreground">·</span>
+            <a href="/privacy" className="text-sm text-primary hover:underline">Privacy Policy</a>
           </div>
         </div>
       </div>

@@ -13,6 +13,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Enterprise from "./pages/Enterprise";
 import AcceptInvite from "./pages/AcceptInvite";
+import { DisclaimerModal, useDisclaimerStatus } from "./components/DisclaimerModal";
 
 function Router() {
   return (
@@ -32,6 +33,20 @@ function Router() {
   );
 }
 
+function AppWithDisclaimer() {
+  const { accepted, loading, markAccepted } = useDisclaimerStatus();
+
+  return (
+    <>
+      {/* Show disclaimer modal until accepted. Loading state shows nothing to avoid flash. */}
+      {!loading && !accepted && (
+        <DisclaimerModal onAccepted={markAccepted} />
+      )}
+      <Router />
+    </>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -47,7 +62,7 @@ function App() {
               },
             }}
           />
-          <Router />
+          <AppWithDisclaimer />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

@@ -145,3 +145,42 @@
 - [x] Keyword include/exclude fields
 - [x] tRPC: submitFeedback, getMyPreferences, updatePreferences
 - [x] Pipeline: incorporate preferences into next briefing AI prompt
+
+## Round 4 Changes
+
+### Phone OTP Verification
+- [x] Phone OTP verification before first SMS and on number change
+- [x] PhoneVerificationModal component (6-digit OTP, rate limiting, 10-min expiry)
+- [x] Settings page: show verification status, trigger re-verify on number change
+- [x] Dashboard: gate TEXT MY BRIEFING behind phone verification
+- [x] OTP stored as bcrypt hash in DB (never plaintext)
+- [x] Error-proof: resend button, clear expiry messaging, max 3 attempts
+
+### Email OAuth (Gmail & Outlook)
+- [x] Gmail OAuth callback route (/api/auth/gmail/callback)
+- [x] Outlook OAuth callback route (/api/auth/outlook/callback)
+- [x] Encrypted token storage (AES-256-GCM before DB write)
+- [x] Incremental email fetching with lastProcessedEmailId tracking
+
+### Enterprise-Grade Security Hardening
+- [x] Helmet security headers (CSP, HSTS, X-Frame-Options, etc.)
+- [x] Rate limiting (100 req/15min general, 5 req/15min auth endpoints)
+- [x] XSS input sanitization middleware on all POST/PUT/PATCH
+- [x] Origin validation for OAuth callbacks
+- [x] Audit logging for sensitive actions (briefing trigger, subscription change, phone verify)
+- [x] SQL injection prevention via Drizzle ORM parameterized queries
+- [x] CSRF protection via SameSite=None + HttpOnly cookies
+- [x] Sensitive data wiped from memory after AI summarization
+
+### Branding & Legal
+- [x] Remove all "16 Star Collective" references from frontend
+- [x] DisclaimerModal: coincidental likeness disclaimer, must accept before interacting
+- [x] Wire DisclaimerModal into App.tsx (shown on first visit, stored in localStorage)
+- [x] Updated Terms and Privacy pages with InboxBrief branding
+
+### Trial Optimization & Limit Logic
+- [x] Trial: 2 briefings/day cap during 7-day trial
+- [x] Trial: end-of-trial SMS nudge on days 5 and 6 with upgrade link
+- [x] Over-limit: first overage is free with "This one's on us" message
+- [x] Over-limit: upgrade suggestion SMS with pricing link (never free again after first)
+- [x] Upgrade suggestion banner in dashboard when approaching limit

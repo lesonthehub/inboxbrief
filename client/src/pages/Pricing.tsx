@@ -170,12 +170,12 @@ function TosModal({
 
             <div>
               <p className="font-medium text-foreground mb-1">Limitation of Liability</p>
-              <p>To the fullest extent permitted by law, InboxBrief and 16 Star Collective LLC shall not be liable for any indirect, incidental, or consequential damages. Our total liability shall not exceed the amount you paid in the 30 days prior to the claim.</p>
+              <p>To the fullest extent permitted by law, InboxBrief shall not be liable for any indirect, incidental, or consequential damages. Our total liability shall not exceed the amount you paid in the 30 days prior to the claim.</p>
             </div>
 
             <div>
               <p className="font-medium text-foreground mb-1">Dispute Resolution</p>
-              <p>Any disputes must first be raised directly with us at <span className="text-primary">lesterantoine@16starcollective.com</span>. We commit to resolving all issues one-on-one before any formal proceedings. Class action waiver applies.</p>
+              <p>Any disputes must first be raised directly with us at <span className="text-primary">support@inboxbrief.com</span>. We commit to resolving all issues one-on-one before any formal proceedings. Class action waiver applies.</p>
             </div>
 
             <div>
@@ -559,7 +559,7 @@ export default function Pricing() {
             <span>All data encrypted at rest with AES-256-GCM</span>
           </div>
           <span className="hidden sm:block text-border">·</span>
-          <span>InboxBrief by 16 Star Collective</span>
+          <span>© 2026 InboxBrief</span>
           <span className="hidden sm:block text-border">·</span>
           <button onClick={() => navigate("/terms")} className="hover:text-foreground transition-colors">Terms</button>
           <span className="hidden sm:block text-border">·</span>

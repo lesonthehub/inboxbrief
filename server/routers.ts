@@ -22,6 +22,8 @@ import { processBriefingFeedback, SUPPORTED_LANGUAGES } from "./grok";
 import { notifyOwner } from "./_core/notification";
 import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs } from "../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { sendVerificationOtp, verifyOtp } from "./phoneVerification";
+import { writeAuditLog } from "./security";
 
 // ─── Auth Router ───────────────────────────────────────────────────────────────
 
@@ -152,6 +154,8 @@ const subscriptionRouter = router({
       hasStripeSubscription: !!sub?.stripeSubscriptionId,
       seatCount: sub?.seatCount ?? 1,
       planDetails: sub?.plan ? PLANS[sub.plan] : null,
+      phoneVerified: user?.phoneVerified ?? false,
+      phone: user?.phone ?? null,
     };
   }),
 
@@ -593,6 +597,93 @@ const legalRouter = router({
   }),
 });
 
+// ─── Phone Verification Router ──────────────────────────────────────────────
+
+const phoneVerificationRouter = router({
+  sendCode: protectedProcedure
+    .input(z.object({ phone: z.string().min(10).max(20) }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await sendVerificationOtp(ctx.user.id, input.phone);
+      if (!result.success) {
+        if (result.error === "rate_limited") {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: `Too many verification attempts. Please wait ${result.retryAfterSeconds ?? 600} seconds.`,
+          });
+        }
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to send verification code. Please try again." });
+      }
+      await writeAuditLog({ userId: ctx.user.id, action: "phone_otp_sent", metadata: { phone: input.phone.slice(-4).padStart(input.phone.length, "*") } });
+      return { success: true, expiresAt: result.expiresAt };
+    }),
+
+  verifyCode: protectedProcedure
+    .input(z.object({
+      phone: z.string().min(10).max(20),
+      code: z.string().length(6).regex(/^\d{6}$/, "Code must be 6 digits"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await verifyOtp(ctx.user.id, input.phone, input.code);
+      if (!result.success) {
+        const messages: Record<string, string> = {
+          invalid_code: result.attemptsLeft !== undefined
+            ? `Incorrect code. ${result.attemptsLeft} attempt${result.attemptsLeft === 1 ? "" : "s"} remaining.`
+            : "Incorrect verification code.",
+          expired: "Verification code has expired. Please request a new one.",
+          too_many_attempts: "Too many incorrect attempts. Please request a new code.",
+          not_found: "No active verification code found. Please request a new one.",
+        };
+        throw new TRPCError({
+          code: result.error === "too_many_attempts" ? "TOO_MANY_REQUESTS" : "BAD_REQUEST",
+          message: messages[result.error] ?? "Verification failed.",
+        });
+      }
+
+      // Mark phone as verified in user record
+      const db = await getDb();
+      if (db) {
+        await db.update(users).set({ phoneVerified: true, phone: input.phone }).where(eq(users.id, ctx.user.id));
+      }
+
+      await writeAuditLog({ userId: ctx.user.id, action: "phone_verified", metadata: { phone: input.phone.slice(-4).padStart(input.phone.length, "*") } });
+      return { success: true };
+    }),
+
+  getStatus: protectedProcedure.query(async ({ ctx }) => {
+    const user = await getUserById(ctx.user.id);
+    return {
+      phoneVerified: user?.phoneVerified ?? false,
+      phone: user?.phone ?? null,
+    };
+  }),
+});
+
+// ─── Disclaimer Router ───────────────────────────────────────────────────────
+
+const disclaimerRouter = router({
+  accept: protectedProcedure
+    .input(z.object({ version: z.string().max(16) }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      await db.update(users).set({
+        disclaimerAcceptedAt: new Date(),
+        disclaimerVersion: input.version,
+      }).where(eq(users.id, ctx.user.id));
+      await writeAuditLog({ userId: ctx.user.id, action: "disclaimer_accepted", metadata: { version: input.version } });
+      return { success: true };
+    }),
+
+  getStatus: protectedProcedure.query(async ({ ctx }) => {
+    const user = await getUserById(ctx.user.id);
+    return {
+      accepted: !!user?.disclaimerAcceptedAt,
+      version: user?.disclaimerVersion ?? null,
+      acceptedAt: user?.disclaimerAcceptedAt ?? null,
+    };
+  }),
+});
+
 // ─── International SMS Router ──────────────────────────────────────────────────
 
 const internationalRouter = router({
@@ -643,6 +734,8 @@ export const appRouter = router({
   enterprise: enterpriseRouter,
   legal: legalRouter,
   international: internationalRouter,
+  phoneVerification: phoneVerificationRouter,
+  disclaimer: disclaimerRouter,
 });
 
 export type AppRouter = typeof appRouter;

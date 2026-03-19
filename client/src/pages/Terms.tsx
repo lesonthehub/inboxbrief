@@ -4,10 +4,10 @@ import { Shield, ArrowLeft, MessageSquare } from "lucide-react";
 
 const TOS_VERSION = "1.0";
 const EFFECTIVE_DATE = "March 17, 2026";
-const COMPANY = "16 Star Collective LLC";
+const COMPANY = "InboxBrief";
 const SERVICE = "InboxBrief";
-const CONTACT_EMAIL = "lesterantoine@16starcollective.com";
-const DOMAIN = "16starcollective.com";
+const CONTACT_EMAIL = "support@inboxbrief.com";
+const DOMAIN = "inboxbrief.com";
 
 export default function Terms() {
   const [, navigate] = useLocation();
@@ -147,7 +147,7 @@ export default function Terms() {
 
       <footer className="border-t border-border/40 py-6 px-4">
         <div className="container flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm text-muted-foreground">InboxBrief · 16 Star Collective</span>
+          <span className="text-sm text-muted-foreground">© 2026 InboxBrief. All rights reserved.</span>
           <div className="flex gap-4 text-xs text-muted-foreground">
             <button onClick={() => navigate("/terms")} className="hover:text-foreground transition-colors">Terms</button>
             <button onClick={() => navigate("/privacy")} className="hover:text-foreground transition-colors">Privacy</button>
