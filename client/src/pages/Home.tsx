@@ -95,9 +95,6 @@ export default function Home() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
         <div className="container flex items-center justify-between h-14 sm:h-16">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary flex items-center justify-center">
-              <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-            </div>
             <span className="font-bold text-base sm:text-lg text-foreground" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -368,9 +365,6 @@ export default function Home() {
       <footer className="border-t border-border/40 py-6 sm:py-8 px-4">
         <div className="container flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center">
-              <MessageSquare className="w-3 h-3 text-primary" />
-            </div>
             <span className="text-sm text-muted-foreground">© {new Date().getFullYear()} InboxBrief. All rights reserved.</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">

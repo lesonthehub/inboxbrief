@@ -186,9 +186,6 @@ export default function Onboarding() {
       {/* Header */}
       <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border/40">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <MessageSquare className="w-4 h-4 text-white" />
-          </div>
           <span className="font-bold text-lg" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground border border-border/40 px-3 py-1.5 rounded-full">

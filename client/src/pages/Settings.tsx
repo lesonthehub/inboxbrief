@@ -122,9 +122,6 @@ export default function Settings() {
           >
             <ArrowLeft className="w-4 h-4" />
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-                <MessageSquare className="w-3.5 h-3.5 text-white" />
-              </div>
               <span className="font-bold" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
             </div>
           </button>

@@ -18,9 +18,6 @@ export default function Privacy() {
             onClick={() => navigate("/")}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
-            <div className="w-7 h-7 rounded-lg bg-primary/20 flex items-center justify-center">
-              <MessageSquare className="w-3.5 h-3.5 text-primary" />
-            </div>
             <span className="font-bold text-sm" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
           </button>
           <Button

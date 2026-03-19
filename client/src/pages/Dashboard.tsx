@@ -320,9 +320,6 @@ export default function Dashboard() {
       <nav className="border-b border-border/40 bg-background/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="container flex items-center justify-between h-14 sm:h-16">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary flex items-center justify-center">
-              <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-            </div>
             <span className="font-bold text-base sm:text-lg" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
