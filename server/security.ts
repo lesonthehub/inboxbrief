@@ -209,10 +209,10 @@ export function validateOriginMiddleware(req: Request, res: Response, next: Next
   // In production, validate origin is from our domain
   if (process.env.NODE_ENV === "production" && origin) {
     const allowedOrigins = [
-      "https://inboxbrief.com",
-      "https://www.inboxbrief.com",
-      "https://inboxbrief.com",
-      "https://www.inboxbrief.com",
+      "https://inboxbrief.org",
+      "https://www.inboxbrief.org",
+      "https://inboxbrief.org",
+      "https://www.inboxbrief.org",
     ];
 
     // Also allow any *.manus.space domain for staging

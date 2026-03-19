@@ -7,7 +7,7 @@ const EFFECTIVE_DATE = "March 17, 2026";
 const COMPANY = "InboxBrief";
 const SERVICE = "InboxBrief";
 const CONTACT_EMAIL = "support@inboxbrief.com";
-const DOMAIN = "inboxbrief.com";
+const DOMAIN = "inboxbrief.org";
 
 export default function Terms() {
   const [, navigate] = useLocation();

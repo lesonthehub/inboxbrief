@@ -184,3 +184,24 @@
 - [x] Over-limit: first overage is free with "This one's on us" message
 - [x] Over-limit: upgrade suggestion SMS with pricing link (never free again after first)
 - [x] Upgrade suggestion banner in dashboard when approaching limit
+
+## Round 5 Changes
+
+### Domain & Email Updates
+- [ ] Replace all domain references: 16starcollective.com → inboxbrief.org
+- [ ] Replace service email: lesterantoine@16starcollective.com → lesterantoine@inboxbrief.org
+- [ ] Enterprise form routes to: sales@inboxbrief.org
+- [ ] Support links point to: support@inboxbrief.com
+
+### Legal PDF Documents
+- [ ] Generate Terms of Service PDF (long-form, downloadable)
+- [ ] Generate Privacy Policy PDF (long-form, downloadable)
+- [ ] Upload PDFs to CDN via manus-upload-file --webdev
+- [ ] Link PDFs to checkbox at site entry
+
+### Entry Disclaimer Redesign
+- [ ] Replace full-screen DisclaimerModal with compact checkbox banner at page entry
+- [ ] Checkbox links to ToS PDF and Privacy PDF
+- [ ] Stored in localStorage (once per visitor, never shown again)
+- [ ] Skip entirely when user is logged in
+- [ ] Must check box before accessing any page content

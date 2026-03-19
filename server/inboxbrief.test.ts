@@ -182,7 +182,7 @@ function createMockContext(user?: User | null): {
 const MOCK_USER: User = {
   id: 1,
   openId: "test-open-id-16star",
-  email: "lesterantoine@16starcollective.com",
+  email: "lesterantoine@inboxbrief.org",
   name: "Lester Antoine",
   loginMethod: "manus",
   role: "user",
@@ -235,7 +235,7 @@ describe("auth.me", () => {
     const { ctx } = createMockContext(MOCK_USER);
     const caller = appRouter.createCaller(ctx);
     const user = await caller.auth.me();
-    expect(user?.email).toBe("lesterantoine@16starcollective.com");
+    expect(user?.email).toBe("lesterantoine@inboxbrief.org");
   });
 });
 

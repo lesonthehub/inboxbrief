@@ -1,244 +1,196 @@
 /**
- * DisclaimerModal
+ * DisclaimerBanner
  * ─────────────────
- * Shown to ALL visitors on first interaction with the service.
- * Users must accept before any service features are accessible.
- * Covers: coincidental likeness, no affiliation, no liability.
- *
- * Acceptance is stored in:
- *   1. localStorage (for non-authenticated visitors)
- *   2. Database via trpc.disclaimer.accept (for authenticated users)
+ * Compact checkbox banner shown to first-time visitors only.
+ * - Shown ONCE per browser (stored in localStorage)
+ * - Skipped entirely when user is logged in
+ * - Links to full PDF documents for ToS and Privacy Policy
+ * - Must check the box before accessing any page content
  */
 
 import { useState, useEffect } from "react";
-import { Shield, AlertTriangle, CheckCircle } from "lucide-react";
+import { Shield, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { trpc } from "@/lib/trpc";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/_core/hooks/useAuth";
 
-const DISCLAIMER_VERSION = "1.0";
-const STORAGE_KEY = "inboxbrief_disclaimer_v1";
+const STORAGE_KEY = "inboxbrief_legal_v1";
 
-interface DisclaimerModalProps {
-  onAccepted: () => void;
-}
+export const TOS_PDF_URL =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief-terms-of-service_87c978b1.pdf";
+export const PRIVACY_PDF_URL =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief-privacy-policy_2b032300.pdf";
 
-export function DisclaimerModal({ onAccepted }: DisclaimerModalProps) {
-  const [scrolledToBottom, setScrolledToBottom] = useState(false);
-  const [accepting, setAccepting] = useState(false);
-  const { isAuthenticated } = useAuth();
+export function DisclaimerBanner({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const [accepted, setAccepted] = useState<boolean | null>(null); // null = not yet determined
+  const [checked, setChecked] = useState(false);
 
-  const acceptMutation = trpc.disclaimer.accept.useMutation({
-    onSuccess: () => {
-      localStorage.setItem(STORAGE_KEY, DISCLAIMER_VERSION);
-      setAccepting(false);
-      onAccepted();
-    },
-    onError: () => {
-      // Even if DB save fails, allow access — local storage is the fallback
-      localStorage.setItem(STORAGE_KEY, DISCLAIMER_VERSION);
-      setAccepting(false);
-      onAccepted();
-    },
-  });
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    setAccepted(stored === "1");
+  }, []);
+
+  // While auth or acceptance status is loading, render children normally
+  if (authLoading || accepted === null) {
+    return <>{children}</>;
+  }
+
+  // Logged-in users never see the banner
+  if (isAuthenticated || accepted) {
+    return <>{children}</>;
+  }
 
   const handleAccept = () => {
-    setAccepting(true);
-    if (isAuthenticated) {
-      acceptMutation.mutate({ version: DISCLAIMER_VERSION });
-    } else {
-      localStorage.setItem(STORAGE_KEY, DISCLAIMER_VERSION);
-      setAccepting(false);
-      onAccepted();
-    }
-  };
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    const atBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 40;
-    if (atBottom) setScrolledToBottom(true);
+    if (!checked) return;
+    localStorage.setItem(STORAGE_KEY, "1");
+    setAccepted(true);
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-card border border-border/60 rounded-2xl shadow-2xl shadow-black/50 w-full max-w-lg flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="flex items-center gap-3 p-5 sm:p-6 border-b border-border/40 flex-shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-            <AlertTriangle className="w-5 h-5 text-amber-400" />
-          </div>
-          <div>
-            <h2 className="font-bold text-foreground text-base sm:text-lg" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
-              Important Disclaimer
-            </h2>
-            <p className="text-xs text-muted-foreground">Please read before continuing</p>
-          </div>
-        </div>
+    <>
+      {/* Blurred, dimmed background content */}
+      <div
+        className="pointer-events-none select-none overflow-hidden"
+        style={{ filter: "blur(4px) brightness(0.4)", maxHeight: "100vh" }}
+        aria-hidden="true"
+      >
+        {children}
+      </div>
 
-        {/* Scrollable content */}
+      {/* Fixed overlay */}
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6">
         <div
-          className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 text-sm text-muted-foreground leading-relaxed"
-          onScroll={handleScroll}
+          className="w-full max-w-md rounded-2xl border shadow-2xl"
+          style={{
+            background: "linear-gradient(145deg, #0f172a 0%, #1e1b4b 100%)",
+            borderColor: "rgba(79,70,229,0.3)",
+            boxShadow: "0 25px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(79,70,229,0.15)",
+          }}
         >
-          <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
-            <p className="text-amber-300 font-semibold text-xs uppercase tracking-wider mb-2">Coincidental Likeness Notice</p>
-            <p>
-              Any resemblance of InboxBrief's name, branding, service descriptions, features, or content to any other
-              individual, brand, organization, product, service, or entity — whether living, deceased, real, or fictitious —
-              is <strong className="text-foreground">purely coincidental</strong> and entirely unintentional.
-            </p>
-          </div>
-
-          <div>
-            <p className="font-semibold text-foreground mb-1">No Affiliation</p>
-            <p>
-              InboxBrief is an independent service and is not affiliated with, endorsed by, sponsored by, or connected to
-              any third-party brand, company, platform, or individual. Any similarity in name, appearance, or function to
-              existing products or services is coincidental.
-            </p>
-          </div>
-
-          <div>
-            <p className="font-semibold text-foreground mb-1">No Warranties</p>
-            <p>
-              InboxBrief is provided "as-is" and "as-available" without warranties of any kind, express or implied.
-              We do not guarantee that the service will be uninterrupted, error-free, or that any specific email will be
-              detected, classified, or delivered as an SMS briefing.
-            </p>
-          </div>
-
-          <div>
-            <p className="font-semibold text-foreground mb-1">Limitation of Liability</p>
-            <p>
-              InboxBrief and its operators shall not be liable for any indirect, incidental, special, consequential, or
-              punitive damages, including but not limited to missed business opportunities, missed leads, missed emails,
-              lost revenue, or data loss arising from use of or inability to use this service.
-            </p>
-            <p className="mt-2">
-              Our total aggregate liability to you for any claim arising from use of InboxBrief shall not exceed the
-              total amount you paid to InboxBrief in the three (3) months immediately preceding the claim.
-            </p>
-          </div>
-
-          <div>
-            <p className="font-semibold text-foreground mb-1">Dispute Resolution</p>
-            <p>
-              Any issues, complaints, or disputes must first be raised directly with InboxBrief at{" "}
-              <span className="text-primary font-medium">support@inboxbrief.com</span> for one-on-one resolution.
-              You agree to attempt good-faith resolution before initiating any formal legal proceedings.
-              Class action lawsuits and class arbitration are expressly waived.
-            </p>
-          </div>
-
-          <div>
-            <p className="font-semibold text-foreground mb-1">Intellectual Property</p>
-            <p>
-              All InboxBrief trademarks, service marks, logos, and trade names are the exclusive property of InboxBrief.
-              Any similarity to third-party intellectual property is unintentional. If you believe there is a conflict,
-              please contact us at support@inboxbrief.com and we will address it promptly.
-            </p>
-          </div>
-
-          <div>
-            <p className="font-semibold text-foreground mb-1">Governing Law</p>
-            <p>
-              This disclaimer and all related disputes are governed by the laws of the State of Texas, United States,
-              without regard to conflict of law principles. You consent to the exclusive jurisdiction of courts located
-              in Texas for any disputes that proceed to formal proceedings.
-            </p>
-          </div>
-
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
-            <p className="text-primary font-semibold text-xs uppercase tracking-wider mb-2">By Clicking "I Agree"</p>
-            <p>
-              You confirm that you have read, understood, and agree to this disclaimer in its entirety. You acknowledge
-              that any resemblance to other brands or entities is coincidental, and that you will resolve any concerns
-              directly with InboxBrief before pursuing any other action.
-            </p>
-          </div>
-
-          {!scrolledToBottom && (
-            <p className="text-center text-xs text-muted-foreground/60 italic">
-              Scroll to the bottom to enable the agree button
-            </p>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-5 sm:p-6 border-t border-border/40 flex-shrink-0 space-y-3">
-          {scrolledToBottom && (
-            <div className="flex items-center gap-2 text-xs text-green-400">
-              <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>You've read the full disclaimer</span>
+          {/* Header */}
+          <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+            <div
+              className="flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0"
+              style={{ background: "rgba(79,70,229,0.2)" }}
+            >
+              <Shield className="w-5 h-5" style={{ color: "#818cf8" }} />
             </div>
-          )}
-          <Button
-            className="w-full bg-primary hover:bg-primary/90 text-white border-0 h-11 font-semibold"
-            onClick={handleAccept}
-            disabled={!scrolledToBottom || accepting}
-          >
-            {accepting ? (
-              <span className="flex items-center gap-2">
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Saving...
+            <div>
+              <h2 className="font-bold text-white text-sm sm:text-base" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+                Before you continue
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+                One-time acknowledgment · Only shown once
+              </p>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="px-5 py-4 space-y-4">
+            <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.65)" }}>
+              InboxBrief is an independent service. Any resemblance to other individuals, brands, organizations, or
+              entities is <span className="text-white font-semibold">purely coincidental</span>. All disputes must be
+              resolved directly with us before any formal proceedings.
+            </p>
+
+            {/* Checkbox */}
+            <label className="flex items-start gap-3 cursor-pointer" htmlFor="legal-checkbox">
+              <Checkbox
+                id="legal-checkbox"
+                checked={checked}
+                onCheckedChange={(v) => setChecked(Boolean(v))}
+                className="mt-0.5 flex-shrink-0 border-white/25 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
+              />
+              <span className="text-sm leading-relaxed select-none" style={{ color: "rgba(255,255,255,0.75)" }}>
+                I have read and agree to the{" "}
+                <a
+                  href={TOS_PDF_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium hover:underline inline-flex items-center gap-0.5"
+                  style={{ color: "#818cf8" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Terms of Service
+                  <ExternalLink className="w-3 h-3" />
+                </a>{" "}
+                and{" "}
+                <a
+                  href={PRIVACY_PDF_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium hover:underline inline-flex items-center gap-0.5"
+                  style={{ color: "#818cf8" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Privacy Policy
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                , including the coincidental likeness notice and limitation of liability.
               </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <Shield className="w-4 h-4" />
-                I Have Read and Agree to This Disclaimer
-              </span>
-            )}
-          </Button>
-          <p className="text-xs text-muted-foreground text-center">
-            You must agree to this disclaimer to use InboxBrief.
-          </p>
+            </label>
+          </div>
+
+          {/* Footer */}
+          <div className="px-5 pb-5">
+            <Button
+              onClick={handleAccept}
+              disabled={!checked}
+              className="w-full h-11 font-semibold text-sm border-0 transition-all duration-200"
+              style={
+                checked
+                  ? { background: "#4f46e5", color: "#ffffff" }
+                  : {
+                      background: "rgba(79,70,229,0.25)",
+                      color: "rgba(255,255,255,0.35)",
+                      cursor: "not-allowed",
+                    }
+              }
+            >
+              Continue to InboxBrief
+            </Button>
+            <p className="text-center text-xs mt-3" style={{ color: "rgba(255,255,255,0.25)" }}>
+              Logged-in users are never shown this screen again.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
 /**
- * Hook: returns whether the disclaimer has been accepted.
- * Checks localStorage first (fast), then DB for authenticated users.
+ * Legacy export alias so existing App.tsx imports don't break.
+ * DisclaimerModal is now the same as DisclaimerBanner.
+ */
+export const DisclaimerModal = DisclaimerBanner;
+
+/**
+ * Hook kept for backward compatibility.
+ * Returns accepted status from localStorage.
  */
 export function useDisclaimerStatus() {
   const [accepted, setAccepted] = useState<boolean | null>(null);
-  const { isAuthenticated, loading: authLoading } = useAuth();
-
-  const dbStatus = trpc.disclaimer.getStatus.useQuery(undefined, {
-    enabled: isAuthenticated && !authLoading,
-  });
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (authLoading) return;
-
-    // Check localStorage first
-    const localAccepted = localStorage.getItem(STORAGE_KEY) === DISCLAIMER_VERSION;
-
-    if (localAccepted) {
+    if (isAuthenticated) {
       setAccepted(true);
       return;
     }
-
-    if (!isAuthenticated) {
-      setAccepted(false);
-      return;
-    }
-
-    // Wait for DB check
-    if (dbStatus.data !== undefined) {
-      setAccepted(dbStatus.data.accepted);
-      if (dbStatus.data.accepted) {
-        // Sync to localStorage for faster future checks
-        localStorage.setItem(STORAGE_KEY, DISCLAIMER_VERSION);
-      }
-    }
-  }, [authLoading, isAuthenticated, dbStatus.data]);
+    const stored = localStorage.getItem(STORAGE_KEY);
+    setAccepted(stored === "1");
+  }, [isAuthenticated]);
 
   return {
-    accepted,
+    accepted: accepted ?? false,
     loading: accepted === null,
-    markAccepted: () => setAccepted(true),
+    markAccepted: () => {
+      localStorage.setItem(STORAGE_KEY, "1");
+      setAccepted(true);
+    },
   };
 }
+
+export default DisclaimerBanner;

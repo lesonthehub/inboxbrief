@@ -5,7 +5,7 @@
 import twilio from "twilio";
 
 // Owner's primary email — used for admin routing and default account detection
-export const OWNER_EMAIL = "lesterantoine@16starcollective.com";
+export const OWNER_EMAIL = "lesterantoine@inboxbrief.org";
 
 function getTwilioClient() {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;

@@ -35,7 +35,7 @@ export interface PipelineResult {
 }
 
 const TRIAL_DAILY_LIMIT = 2;
-const PRICING_URL = "https://inboxbrief.com/pricing";
+const PRICING_URL = "https://inboxbrief.org/pricing";
 
 /**
  * Count briefings sent today for a user.

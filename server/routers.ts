@@ -559,14 +559,16 @@ const enterpriseRouter = router({
       };
 
       await notifyOwner({
-        title: `Enterprise Inquiry: ${input.company}`,
+        title: `🏢 Enterprise Inquiry: ${input.company}`,
         content: [
-          `Name: ${input.name}`,
-          `Email: ${input.email}`,
+          `From: ${input.name} <${input.email}>`,
           `Company: ${input.company}`,
           `Team Size: ${teamSizeLabels[input.teamSize] ?? input.teamSize}`,
           input.useCase ? `Use Case: ${input.useCase}` : null,
           input.message ? `Message: ${input.message}` : null,
+          ``,
+          `Reply to this inquiry at: sales@inboxbrief.org`,
+          `Customer support: support@inboxbrief.com`,
         ].filter(Boolean).join("\n"),
       });
 
