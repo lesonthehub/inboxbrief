@@ -368,7 +368,7 @@ export default function Pricing() {
               </div>
             </div>
             <Button
-              className="bg-primary hover:bg-primary/90 text-white border-0 whitespace-nowrap w-full sm:w-auto"
+              className="bg-primary hover:bg-primary/90 text-white border-0 w-full sm:w-auto flex-shrink-0"
               onClick={handleStartTrial}
             >
               Start Free Trial
@@ -509,7 +509,7 @@ export default function Pricing() {
             </div>
             <div className="flex flex-col gap-3 w-full sm:w-auto flex-shrink-0">
               <Button
-                className="bg-violet-600 hover:bg-violet-500 text-white border-0 whitespace-nowrap w-full sm:w-auto px-8"
+                className="bg-violet-600 hover:bg-violet-500 text-white border-0 w-full sm:w-auto px-8"
                 onClick={() => navigate("/enterprise")}
               >
                 <Mail className="w-4 h-4 mr-2" />

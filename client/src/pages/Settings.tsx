@@ -256,10 +256,10 @@ export default function Settings() {
               </span>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               {!subStatus?.isActive || subStatus.plan === "trial" ? (
                 <Button
-                  className="bg-primary hover:bg-primary/90 text-white border-0 flex-1"
+                  className="bg-primary hover:bg-primary/90 text-white border-0 w-full sm:flex-1"
                   onClick={() => navigate("/pricing")}>
                   {subStatus?.plan === "trial" ? "Upgrade Plan" : "Choose a Plan"}
                 </Button>
@@ -267,7 +267,7 @@ export default function Settings() {
               {subStatus?.hasStripeSubscription && (
                 <Button
                   variant="outline"
-                  className="border-border/60 text-muted-foreground hover:text-foreground bg-transparent flex-1"
+                  className="border-border/60 text-muted-foreground hover:text-foreground bg-transparent w-full sm:flex-1"
                   onClick={() => createPortal.mutate({ origin: window.location.origin })}
                   disabled={createPortal.isPending}
                 >

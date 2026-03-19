@@ -150,17 +150,17 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-10 sm:mb-12">
             <Button
               size="lg"
-              className="bg-primary hover:bg-primary/90 text-white border-0 text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30"
+              className="bg-primary hover:bg-primary/90 text-white border-0 text-sm sm:text-base md:text-lg px-5 sm:px-8 py-4 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30"
               onClick={handleGetStarted}
               disabled={loading}
             >
               💬 Start Free — 7 Days Full Access
-              <ChevronRight className="w-5 h-5 ml-1" />
+              <ChevronRight className="w-5 h-5 ml-1 flex-shrink-0" />
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 h-auto border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/50 bg-transparent w-full sm:w-auto"
+              className="text-sm sm:text-base md:text-lg px-5 sm:px-8 py-4 sm:py-6 h-auto border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/50 bg-transparent w-full sm:w-auto"
               onClick={() => navigate("/pricing")}
             >
               View Plans
@@ -352,7 +352,7 @@ export default function Home() {
             </p>
             <Button
               size="lg"
-              className="bg-primary hover:bg-primary/90 text-white border-0 text-base sm:text-lg px-8 sm:px-10 py-5 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30"
+              className="bg-primary hover:bg-primary/90 text-white border-0 text-sm sm:text-base md:text-lg px-6 sm:px-10 py-4 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30"
               onClick={handleGetStarted}
             >
               💬 Get My First Briefing Free

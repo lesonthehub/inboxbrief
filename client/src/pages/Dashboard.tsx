@@ -681,7 +681,8 @@ export default function Dashboard() {
                       onClick={() => inviteMember.mutate({ email: inviteEmail, phone: invitePhone || undefined })}
                     >
                       <Send className="w-3.5 h-3.5 mr-1" />
-                      {inviteMember.isPending ? "Generating..." : "Generate Invite Link"}
+                      <span className="hidden sm:inline">{inviteMember.isPending ? "Generating..." : "Generate Invite Link"}</span>
+                      <span className="sm:hidden">{inviteMember.isPending ? "Generating..." : "Generate Link"}</span>
                     </Button>
                     <Button size="sm" variant="ghost" className="text-xs text-muted-foreground" onClick={() => setShowInviteForm(false)}>
                       Cancel
@@ -797,9 +798,9 @@ export default function Dashboard() {
 
                   <div className="grid grid-cols-3 gap-3 mb-4">
                     {[
-                      { label: "Total Referrals", value: referralData.totalReferrals },
-                      { label: "Credits Earned", value: `$${((referralData.creditsEarned ?? 0) / 100).toFixed(0)}` },
-                      { label: "Available Credits", value: `$${((referralData.referralCredits ?? 0) / 100).toFixed(0)}` },
+                      { label: "Referrals", value: referralData.totalReferrals },
+                      { label: "Earned", value: `$${((referralData.creditsEarned ?? 0) / 100).toFixed(0)}` },
+                      { label: "Available", value: `$${((referralData.referralCredits ?? 0) / 100).toFixed(0)}` },
                     ].map(({ label, value }) => (
                       <div key={label} className="bg-muted/20 border border-border/30 rounded-lg p-3 text-center">
                         <p className="text-lg font-bold text-foreground">{value}</p>
@@ -836,7 +837,7 @@ export default function Dashboard() {
             <Button
               size="sm"
               variant="outline"
-              className="border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 whitespace-nowrap text-xs"
+              className="border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 text-xs flex-shrink-0"
               onClick={() => navigate("/pricing")}
             >
               View Team Plans

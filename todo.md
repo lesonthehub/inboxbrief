@@ -188,20 +188,34 @@
 ## Round 5 Changes
 
 ### Domain & Email Updates
-- [ ] Replace all domain references: 16starcollective.com → inboxbrief.org
-- [ ] Replace service email: lesterantoine@16starcollective.com → lesterantoine@inboxbrief.org
-- [ ] Enterprise form routes to: sales@inboxbrief.org
-- [ ] Support links point to: support@inboxbrief.com
+- [x] Replace all domain references: 16starcollective.com → inboxbrief.org
+- [x] Replace service email: lesterantoine@16starcollective.com → lesterantoine@inboxbrief.org
+- [x] Enterprise form routes to: sales@inboxbrief.org
+- [x] Support links point to: support@inboxbrief.com
 
 ### Legal PDF Documents
-- [ ] Generate Terms of Service PDF (long-form, downloadable)
-- [ ] Generate Privacy Policy PDF (long-form, downloadable)
-- [ ] Upload PDFs to CDN via manus-upload-file --webdev
-- [ ] Link PDFs to checkbox at site entry
+- [x] Generate Terms of Service PDF (long-form, downloadable)
+- [x] Generate Privacy Policy PDF (long-form, downloadable)
+- [x] Upload PDFs to CDN via manus-upload-file --webdev
+- [x] Link PDFs to checkbox at site entry
 
 ### Entry Disclaimer Redesign
-- [ ] Replace full-screen DisclaimerModal with compact checkbox banner at page entry
-- [ ] Checkbox links to ToS PDF and Privacy PDF
-- [ ] Stored in localStorage (once per visitor, never shown again)
-- [ ] Skip entirely when user is logged in
-- [ ] Must check box before accessing any page content
+- [x] Replace full-screen DisclaimerModal with compact checkbox banner at page entry
+- [x] Checkbox links to ToS PDF and Privacy PDF
+- [x] Stored in localStorage (once per visitor, never shown again)
+- [x] Skip entirely when user is logged in
+- [x] Must check box before accessing any page content
+
+## Round 6 — Clickable Text Fit (Mobile + PC)
+- [x] Home: hero CTAs responsive text sizing (text-sm on mobile, text-base/lg on larger screens)
+- [x] Home: bottom CTA button responsive text sizing
+- [x] Pricing: Free Trial Banner button — removed whitespace-nowrap, uses w-full on mobile
+- [x] Pricing: Enterprise Contact Us button — removed whitespace-nowrap, uses w-full on mobile
+- [x] Dashboard: Generate Invite Link button — shortened to "Generate Link" on mobile
+- [x] Dashboard: Referral stats labels shortened (Total Referrals→Referrals, Credits Earned→Earned, Available Credits→Available)
+- [x] Dashboard: View Team Plans button — removed whitespace-nowrap, uses flex-shrink-0
+- [x] Settings: Subscription buttons (Upgrade Plan/Choose a Plan/Manage Billing) — stack vertically on mobile
+- [x] DisclaimerBanner: w-full button, text wraps naturally — no overflow issues
+- [x] TosAgreementModal: flex layout with flex-1 primary button — no overflow issues
+- [x] Onboarding: option cards use full-width buttons with text wrapping — no overflow issues
+- [x] Terms / Privacy: back navigation button — icon-only with short text, no overflow issues
