@@ -17,9 +17,9 @@ import { useAuth } from "@/_core/hooks/useAuth";
 const STORAGE_KEY = "inboxbrief_legal_v1";
 
 export const TOS_PDF_URL =
-  "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief-terms-of-service_87c978b1.pdf";
+  "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_tos_1c606cde.pdf";
 export const PRIVACY_PDF_URL =
-  "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief-privacy-policy_2b032300.pdf";
+  "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_privacy_b78b9176.pdf";
 
 export function DisclaimerBanner({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -88,12 +88,6 @@ export function DisclaimerBanner({ children }: { children: React.ReactNode }) {
 
           {/* Body */}
           <div className="px-5 py-4 space-y-4">
-            <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.65)" }}>
-              InboxBrief is an independent service. Any resemblance to other individuals, brands, organizations, or
-              entities is <span className="text-white font-semibold">purely coincidental</span>. All disputes must be
-              resolved directly with us before any formal proceedings.
-            </p>
-
             {/* Checkbox */}
             <label className="flex items-start gap-3 cursor-pointer" htmlFor="legal-checkbox">
               <Checkbox
@@ -103,7 +97,7 @@ export function DisclaimerBanner({ children }: { children: React.ReactNode }) {
                 className="mt-0.5 flex-shrink-0 border-white/25 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
               />
               <span className="text-sm leading-relaxed select-none" style={{ color: "rgba(255,255,255,0.75)" }}>
-                I have read and agree to the{" "}
+                I agree to the{" "}
                 <a
                   href={TOS_PDF_URL}
                   target="_blank"
@@ -127,7 +121,7 @@ export function DisclaimerBanner({ children }: { children: React.ReactNode }) {
                   Privacy Policy
                   <ExternalLink className="w-3 h-3" />
                 </a>
-                , including the coincidental likeness notice and limitation of liability.
+                .
               </span>
             </label>
           </div>

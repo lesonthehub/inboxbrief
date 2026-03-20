@@ -219,3 +219,27 @@
 - [x] TosAgreementModal: flex layout with flex-1 primary button — no overflow issues
 - [x] Onboarding: option cards use full-width buttons with text wrapping — no overflow issues
 - [x] Terms / Privacy: back navigation button — icon-only with short text, no overflow issues
+
+## Round 7 Changes
+
+### Pricing / Margin Recalculation
+- [x] Research Twilio A2P 10DLC SMS cost: $0.0113/SMS (base + carrier surcharge)
+- [x] Research GPT-4o-mini cost: $0.000045/email + $0.00012/briefing base
+- [x] Calculate COGS per tier at 70% utilization
+- [x] Solo: 25 emails → 50 emails (margin 91%), SMS/day stays at 2
+- [x] Pro: 75 emails → 100 emails (margin 87%), SMS/day stays at 5
+- [x] Business: 150 emails/10 SMS → 75 emails/2 SMS per seat (was 38% margin, now 89%)
+- [x] Update plans.ts with new limits and margin documentation
+- [x] Update Pricing.tsx with new email limits per tier
+
+### Disclaimer & Legal Documents
+- [x] Shorten DisclaimerBanner checkbox to: "I agree to the Terms of Service and Privacy Policy."
+- [x] Remove verbose body paragraph from DisclaimerBanner
+- [x] Shorten TosAgreementModal checkboxes to reference documents only
+- [x] Write Terms of Service v2.0 (20 sections, ~10 pages, Google/Facebook style)
+- [x] Write Privacy Policy v2.0 (16 sections, ~10 pages, Google/Facebook style)
+- [x] Generate PDFs and upload to CDN
+- [x] Update PDF URLs in DisclaimerModal.tsx (new v2 CDN links)
+- [x] Update PDF URLs in TosAgreementModal.tsx (new v2 CDN links)
+- [x] Update Terms.tsx: version 2.0, new date, Download PDF link
+- [x] Update Privacy.tsx: version 2.0, new date, Download PDF link

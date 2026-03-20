@@ -87,15 +87,23 @@ export function TosAgreementModal({ open, onClose, onAccepted, planName, priceLa
                   className="mt-0.5 flex-shrink-0"
                 />
                 <Label htmlFor="tos-check" className="text-xs text-foreground/80 leading-relaxed cursor-pointer">
-                  I have read and agree to the{" "}
+                  I agree to the{" "}
                   <button
                     type="button"
-                    onClick={() => { window.open("/terms", "_blank"); }}
+                    onClick={() => { window.open("https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_tos_1c606cde.pdf", "_blank"); }}
                     className="text-primary hover:underline"
                   >
                     Terms of Service
                   </button>
-                  {" "}(Version 1.0), including all subscription, cancellation, and acceptable use policies.
+                  {" "}and{" "}
+                  <button
+                    type="button"
+                    onClick={() => { window.open("https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_privacy_b78b9176.pdf", "_blank"); }}
+                    className="text-primary hover:underline"
+                  >
+                    Privacy Policy
+                  </button>
+                  .
                 </Label>
               </div>
 
@@ -108,7 +116,7 @@ export function TosAgreementModal({ open, onClose, onAccepted, planName, priceLa
                   className="mt-0.5 flex-shrink-0"
                 />
                 <Label htmlFor="liability-check" className="text-xs text-foreground/80 leading-relaxed cursor-pointer">
-                  I understand that InboxBrief is provided "as-is" without warranties. InboxBrief's total liability is limited to the amount paid in the prior 3 months, and they are not liable for missed emails, missed leads, or business losses.
+                  I understand and accept the limitation of liability provisions set forth in the Terms of Service.
                 </Label>
               </div>
 
@@ -121,7 +129,7 @@ export function TosAgreementModal({ open, onClose, onAccepted, planName, priceLa
                   className="mt-0.5 flex-shrink-0"
                 />
                 <Label htmlFor="arbitration-check" className="text-xs text-foreground/80 leading-relaxed cursor-pointer">
-                  I agree that any disputes will be resolved through binding individual arbitration, not class action lawsuits. I waive my right to a jury trial for disputes related to this service.
+                  I agree to the dispute resolution and arbitration provisions set forth in the Terms of Service.
                 </Label>
               </div>
 
@@ -134,7 +142,7 @@ export function TosAgreementModal({ open, onClose, onAccepted, planName, priceLa
                   className="mt-0.5 flex-shrink-0"
                 />
                 <Label htmlFor="refund-check" className="text-xs text-foreground/80 leading-relaxed cursor-pointer">
-                  I understand that all subscription fees are non-refundable. If I have an issue, I will contact support@inboxbrief.com for one-on-one resolution before pursuing any other action.
+                  I understand the billing, refund, and cancellation policies set forth in the Terms of Service.
                 </Label>
               </div>
             </div>

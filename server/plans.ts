@@ -1,15 +1,23 @@
 /**
  * InboxBrief Subscription Plans
  *
- * Market research basis (2025):
- * - Average professional receives ~121 emails/day; ~40% are actionable
- * - Solo proprietors: ~30-50 relevant emails/day after spam filtering
- * - Small teams (2-5): ~75-150 relevant emails/day across inboxes
- * - Growing teams (6-15): ~150-300 relevant emails/day
- * - Enterprise (16+): 300+ relevant emails/day, multiple inboxes
+ * Cost basis (2025/2026 market rates):
+ * - Twilio A2P 10DLC SMS (US): $0.0083 base + ~$0.003 carrier surcharge = $0.0113/SMS
+ * - LLM summarization (GPT-4o-mini via OpenRouter): $0.15/1M input + $0.60/1M output tokens
+ *   Per briefing: ~(emails × 300 input tokens) + 200 output tokens
+ *   ≈ $0.000045 × emails + $0.00012 per briefing
+ * - Gmail/Outlook API: free at our volumes
  *
- * Competitor benchmarks: Superhuman $30/user, Fyxer $30-50/user, SaneBox $7-36/user
- * InboxBrief differentiator: SMS delivery + E2EE + no-inbox-login UX
+ * Margin targets: 80–90% gross margin per tier
+ *
+ * Margin model (70% avg utilization assumed):
+ *   Solo:     $9/mo  | 50 emails, 2 SMS/day, 1 seat  → COGS ~$0.80  → ~91% margin
+ *   Pro:      $19/mo | 100 emails, 5 SMS/day, 1 seat  → COGS ~$2.40  → ~87% margin
+ *   Business: $39/mo | 75 emails, 2 SMS/day/seat, 5 seats → COGS ~$4.14 → ~89% margin
+ *   Enterprise: Custom pricing — negotiated per contract
+ *
+ * Note: Business tier was reduced from 150 emails/10 SMS/day to 75 emails/2 SMS/day
+ * because the prior limits yielded only ~38% gross margin at full utilization.
  *
  * International SMS surcharge rationale (Twilio outbound rates):
  * - US/Canada: $0.0083/SMS (baseline)
@@ -18,7 +26,6 @@
  * - France: $0.0798/SMS (~10× baseline)
  * - Germany/Italy: $0.0940/SMS (~11× baseline)
  * A flat +$5/month surcharge covers costs at all tiers while remaining competitive.
- * Competitors (Omnisend, Klaviyo, Textus) all charge international surcharges.
  */
 
 export type PlanId = "trial" | "solo" | "pro" | "business" | "enterprise";
@@ -30,7 +37,7 @@ export interface Plan {
   priceLabel: string;
   pricePerSeat?: string;   // shown for team plans
   emailLimit: number;      // Max emails read per briefing (-1 = unlimited)
-  smsPerDay: number;       // Max SMS briefings per day
+  smsPerDay: number;       // Max SMS briefings per day (-1 = unlimited)
   maxSeats: number;        // Max team members (-1 = unlimited)
   features: string[];
   stripePriceId: string | null;
@@ -77,11 +84,11 @@ export const PLANS: Record<PlanId, Plan> = {
     name: "Solo",
     price: 9,
     priceLabel: "$9/month",
-    emailLimit: 25,
+    emailLimit: 50,        // Raised from 25 → 50 (margin: ~91%)
     smsPerDay: 2,
     maxSeats: 1,
     features: [
-      "Up to 25 emails per briefing",
+      "Up to 50 emails per briefing",
       "2 SMS briefings/day",
       "Gmail integration",
       "Smart priority filtering",
@@ -97,11 +104,11 @@ export const PLANS: Record<PlanId, Plan> = {
     name: "Pro",
     price: 19,
     priceLabel: "$19/month",
-    emailLimit: 75,
+    emailLimit: 100,       // Raised from 75 → 100 (margin: ~87%)
     smsPerDay: 5,
     maxSeats: 1,
     features: [
-      "Up to 75 emails per briefing",
+      "Up to 100 emails per briefing",
       "5 SMS briefings/day",
       "Gmail & Outlook integration",
       "Smart priority filtering",
@@ -120,12 +127,12 @@ export const PLANS: Record<PlanId, Plan> = {
     price: 39,
     priceLabel: "$39/month",
     pricePerSeat: "Up to 5 team members",
-    emailLimit: 150,
-    smsPerDay: 10,
+    emailLimit: 75,        // Reduced from 150 → 75 per seat (margin: ~89%)
+    smsPerDay: 2,          // Reduced from 10 → 2 per seat (prior 10×5 seats was 38% margin)
     maxSeats: 5,
     features: [
-      "Up to 150 emails per briefing",
-      "10 SMS briefings/day",
+      "Up to 75 emails per briefing",
+      "2 SMS briefings/day per member",
       "Up to 5 team members",
       "Gmail & Outlook integration",
       "Smart priority filtering",

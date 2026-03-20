@@ -2,7 +2,9 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Shield, ArrowLeft, MessageSquare } from "lucide-react";
 
-const EFFECTIVE_DATE = "March 17, 2026";
+const EFFECTIVE_DATE = "March 19, 2026";
+const PRIVACY_VERSION = "2.0";
+const PRIVACY_PDF_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_privacy_b78b9176.pdf";
 const COMPANY = "InboxBrief";
 const SERVICE = "InboxBrief";
 const CONTACT_EMAIL = "support@inboxbrief.com";
@@ -41,7 +43,19 @@ export default function Privacy() {
           <h1 className="text-3xl sm:text-4xl font-bold mb-3" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
             Privacy Policy
           </h1>
-          <p className="text-muted-foreground text-sm">Effective {EFFECTIVE_DATE}</p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <p className="text-muted-foreground text-sm">
+              Version {PRIVACY_VERSION} · Effective {EFFECTIVE_DATE}
+            </p>
+            <a
+              href={PRIVACY_PDF_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-primary hover:underline font-medium"
+            >
+              Download PDF ↗
+            </a>
+          </div>
         </div>
 
         <div className="prose prose-invert prose-sm max-w-none space-y-8 text-foreground/90 leading-relaxed">
