@@ -363,3 +363,14 @@
 - [ ] Add whitelist check to server-side adminProcedure middleware
 - [ ] Add frontend route guard: redirect non-whitelisted users away from /admin/*
 - [ ] Update AdminAnnouncements.tsx to enforce whitelist on client side
+
+## Round 11 Changes
+
+### Admin Mod Actions
+- [x] Add isActive/suspendedAt/suspendedReason/suspendedBy/adminNotes fields to users table via SQL + schema
+- [x] Block suspended users from briefing pipeline (isActive gate before phone verification check)
+- [x] Add admin tRPC procedures: suspend, unsuspend, updateNotes, softDelete, setRole
+- [x] Rewrite AdminCustomers panel with full mod actions: Suspend/Unsuspend, Add/Edit Notes, Change Role, Delete Account
+- [x] Stats bar (Total / Active / Suspended counts)
+- [x] Confirmation modals with reason inputs and destructive warnings
+- [x] Admin nav link in Dashboard nav (amber Crown badge, visible only to whitelisted emails, hidden on mobile)

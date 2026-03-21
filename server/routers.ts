@@ -843,6 +843,78 @@ const adminUsersRouter = router({
       await updateUser(input.userId, { role: input.role });
       return { success: true };
     }),
+
+  // Suspend a user account
+  suspend: protectedProcedure
+    .input(z.object({
+      userId: z.number(),
+      reason: z.string().min(1).max(500),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot suspend your own account" });
+      const db = getDb();
+      await db.update(users).set({
+        isActive: false,
+        suspendedAt: new Date(),
+        suspendedReason: input.reason,
+        suspendedBy: ctx.user.id,
+      }).where(eq(users.id, input.userId));
+      return { success: true };
+    }),
+
+  // Unsuspend a user account
+  unsuspend: protectedProcedure
+    .input(z.object({ userId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = getDb();
+      await db.update(users).set({
+        isActive: true,
+        suspendedAt: null,
+        suspendedReason: null,
+        suspendedBy: null,
+      }).where(eq(users.id, input.userId));
+      return { success: true };
+    }),
+
+  // Update admin notes for a user
+  updateNotes: protectedProcedure
+    .input(z.object({
+      userId: z.number(),
+      notes: z.string().max(2000),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = getDb();
+      await db.update(users).set({ adminNotes: input.notes }).where(eq(users.id, input.userId));
+      return { success: true };
+    }),
+
+  // Soft-delete a user (clear PII, mark inactive, keep audit trail)
+  softDelete: protectedProcedure
+    .input(z.object({
+      userId: z.number(),
+      reason: z.string().min(1).max(500),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot delete your own account" });
+      const db = getDb();
+      // Anonymize PII, preserve audit trail
+      await db.update(users).set({
+        isActive: false,
+        name: "[Deleted User]",
+        email: null,
+        phone: null,
+        phoneVerified: false,
+        suspendedAt: new Date(),
+        suspendedReason: `DELETED: ${input.reason}`,
+        suspendedBy: ctx.user.id,
+        adminNotes: `Account soft-deleted by admin ${ctx.user.id} on ${new Date().toISOString()}. Reason: ${input.reason}`,
+      }).where(eq(users.id, input.userId));
+      return { success: true };
+    }),
 });
 
 // ─── App Router ────────────────────────────────────────────────────────────

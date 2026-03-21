@@ -11,7 +11,7 @@ import {
   Shield, MessageSquare, Settings, LogOut, Plus, Trash2,
   Clock, CheckCircle, XCircle, AlertCircle, Zap, Mail,
   Calendar, Lock, Gift, Star, Users, ThumbsUp, ThumbsDown,
-  Globe, ChevronDown, Copy, Check, Send, UserPlus, ExternalLink
+  Globe, ChevronDown, Copy, Check, Send, UserPlus, ExternalLink, Crown
 } from "lucide-react";
 
 const SCHEDULE_OPTIONS = [
@@ -323,6 +323,18 @@ export default function Dashboard() {
             <span className="font-bold text-base sm:text-lg" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
+            {/* Admin shortcut — visible only to whitelisted admin emails */}
+            {user?.email && ["lesterantoine@inboxbrief.org", "lesterantoine@16starcollective.com"].includes(user.email) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/admin/customers")}
+                className="hidden sm:flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 border border-amber-400/20 px-2.5 py-1.5 h-auto rounded-full"
+              >
+                <Crown className="w-3 h-3" />
+                Admin
+              </Button>
+            )}
             <div className="hidden sm:flex items-center gap-1.5 border border-green-500/30 bg-green-500/10 px-3 py-1.5 rounded-full text-xs font-medium text-green-400">
               <Shield className="w-3.5 h-3.5" />
               Data Encrypted

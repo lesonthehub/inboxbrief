@@ -100,6 +100,11 @@ export async function runBriefingPipeline(
 
   if (!user.phone) return { success: false, smsSent: false, emailsFetched: 0, highPriorityCount: 0, generalCount: 0, ignoredCount: 0, error: "No phone number configured" };
 
+  // ── Account suspension gate ───────────────────────────────────────
+  if (!user.isActive) {
+    return { success: false, smsSent: false, emailsFetched: 0, highPriorityCount: 0, generalCount: 0, ignoredCount: 0, error: "Account suspended. Please contact support@inboxbrief.com." };
+  }
+
   // ── Phone verification gate ──────────────────────────────────────────────
   if (!user.phoneVerified) {
     return { success: false, smsSent: false, emailsFetched: 0, highPriorityCount: 0, generalCount: 0, ignoredCount: 0, error: "Phone number not verified. Please verify your phone number in Settings before sending briefings." };
