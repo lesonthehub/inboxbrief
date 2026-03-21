@@ -421,3 +421,9 @@
 - [ ] Add outbound-only notice in Settings phone section
 - [ ] Add outbound-only notice in Dashboard briefing section
 - [ ] Configure Twilio number to reject/auto-respond to inbound calls and messages
+
+## Round 15 Changes
+
+- [x] Center announcement banner text on PC and mobile (icon + text centered, dismiss button absolutely positioned right)
+- [x] Replace single Admin button with dropdown menu (Crown + ChevronDown) showing Customer Accounts and Announcements links — visible on mobile and desktop for all role=admin users
+- [x] Updated TWILIO_PHONE_NUMBER secret to +12816617555 — credentials test passing

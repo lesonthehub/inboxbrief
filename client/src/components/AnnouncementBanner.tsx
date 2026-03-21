@@ -54,14 +54,18 @@ export function AnnouncementBanner() {
             key={announcement.id}
             className={`w-full border-b ${style.bg} ${style.border} backdrop-blur-sm`}
           >
-            <div className="container flex items-start gap-3 py-2.5 px-4 sm:px-6">
-              {style.icon}
-              <p className={`flex-1 text-sm leading-relaxed ${style.text}`}>
-                {announcement.message}
-              </p>
+            <div className="relative flex items-center justify-center py-2.5 px-10 sm:px-12">
+              {/* Centered content */}
+              <div className="flex items-start gap-2 max-w-2xl w-full justify-center">
+                <span className="flex-shrink-0 mt-0.5">{style.icon}</span>
+                <p className={`text-sm leading-relaxed text-center ${style.text}`}>
+                  {announcement.message}
+                </p>
+              </div>
+              {/* Dismiss button — absolutely positioned right so it doesn't affect centering */}
               <button
                 onClick={() => setDismissed((prev) => new Set([...prev, announcement.id]))}
-                className={`flex-shrink-0 p-0.5 rounded hover:opacity-70 transition-opacity ${style.text}`}
+                className={`absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 flex-shrink-0 p-0.5 rounded hover:opacity-70 transition-opacity ${style.text}`}
                 aria-label="Dismiss"
               >
                 <X className="w-4 h-4" />
