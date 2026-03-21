@@ -427,3 +427,7 @@
 - [x] Center announcement banner text on PC and mobile (icon + text centered, dismiss button absolutely positioned right)
 - [x] Replace single Admin button with dropdown menu (Crown + ChevronDown) showing Customer Accounts and Announcements links — visible on mobile and desktop for all role=admin users
 - [x] Updated TWILIO_PHONE_NUMBER secret to +12816617555 — credentials test passing
+
+## Round 16 Changes
+
+- [x] Fix admin Crown dropdown: replaced CSS :hover with React click-toggle (adminMenuOpen state) + full-screen backdrop to close on outside click — works on mobile and desktop

@@ -173,6 +173,7 @@ export default function Dashboard() {
   const [generatedInviteLink, setGeneratedInviteLink] = useState<string | null>(null);
   const [copiedInviteLink, setCopiedInviteLink] = useState(false);
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -323,38 +324,48 @@ export default function Dashboard() {
             <span className="font-bold text-base sm:text-lg" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
-            {/* Admin dropdown — visible to all admin-role accounts on both mobile and desktop */}
+            {/* Admin dropdown — click-toggle, works on mobile and desktop */}
             {user?.role === "admin" && (
-              <div className="relative group">
+              <div className="relative">
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={() => setAdminMenuOpen((o) => !o)}
                   className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 border border-amber-400/20 px-2.5 py-1.5 h-auto rounded-full"
                 >
                   <Crown className="w-3 h-3" />
                   <span className="hidden sm:inline">Admin</span>
-                  <ChevronDown className="w-3 h-3" />
+                  <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${adminMenuOpen ? "rotate-180" : ""}`} />
                 </Button>
-                {/* Dropdown */}
-                <div className="absolute right-0 top-full mt-1.5 w-48 bg-card border border-amber-400/20 rounded-xl shadow-xl z-50 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150">
-                  <div className="px-3 py-2 border-b border-border/40">
-                    <p className="text-xs font-semibold text-amber-400 uppercase tracking-wide">Admin Panel</p>
-                  </div>
-                  <button
-                    onClick={() => navigate("/admin/customers")}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-foreground hover:bg-muted/30 transition-colors text-left"
-                  >
-                    <Crown className="w-3.5 h-3.5 text-amber-400" />
-                    Customer Accounts
-                  </button>
-                  <button
-                    onClick={() => navigate("/admin/announcements")}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-foreground hover:bg-muted/30 transition-colors text-left"
-                  >
-                    <Crown className="w-3.5 h-3.5 text-amber-400" />
-                    Announcements
-                  </button>
-                </div>
+                {/* Click-driven dropdown */}
+                {adminMenuOpen && (
+                  <>
+                    {/* Backdrop to close on outside click */}
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setAdminMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-1.5 w-52 bg-card border border-amber-400/20 rounded-xl shadow-xl z-50 overflow-hidden">
+                      <div className="px-3 py-2 border-b border-border/40">
+                        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wide">Admin Panel</p>
+                      </div>
+                      <button
+                        onClick={() => { setAdminMenuOpen(false); navigate("/admin/customers"); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-foreground hover:bg-muted/30 transition-colors text-left"
+                      >
+                        <Crown className="w-3.5 h-3.5 text-amber-400" />
+                        Customer Accounts
+                      </button>
+                      <button
+                        onClick={() => { setAdminMenuOpen(false); navigate("/admin/announcements"); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-foreground hover:bg-muted/30 transition-colors text-left"
+                      >
+                        <Crown className="w-3.5 h-3.5 text-amber-400" />
+                        Announcements
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
             <div className="hidden sm:flex items-center gap-1.5 border border-green-500/30 bg-green-500/10 px-3 py-1.5 rounded-full text-xs font-medium text-green-400">
