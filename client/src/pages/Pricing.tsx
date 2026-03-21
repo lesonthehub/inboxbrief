@@ -103,6 +103,10 @@ const FAQ = [
     a: "Each team member you invite gets their own SMS briefing on their own schedule. The account owner manages the team from the dashboard. The plan covers up to 5 members total.",
   },
   {
+    q: "How many SMS briefings does each Business plan member receive?",
+    a: "Each member gets 2 focused briefings daily — morning and evening — to keep the team aligned without inbox fatigue. Members can also trigger a manual briefing on demand from their dashboard at any time.",
+  },
+  {
     q: "Can I change plans later?",
     a: "Yes, upgrade or downgrade anytime from your dashboard. Changes take effect at the next billing cycle.",
   },

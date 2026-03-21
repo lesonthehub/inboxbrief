@@ -13,7 +13,9 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Enterprise from "./pages/Enterprise";
 import AcceptInvite from "./pages/AcceptInvite";
+import AdminAnnouncements from "./pages/AdminAnnouncements";
 import { DisclaimerBanner } from "./components/DisclaimerModal";
+import { AnnouncementBanner } from "./components/AnnouncementBanner";
 
 function Router() {
   return (
@@ -27,6 +29,7 @@ function Router() {
       <Route path="/privacy" component={Privacy} />
       <Route path="/enterprise" component={Enterprise} />
       <Route path="/invite/:token" component={AcceptInvite} />
+      <Route path="/admin/announcements" component={AdminAnnouncements} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -55,6 +58,7 @@ function App() {
             - Once accepted, localStorage flag prevents it from ever showing again
           */}
           <DisclaimerBanner>
+            <AnnouncementBanner />
             <Router />
           </DisclaimerBanner>
         </TooltipProvider>

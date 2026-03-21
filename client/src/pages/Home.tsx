@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import {
   Shield, Zap, Clock, MessageSquare, Lock, ChevronRight,
-  Star, CheckCircle, Globe, Users, Gift, RefreshCw
+  Star, CheckCircle, Globe, Users, Gift, RefreshCw,
+  Plug, BrainCircuit, Smartphone, ArrowRight
 } from "lucide-react";
 
 const FEATURES = [
@@ -214,6 +215,93 @@ export default function Home() {
             <p className="text-xs text-muted-foreground mt-3 text-center">
               {SMS_EXAMPLES[activeSmsLang].flag} Delivered in {SMS_EXAMPLES[activeSmsLang].lang} · Under 320 characters · 1 SMS
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-16 sm:py-20 px-4 bg-card/20 border-y border-border/30">
+        <div className="container">
+          <div className="text-center mb-10 sm:mb-14">
+            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary/80 mb-3">How It Works</span>
+            <h2
+              className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4"
+              style={{ fontFamily: "Space Grotesk, sans-serif" }}
+            >
+              Three steps to a <span className="text-gradient">smarter inbox</span>
+            </h2>
+            <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto">
+              Set up once in under two minutes. Your briefings start arriving the same day.
+            </p>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-0 max-w-4xl mx-auto">
+            {/* Step 1 */}
+            <div className="flex-1 flex flex-col items-center text-center px-4 sm:px-6">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
+                style={{ background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)" }}
+              >
+                <Plug className="w-7 h-7 text-white" />
+              </div>
+              <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-xs font-bold text-primary mb-3">
+                1
+              </div>
+              <h3 className="font-bold text-lg mb-2" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+                Connect Your Inbox
+              </h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Link your Gmail or Outlook account with one click. OAuth-secured — we never store your password.
+              </p>
+            </div>
+
+            {/* Connector */}
+            <div className="hidden md:flex items-center justify-center flex-shrink-0 px-2">
+              <ArrowRight className="w-6 h-6 text-primary/40" />
+            </div>
+
+            {/* Step 2 */}
+            <div className="flex-1 flex flex-col items-center text-center px-4 sm:px-6">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
+                style={{ background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)" }}
+              >
+                <BrainCircuit className="w-7 h-7 text-white" />
+              </div>
+              <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-xs font-bold text-primary mb-3">
+                2
+              </div>
+              <h3 className="font-bold text-lg mb-2" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+                AI Reads &amp; Filters
+              </h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Our AI scans every email, scores priority, and distills your inbox into a short, human-sounding summary.
+              </p>
+            </div>
+
+            {/* Connector */}
+            <div className="hidden md:flex items-center justify-center flex-shrink-0 px-2">
+              <ArrowRight className="w-6 h-6 text-primary/40" />
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex-1 flex flex-col items-center text-center px-4 sm:px-6">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
+                style={{ background: "linear-gradient(135deg, #a855f7 0%, #ec4899 100%)" }}
+              >
+                <Smartphone className="w-7 h-7 text-white" />
+              </div>
+              <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-xs font-bold text-primary mb-3">
+                3
+              </div>
+              <h3 className="font-bold text-lg mb-2" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+                Receive Your SMS Briefing
+              </h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                A crisp text message lands on your phone at the time you choose — or tap the button on demand.
+              </p>
+            </div>
           </div>
         </div>
       </section>

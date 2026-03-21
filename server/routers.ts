@@ -20,7 +20,7 @@ import { PLANS, isSubscriptionActive, getDisplayPlans, INTERNATIONAL_SMS_SURCHAR
 import { OWNER_EMAIL } from "./sms";
 import { processBriefingFeedback, SUPPORTED_LANGUAGES } from "./grok";
 import { notifyOwner } from "./_core/notification";
-import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs } from "../drizzle/schema";
+import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs, announcements } from "../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { sendVerificationOtp, verifyOtp } from "./phoneVerification";
 import { writeAuditLog } from "./security";
@@ -720,8 +720,89 @@ const internationalRouter = router({
     }),
 });
 
-// ─── App Router ───────────────────────────────────────────────────────────────
+//// ─── Announcements Router ───────────────────────────────────────────────────────
 
+const announcementsRouter = router({
+  // Public: get all active, non-expired announcements
+  getActive: publicProcedure.query(async () => {
+    const db = getDb();
+    const now = new Date();
+    const rows = await db
+      .select()
+      .from(announcements)
+      .where(
+        and(
+          eq(announcements.isActive, true)
+        )
+      )
+      .orderBy(desc(announcements.createdAt));
+    // Filter out expired ones (expiresAt null = never expires)
+    return rows.filter(r => !r.expiresAt || r.expiresAt > now);
+  }),
+
+  // Admin: list all announcements
+  list: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+    const db = getDb();
+    return db.select().from(announcements).orderBy(desc(announcements.createdAt));
+  }),
+
+  // Admin: create announcement
+  create: protectedProcedure
+    .input(
+      z.object({
+        message: z.string().min(1).max(500),
+        type: z.enum(["info", "warning", "success", "promo"]),
+        expiresAt: z.string().optional(), // ISO string
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = getDb();
+      await db.insert(announcements).values({
+        message: input.message,
+        type: input.type,
+        isActive: true,
+        expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+        createdBy: ctx.user.id,
+      });
+      return { success: true };
+    }),
+
+  // Admin: update announcement
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        message: z.string().min(1).max(500).optional(),
+        type: z.enum(["info", "warning", "success", "promo"]).optional(),
+        isActive: z.boolean().optional(),
+        expiresAt: z.string().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = getDb();
+      const { id, expiresAt, ...rest } = input;
+      await db.update(announcements).set({
+        ...rest,
+        ...(expiresAt !== undefined ? { expiresAt: expiresAt ? new Date(expiresAt) : null } : {}),
+      }).where(eq(announcements.id, id));
+      return { success: true };
+    }),
+
+  // Admin: delete announcement
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = getDb();
+      await db.delete(announcements).where(eq(announcements.id, input.id));
+      return { success: true };
+    }),
+});
+
+// ─── App Router ────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
   auth: authRouter,
@@ -738,6 +819,6 @@ export const appRouter = router({
   international: internationalRouter,
   phoneVerification: phoneVerificationRouter,
   disclaimer: disclaimerRouter,
+  announcements: announcementsRouter,
 });
-
 export type AppRouter = typeof appRouter;

@@ -243,3 +243,73 @@
 - [x] Update PDF URLs in TosAgreementModal.tsx (new v2 CDN links)
 - [x] Update Terms.tsx: version 2.0, new date, Download PDF link
 - [x] Update Privacy.tsx: version 2.0, new date, Download PDF link
+
+## Round 8 Changes
+
+### Admin Announcement Banner System
+- [ ] DB: announcements table (id, message, type, expiresAt, createdBy, createdAt, isActive)
+- [ ] tRPC: announcements router (admin: create, update, delete, list; public: getActive)
+- [ ] Admin UI: /admin/announcements page (create/edit/delete banners with expiry datetime picker)
+- [ ] Public banner: AnnouncementBanner component shown at top of all pages (dismissible per session)
+- [ ] Banner types: info (blue), warning (yellow), success (green), promo (purple)
+- [ ] Auto-hide when expiresAt is past
+- [ ] Role-gate admin page to admin users only
+
+### Landing Page — How It Works Section
+- [ ] Add 3-step visual section between hero and features grid
+- [ ] Step 1: Connect Gmail or Outlook (plug icon)
+- [ ] Step 2: AI reads and filters your inbox (brain/filter icon)
+- [ ] Step 3: Receive your SMS briefing (phone icon)
+- [ ] Animated connectors between steps
+
+### Pricing Page — Business Plan FAQ Entry
+- [ ] Add FAQ entry: "How many SMS briefings does each Business member get?"
+- [ ] Answer: "Each member gets 2 focused briefings daily — morning and evening — to keep the team aligned without inbox fatigue."
+
+### API Credentials for Launch
+- [ ] Request TWILIO_ACCOUNT_SID
+- [ ] Request TWILIO_AUTH_TOKEN
+- [ ] Request TWILIO_PHONE_NUMBER
+- [ ] Request OPENROUTER_API_KEY
+- [ ] Request GOOGLE_CLIENT_ID
+- [ ] Request GOOGLE_CLIENT_SECRET
+- [ ] Request MICROSOFT_CLIENT_ID
+- [ ] Request MICROSOFT_CLIENT_SECRET
+- [ ] Verify all secrets are wired to correct env vars in server code
+
+## Round 8 Changes
+
+### Admin Announcement Banner System
+- [x] Create `announcements` table in DB (id, message, type, isActive, expiresAt, createdBy, createdAt, updatedAt)
+- [x] Add `announcementsRouter` to server/routers.ts (getActive public, list/create/update/delete admin-only)
+- [x] Create AnnouncementBanner component (shows active banners at top of all pages, dismissible per session)
+- [x] Create AdminAnnouncements page at /admin/announcements (CRUD UI for admin users)
+- [x] Register route in App.tsx and mount AnnouncementBanner above Router
+- [x] Support 4 banner types: info (blue), warning (yellow), success (green), promo (purple)
+- [x] Auto-expire banners at set date/time; banners with no expiry stay until manually deactivated
+
+### How It Works Section (Landing Page)
+- [x] Add 3-step visual section between SMS Preview and Features sections
+- [x] Step 1: Connect Your Inbox (Plug icon, indigo gradient)
+- [x] Step 2: AI Reads & Filters (BrainCircuit icon, purple gradient)
+- [x] Step 3: Receive Your SMS Briefing (Smartphone icon, pink gradient)
+- [x] Arrow connectors between steps (hidden on mobile, shown on md+)
+
+### Business Plan FAQ Entry (Pricing Page)
+- [x] Add FAQ: "How many SMS briefings does each Business plan member receive?"
+- [x] Answer explains 2x daily (morning + evening) + on-demand manual briefings
+
+### Launch API Credentials
+- [x] TWILIO_ACCOUNT_SID — validated (starts with AC, 34 chars)
+- [x] TWILIO_AUTH_TOKEN — validated (non-empty)
+- [x] TWILIO_PHONE_NUMBER — validated (E.164 format)
+- [x] GOOGLE_CLIENT_ID — validated (non-empty)
+- [x] GOOGLE_CLIENT_SECRET — validated (non-empty)
+- [x] MICROSOFT_CLIENT_ID — validated (non-empty)
+- [x] MICROSOFT_CLIENT_SECRET — validated (non-empty)
+- [x] All 49 tests passing (4 test files)
+
+### Test Suite Updates
+- [x] Update inboxbrief.test.ts plan assertions to match new repriced email limits (50/100/75)
+- [x] Update SMS/day test: business plan = solo (2/day per seat, by design)
+- [x] Add server/credentials.test.ts for launch credential validation (7 tests)

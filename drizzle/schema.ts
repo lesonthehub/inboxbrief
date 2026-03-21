@@ -223,3 +223,20 @@ export const briefingFeedback = mysqlTable("briefing_feedback", {
 
 export type BriefingFeedback = typeof briefingFeedback.$inferSelect;
 export type InsertBriefingFeedback = typeof briefingFeedback.$inferInsert;
+
+// ─── Announcements ────────────────────────────────────────────────────────────
+// Admin-posted banners shown at the top of all pages until expiry
+
+export const announcements = mysqlTable("announcements", {
+  id: int("id").autoincrement().primaryKey(),
+  message: text("message").notNull(),
+  type: mysqlEnum("type", ["info", "warning", "success", "promo"]).default("info").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  expiresAt: timestamp("expiresAt"),
+  createdBy: int("createdBy").notNull(), // userId of admin who created it
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Announcement = typeof announcements.$inferSelect;
+export type InsertAnnouncement = typeof announcements.$inferInsert;

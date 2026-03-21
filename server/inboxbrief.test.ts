@@ -79,16 +79,16 @@ describe("AES-256-GCM Encryption", () => {
 // ─── Plans / Tier Logic Tests ─────────────────────────────────────────────────
 
 describe("Subscription Plans", () => {
-  it("solo plan has email limit of 25", () => {
-    expect(getEmailLimit("solo")).toBe(25);
+  it("solo plan has email limit of 50", () => {
+    expect(getEmailLimit("solo")).toBe(50);
   });
 
-  it("pro plan has email limit of 75", () => {
-    expect(getEmailLimit("pro")).toBe(75);
+  it("pro plan has email limit of 100", () => {
+    expect(getEmailLimit("pro")).toBe(100);
   });
 
-  it("business plan has email limit of 150", () => {
-    expect(getEmailLimit("business")).toBe(150);
+  it("business plan has email limit of 75 per seat", () => {
+    expect(getEmailLimit("business")).toBe(75);
   });
 
   it("enterprise plan has unlimited emails (-1)", () => {
@@ -151,8 +151,9 @@ describe("Subscription Plans", () => {
     expect(PLANS.business.price).toBe(39);
   });
 
-  it("business plan has more SMS/day than solo", () => {
-    expect(PLANS.business.smsPerDay).toBeGreaterThan(PLANS.solo.smsPerDay);
+  it("business plan has same SMS/day as solo (2 per seat, by design for margin)", () => {
+    // Business was repriced to 2 SMS/day per seat (same as solo) for 89% margin
+    expect(PLANS.business.smsPerDay).toBe(PLANS.solo.smsPerDay);
   });
 
   it("trial plan gives unlimited email access", () => {
