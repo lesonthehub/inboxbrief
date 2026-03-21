@@ -374,3 +374,17 @@
 - [x] Stats bar (Total / Active / Suspended counts)
 - [x] Confirmation modals with reason inputs and destructive warnings
 - [x] Admin nav link in Dashboard nav (amber Crown badge, visible only to whitelisted emails, hidden on mobile)
+
+## Round 12 Changes
+
+### Login / Create Account Button
+- [x] Add Log In button to Home.tsx nav (ghost style, visible on sm+ when not authenticated)
+- [x] Add "Already have an account? Log in here" link below hero trust badges
+- [x] Nav already shows Dashboard button when authenticated (verified)
+
+### OpenRouter Model Switch
+- [x] Switch OpenRouter default model from gemini-2.0-flash-001 to x-ai/grok-4.1-fast
+
+### Admin Verification
+- [x] Verified /admin/customers shows lastSignedIn dates (timeAgo + absolute date)
+- [x] Verified both /admin/customers and /admin/announcements enforce ADMIN_EMAILS whitelist

@@ -6,7 +6,7 @@
  */
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "google/gemini-2.0-flash-001";
+const DEFAULT_MODEL = "x-ai/grok-4.1-fast";
 
 export interface ORMessage {
   role: "system" | "user" | "assistant";

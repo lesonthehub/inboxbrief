@@ -116,13 +116,23 @@ export default function Home() {
                 Dashboard
               </Button>
             ) : (
-              <Button
-                size="sm"
-                className="bg-primary hover:bg-primary/90 text-white border-0"
-                onClick={handleGetStarted}
-              >
-                Start Free Trial
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-foreground hidden sm:inline-flex"
+                  onClick={() => { window.location.href = getLoginUrl("/dashboard"); }}
+                >
+                  Log In
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-primary hover:bg-primary/90 text-white border-0"
+                  onClick={handleGetStarted}
+                >
+                  Start Free Trial
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -169,6 +179,17 @@ export default function Home() {
             <div className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /><span>No credit card for trial</span></div>
             <div className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /><span>8 languages supported</span></div>
           </div>
+          {!isAuthenticated && (
+            <p className="mt-5 text-xs sm:text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <button
+                className="text-primary hover:underline font-medium"
+                onClick={() => { window.location.href = getLoginUrl("/dashboard"); }}
+              >
+                Log in here
+              </button>
+            </p>
+          )}
         </div>
       </section>
 
