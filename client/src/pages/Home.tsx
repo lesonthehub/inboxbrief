@@ -481,7 +481,7 @@ export default function Home() {
               Privacy
             </button>
             <a
-              href="https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_google_privacy_d520683c.pdf"
+              href="https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_google_privacy_v3_3e6848bf.pdf"
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"

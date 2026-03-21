@@ -339,3 +339,27 @@
 - [ ] Generate PDF and upload to CDN
 - [ ] Add link to Privacy page, footer, and DisclaimerModal
 - [ ] Add separate /privacy/google route or section
+
+## Round 10 Changes
+
+### Legal Documents — Third-Party Service Disclosures (+10 pages each)
+- [ ] Research required legal disclosures: Google OAuth, Microsoft OAuth, Twilio, Stripe, OpenRouter
+- [ ] Expand Terms of Service by 10+ pages (third-party integrations, DMCA, dispute resolution, indemnification, acceptable use)
+- [ ] Expand Privacy Policy by 10+ pages (third-party processors, data transfers, CCPA/GDPR rights, cookies, Microsoft/Twilio/Stripe disclosures)
+- [ ] Expand Google User Data Policy by 10+ pages (OAuth scopes, data flows, Limited Use compliance, audit rights, security)
+- [ ] Generate new PDFs v3.0 and upload to CDN
+- [ ] Update all PDF URL constants in DisclaimerModal.tsx, TosAgreementModal.tsx, Terms.tsx, Privacy.tsx
+
+### Admin Customer Details Panel
+- [ ] Add lastLoginAt column to users table via SQL
+- [ ] Update lastLoginAt on every successful auth/me call
+- [ ] Add tRPC admin procedure: getCustomers (paginated, with email, plan, status, lastLoginAt, createdAt, phone)
+- [ ] Create AdminCustomers.tsx page with sortable/searchable table
+- [ ] Add "Customers" nav link in admin area
+- [ ] Register /admin/customers route in App.tsx
+
+### Admin Route Security — Email Whitelist
+- [ ] Define ADMIN_WHITELIST constant (lesterantoine@inboxbrief.org + other authorized accounts)
+- [ ] Add whitelist check to server-side adminProcedure middleware
+- [ ] Add frontend route guard: redirect non-whitelisted users away from /admin/*
+- [ ] Update AdminAnnouncements.tsx to enforce whitelist on client side

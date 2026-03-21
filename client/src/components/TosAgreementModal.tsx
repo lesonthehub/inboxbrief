@@ -90,7 +90,7 @@ export function TosAgreementModal({ open, onClose, onAccepted, planName, priceLa
                   I agree to the{" "}
                   <button
                     type="button"
-                    onClick={() => { window.open("https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_tos_1c606cde.pdf", "_blank"); }}
+                    onClick={() => { window.open("https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_tos_v3_1bd41576.pdf", "_blank"); }}
                     className="text-primary hover:underline"
                   >
                     Terms of Service
@@ -98,7 +98,7 @@ export function TosAgreementModal({ open, onClose, onAccepted, planName, priceLa
                   {" "}and{" "}
                   <button
                     type="button"
-                    onClick={() => { window.open("https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_privacy_b78b9176.pdf", "_blank"); }}
+                    onClick={() => { window.open("https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_privacy_v3_9fa80d21.pdf", "_blank"); }}
                     className="text-primary hover:underline"
                   >
                     Privacy Policy

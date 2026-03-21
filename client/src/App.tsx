@@ -14,6 +14,7 @@ import Privacy from "./pages/Privacy";
 import Enterprise from "./pages/Enterprise";
 import AcceptInvite from "./pages/AcceptInvite";
 import AdminAnnouncements from "./pages/AdminAnnouncements";
+import AdminCustomers from "./pages/AdminCustomers";
 import { DisclaimerBanner } from "./components/DisclaimerModal";
 import { AnnouncementBanner } from "./components/AnnouncementBanner";
 
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/enterprise" component={Enterprise} />
       <Route path="/invite/:token" component={AcceptInvite} />
       <Route path="/admin/announcements" component={AdminAnnouncements} />
+      <Route path="/admin/customers" component={AdminCustomers} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

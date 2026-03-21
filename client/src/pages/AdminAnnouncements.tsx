@@ -85,8 +85,14 @@ export default function AdminAnnouncements() {
     onError: (e) => toast.error(e.message),
   });
 
-  // Redirect non-admins
-  if (isAuthenticated && user?.role !== "admin") {
+  // Enforce email whitelist — only specific accounts may access admin pages
+  const ADMIN_EMAILS = [
+    "lesterantoine@inboxbrief.org",
+    "lesterantoine@16starcollective.com",
+  ];
+  const isAuthorized = isAuthenticated && user?.email && ADMIN_EMAILS.includes(user.email);
+
+  if (isAuthenticated && !isAuthorized) {
     navigate("/dashboard");
     return null;
   }
@@ -140,10 +146,15 @@ export default function AdminAnnouncements() {
               InboxBrief
             </span>
           </button>
-          <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="w-4 h-4" />
-            Dashboard
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground text-xs" onClick={() => navigate("/admin/customers")}>
+              Customers
+            </Button>
+            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground" onClick={() => navigate("/dashboard")}>
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Button>
+          </div>
         </div>
       </nav>
 

@@ -1,4 +1,4 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, subscriptions, emailAccounts, briefingLogs } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -172,4 +172,60 @@ export async function getBriefingLogsByUserId(userId: number, limit = 20) {
     .where(eq(briefingLogs.userId, userId))
     .orderBy(desc(briefingLogs.createdAt))
     .limit(limit);
+}
+
+// ─── Admin Query Helpers ────────────────────────────────────────────────────
+
+export async function getAllUsersAdmin(limit = 200, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      phone: users.phone,
+      phoneVerified: users.phoneVerified,
+      businessType: users.businessType,
+      onboardingComplete: users.onboardingComplete,
+      trialStartedAt: users.trialStartedAt,
+      trialEndsAt: users.trialEndsAt,
+      trialUsed: users.trialUsed,
+      referralCode: users.referralCode,
+      referralCredits: users.referralCredits,
+      createdAt: users.createdAt,
+      lastSignedIn: users.lastSignedIn,
+      loginMethod: users.loginMethod,
+    })
+    .from(users)
+    .orderBy(desc(users.lastSignedIn))
+    .limit(limit)
+    .offset(offset);
+}
+
+export async function getAdminUserCount() {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.select({ count: sql<number>`COUNT(*)` }).from(users);
+  return Number(result[0]?.count ?? 0);
+}
+
+export async function getUserWithSubscriptionAdmin(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user[0]) return null;
+  const sub = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);
+  const accounts = await db.select().from(emailAccounts).where(eq(emailAccounts.userId, userId));
+  const briefings = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(briefingLogs)
+    .where(eq(briefingLogs.userId, userId));
+  return {
+    user: user[0],
+    subscription: sub[0] ?? null,
+    emailAccounts: accounts,
+    totalBriefings: Number(briefings[0]?.count ?? 0),
+  };
 }

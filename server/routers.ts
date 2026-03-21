@@ -10,6 +10,7 @@ import {
   getSubscriptionByUserId, upsertSubscription,
   getEmailAccountsByUserId, insertEmailAccount, deactivateEmailAccount,
   getBriefingLogsByUserId,
+  getAllUsersAdmin, getAdminUserCount, getUserWithSubscriptionAdmin,
   getDb,
 } from "./db";
 import { encrypt, safeDecrypt } from "./encryption";
@@ -802,6 +803,48 @@ const announcementsRouter = router({
     }),
 });
 
+// ─── Admin Users Router ──────────────────────────────────────────────────────
+
+const adminUsersRouter = router({
+  // List all users with pagination
+  list: protectedProcedure
+    .input(z.object({
+      limit: z.number().min(1).max(200).default(100),
+      offset: z.number().min(0).default(0),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const [users, total] = await Promise.all([
+        getAllUsersAdmin(input.limit, input.offset),
+        getAdminUserCount(),
+      ]);
+      return { users, total };
+    }),
+
+  // Get detailed info for a single user
+  getDetail: protectedProcedure
+    .input(z.object({ userId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const detail = await getUserWithSubscriptionAdmin(input.userId);
+      if (!detail) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      return detail;
+    }),
+
+  // Promote or demote a user's role
+  setRole: protectedProcedure
+    .input(z.object({
+      userId: z.number(),
+      role: z.enum(["user", "admin"]),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot change your own role" });
+      await updateUser(input.userId, { role: input.role });
+      return { success: true };
+    }),
+});
+
 // ─── App Router ────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -820,5 +863,6 @@ export const appRouter = router({
   phoneVerification: phoneVerificationRouter,
   disclaimer: disclaimerRouter,
   announcements: announcementsRouter,
+  adminUsers: adminUsersRouter,
 });
 export type AppRouter = typeof appRouter;

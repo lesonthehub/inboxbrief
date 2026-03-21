@@ -2,9 +2,9 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Shield, ArrowLeft, MessageSquare } from "lucide-react";
 
-const TOS_VERSION = "2.0";
-const EFFECTIVE_DATE = "March 19, 2026";
-const TOS_PDF_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_tos_1c606cde.pdf";
+const TOS_VERSION = "3.0";
+const EFFECTIVE_DATE = "March 21, 2026";
+const TOS_PDF_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_tos_v3_1bd41576.pdf";
 const COMPANY = "InboxBrief";
 const SERVICE = "InboxBrief";
 const CONTACT_EMAIL = "support@inboxbrief.com";

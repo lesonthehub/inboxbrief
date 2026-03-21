@@ -2,10 +2,10 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Shield, ArrowLeft, MessageSquare } from "lucide-react";
 
-const EFFECTIVE_DATE = "March 19, 2026";
-const PRIVACY_VERSION = "2.0";
-const PRIVACY_PDF_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_privacy_b78b9176.pdf";
-const GOOGLE_PRIVACY_PDF_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_google_privacy_d520683c.pdf";
+const EFFECTIVE_DATE = "March 21, 2026";
+const PRIVACY_VERSION = "3.0";
+const PRIVACY_PDF_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_privacy_v3_9fa80d21.pdf";
+const GOOGLE_PRIVACY_PDF_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_google_privacy_v3_3e6848bf.pdf";
 const COMPANY = "InboxBrief";
 const SERVICE = "InboxBrief";
 const CONTACT_EMAIL = "support@inboxbrief.com";
