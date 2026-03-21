@@ -480,6 +480,14 @@ export default function Home() {
             >
               Privacy
             </button>
+            <a
+              href="https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_google_privacy_d520683c.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Google Data Policy
+            </a>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Shield className="w-3.5 h-3.5 text-green-400" />
               <span>AES-256-GCM Encrypted</span>

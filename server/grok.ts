@@ -3,8 +3,9 @@
  * Classifies emails and generates natural, human-sounding SMS briefings.
  * Raw email text is processed in-memory and never persisted unencrypted.
  * No third-party AI tool names are exposed to users.
+ * Uses OpenRouter (google/gemini-2.0-flash-001) for all AI calls.
  */
-import { invokeLLM } from "./_core/llm";
+import { invokeOpenRouter } from "./openrouter";
 
 export type EmailCategory = "high_priority" | "general" | "ignore";
 
@@ -44,6 +45,38 @@ export const SUPPORTED_LANGUAGES: Record<string, string> = {
   ru: "Russian",
 };
 
+/** Hard SMS character limit — enforced both in the prompt and post-generation. */
+const SMS_CHAR_LIMIT = 500;
+
+/**
+ * Truncates text to the SMS character limit at a sentence or word boundary.
+ * Never cuts mid-word. Appends "…" if truncated.
+ */
+export function truncateToSmsLimit(text: string, limit = SMS_CHAR_LIMIT): string {
+  if (text.length <= limit) return text;
+
+  // Try to cut at last sentence boundary within limit
+  const truncated = text.slice(0, limit - 1);
+  const lastPeriod = Math.max(
+    truncated.lastIndexOf(". "),
+    truncated.lastIndexOf("! "),
+    truncated.lastIndexOf("? ")
+  );
+
+  if (lastPeriod > limit * 0.6) {
+    // Good sentence boundary found — cut there
+    return truncated.slice(0, lastPeriod + 1).trim();
+  }
+
+  // Fall back to last word boundary
+  const lastSpace = truncated.lastIndexOf(" ");
+  if (lastSpace > 0) {
+    return truncated.slice(0, lastSpace).trim() + "…";
+  }
+
+  return truncated.trim() + "…";
+}
+
 /**
  * Classifies a batch of emails into high_priority, general, or ignore.
  * Uses structured JSON output for reliable parsing.
@@ -65,7 +98,7 @@ export async function classifyEmails(
     .map((e, i) => `[${i}] From: ${e.from}\nSubject: ${e.subject}\nSnippet: ${e.snippet}`)
     .join("\n\n");
 
-  const response = await invokeLLM({
+  const response = await invokeOpenRouter({
     messages: [
       {
         role: "system",
@@ -75,7 +108,7 @@ Classify each email as:
 - "general": team updates, tool notifications the user actively uses, scheduled reports, non-urgent vendor emails
 - "ignore": marketing spam, promotional offers, automated system alerts, social media notifications, mass newsletters, coupon emails, unsolicited cold outreach${includeKeywords}${excludeKeywords}
 
-Return ONLY a JSON array with one object per email in the same order as input.`,
+Return ONLY a JSON object with a "classifications" array. Each item: {"index": <number>, "category": "<high_priority|general|ignore>"}`,
       },
       {
         role: "user",
@@ -108,6 +141,7 @@ Return ONLY a JSON array with one object per email in the same order as input.`,
         },
       },
     },
+    max_tokens: 512,
   });
 
   const content = response.choices[0]?.message?.content ?? "{}";
@@ -125,7 +159,7 @@ Return ONLY a JSON array with one object per email in the same order as input.`,
 
 /**
  * Generates a natural, human-sounding SMS briefing from classified emails.
- * Target: 1–2 SMS messages (max 320 characters total).
+ * Hard limit: 500 characters (enforced in prompt + post-generation truncation).
  * Supports multi-language output and user tone preferences.
  * Raw text is used only during this call and never stored unencrypted.
  */
@@ -149,7 +183,7 @@ export async function generateSmsBriefing(
       de: `Hallo ${firstName}, Ihr Posteingang ist leer — keine neuen wichtigen E-Mails seit Ihrer letzten Zusammenfassung.`,
       pt: `Oi ${firstName}, sua caixa está limpa — sem e-mails importantes desde seu último resumo. Aproveite!`,
     };
-    return (emptyMessages[language] ?? emptyMessages.en).slice(0, 320);
+    return truncateToSmsLimit(emptyMessages[language] ?? emptyMessages.en);
   }
 
   // Build a structured context for the AI — include specific details for natural output
@@ -165,10 +199,10 @@ export async function generateSmsBriefing(
   const toneInstructions: Record<string, string> = {
     concise: "Be extremely brief. Use short phrases. No filler words.",
     conversational: "Sound like a knowledgeable assistant texting a friend. Natural, warm, direct.",
-    detailed: "Include more specifics from each email. Still fit within 320 characters.",
+    detailed: "Include more specifics from each email. Still stay under 500 characters.",
   };
 
-  const response = await invokeLLM({
+  const response = await invokeOpenRouter({
     messages: [
       {
         role: "system",
@@ -176,10 +210,10 @@ export async function generateSmsBriefing(
 Tone: ${toneInstructions[tone] ?? toneInstructions.conversational}
 
 Critical rules:
-- Maximum 320 characters total (hard limit — this is an SMS)
+- MAXIMUM ${SMS_CHAR_LIMIT} CHARACTERS TOTAL (hard limit — count every character)
 - Sound HUMAN and NATURAL — like a smart assistant, not a robot
 - Lead with the most important items using specific details
-- Use natural language like "You have 3 applicants for [role]", "Sarah Chen sent a contract", "19 new orders waiting"
+- Use natural language like "You have 3 applicants for [role]", "Sarah Chen sent a contract"
 - For counts, be specific: "2 new leads", "1 invoice from Acme", not just "emails"
 - End with a quick count summary in parentheses e.g. (2 urgent, 4 general)
 - Plain text only — no markdown, no bullet points, no emojis
@@ -193,13 +227,14 @@ ${highPriority.length > 0 ? `PRIORITY EMAILS:\n${hpContext}` : ""}
 ${general.length > 0 ? `\nGENERAL EMAILS:\n${genContext}` : ""}`,
       },
     ],
+    max_tokens: 256,
   });
 
   const rawText = response.choices[0]?.message?.content ?? "";
   const text = typeof rawText === "string" ? rawText : JSON.stringify(rawText);
 
-  // Hard-cap at 320 chars
-  return text.slice(0, 320).trim();
+  // Post-generation safety net: enforce 500-char limit with smart truncation
+  return truncateToSmsLimit(text.trim());
 }
 
 /**

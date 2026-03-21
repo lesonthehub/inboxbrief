@@ -20,6 +20,8 @@ export const TOS_PDF_URL =
   "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_tos_1c606cde.pdf";
 export const PRIVACY_PDF_URL =
   "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_privacy_b78b9176.pdf";
+export const GOOGLE_PRIVACY_PDF_URL =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_google_privacy_d520683c.pdf";
 
 export function DisclaimerBanner({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -119,6 +121,18 @@ export function DisclaimerBanner({ children }: { children: React.ReactNode }) {
                   onClick={(e) => e.stopPropagation()}
                 >
                   Privacy Policy
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                , and{" "}
+                <a
+                  href={GOOGLE_PRIVACY_PDF_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium hover:underline inline-flex items-center gap-0.5"
+                  style={{ color: "#818cf8" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Google Data Policy
                   <ExternalLink className="w-3 h-3" />
                 </a>
                 .

@@ -313,3 +313,29 @@
 - [x] Update inboxbrief.test.ts plan assertions to match new repriced email limits (50/100/75)
 - [x] Update SMS/day test: business plan = solo (2/day per seat, by design)
 - [x] Add server/credentials.test.ts for launch credential validation (7 tests)
+
+## Round 9 Changes
+
+### Admin Promotion
+- [ ] Promote lesterantoine@inboxbrief.org to admin role via SQL
+
+### OpenRouter Integration
+- [ ] Request OPENROUTER_API_KEY secret
+- [ ] Replace invokeLLM (Manus built-in) with OpenRouter API calls in server/grok.ts
+- [ ] Update server/_core/llm.ts or create server/openrouter.ts helper
+- [ ] Verify AI briefing pipeline still works end-to-end
+
+### 500-Character SMS Limit
+- [ ] Add 500-char hard limit to SMS briefing output in grok.ts
+- [ ] Add smart truncation: complete sentences, never cut mid-word
+- [ ] Add character count to system prompt so LLM targets under 500 chars
+- [ ] Add post-generation truncation safety net
+- [ ] Update SMS delivery helper to enforce limit before send
+
+### Google User Data Privacy Policy
+- [ ] Write 10+ page Google User Data Privacy Policy (explicit Google OAuth data usage)
+- [ ] Cover: data collected, how it's used, retention, deletion, sharing, security
+- [ ] Model language after Google's own API Services User Data Policy
+- [ ] Generate PDF and upload to CDN
+- [ ] Add link to Privacy page, footer, and DisclaimerModal
+- [ ] Add separate /privacy/google route or section
