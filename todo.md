@@ -431,3 +431,11 @@
 ## Round 16 Changes
 
 - [x] Fix admin Crown dropdown: replaced CSS :hover with React click-toggle (adminMenuOpen state) + full-screen backdrop to close on outside click — works on mobile and desktop
+
+## Round 17 Changes
+
+- [x] Bug: Root cause found — TosModal in Pricing.tsx used navigate("/terms") and navigate("/privacy") inside the label click handler, redirecting the whole page instead of opening PDFs in new tabs. Fixed by replacing with <a target="_blank"> links with e.stopPropagation().
+- [x] Research: Industry standard (Stripe, Shopify, Netflix, Apple) uses a single checkbox with a short one-liner linking to documents — no verbose summaries, no multiple checkboxes.
+- [x] TosModal (Pricing.tsx): Removed entire "Key Terms Summary" block, reduced to single checkbox: "I agree to the Terms of Service and Privacy Policy."
+- [x] TosAgreementModal (Settings): Rewrote to single checkbox with same minimal language, removed 4-checkbox verbose pattern, removed navigate() calls
+- [x] DisclaimerBanner: Already correct — uses <a target="_blank"> and minimal one-liner (no changes needed)

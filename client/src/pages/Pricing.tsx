@@ -142,61 +142,29 @@ function TosModal({
   isLoading: boolean;
 }) {
   const [checked, setChecked] = useState(false);
-  const [, navigate] = useLocation();
+
+  const TOS_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_tos_v3_1bd41576.pdf";
+  const PRIVACY_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_privacy_v3_9fa80d21.pdf";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-card border border-border/60 rounded-2xl w-full max-w-lg shadow-2xl shadow-black/50">
+      <div className="bg-card border border-border/60 rounded-2xl w-full max-w-md shadow-2xl shadow-black/50">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border/40">
           <div>
             <h2 className="font-bold text-foreground text-base" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
-              Before you continue
+              {planName} Plan
             </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Review and accept our terms to proceed with the {planName} plan
-            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">Confirm to continue to payment</p>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Key terms summary */}
-        <div className="p-5 max-h-64 overflow-y-auto">
-          <div className="bg-muted/20 border border-border/30 rounded-xl p-4 space-y-3 text-xs text-muted-foreground">
-            <p className="font-semibold text-foreground text-sm">Key Terms Summary</p>
-
-            <div>
-              <p className="font-medium text-foreground mb-1">Service Availability</p>
-              <p>InboxBrief is provided "as is." We do not guarantee uninterrupted service, and scheduled briefings may be delayed due to carrier or network conditions outside our control.</p>
-            </div>
-
-            <div>
-              <p className="font-medium text-foreground mb-1">Limitation of Liability</p>
-              <p>To the fullest extent permitted by law, InboxBrief shall not be liable for any indirect, incidental, or consequential damages. Our total liability shall not exceed the amount you paid in the 30 days prior to the claim.</p>
-            </div>
-
-            <div>
-              <p className="font-medium text-foreground mb-1">Dispute Resolution</p>
-              <p>Any disputes must first be raised directly with us at <span className="text-primary">support@inboxbrief.com</span>. We commit to resolving all issues one-on-one before any formal proceedings. Class action waiver applies.</p>
-            </div>
-
-            <div>
-              <p className="font-medium text-foreground mb-1">Email Data Processing</p>
-              <p>You authorize InboxBrief to access, read, and summarize emails from connected accounts solely to generate your SMS briefings. Email content is processed in-memory and never stored in plaintext.</p>
-            </div>
-
-            <div>
-              <p className="font-medium text-foreground mb-1">Subscription & Billing</p>
-              <p>Subscriptions auto-renew monthly. You may cancel anytime from your dashboard. Refunds are handled on a case-by-case basis — contact us directly.</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Checkbox + CTA */}
-        <div className="p-5 border-t border-border/40 space-y-4">
-          <label className="flex items-start gap-3 cursor-pointer" onClick={() => setChecked(!checked)}>
+        {/* Single checkbox */}
+        <div className="p-5 space-y-4">
+          <label className="flex items-start gap-3 cursor-pointer" onClick={() => setChecked((c) => !c)}>
             <div
               className={`w-4 h-4 rounded border flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${
                 checked ? "bg-primary border-primary" : "border-border/60 bg-muted/20"
@@ -204,22 +172,27 @@ function TosModal({
             >
               {checked && <Check className="w-3 h-3 text-white" />}
             </div>
-            <span className="text-xs text-muted-foreground leading-relaxed">
-              I have read and agree to the{" "}
-              <button
-                onClick={(e) => { e.stopPropagation(); navigate("/terms"); }}
+            <span className="text-xs text-muted-foreground leading-relaxed select-none">
+              I agree to the{" "}
+              <a
+                href={TOS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
                 className="text-primary hover:underline"
               >
                 Terms of Service
-              </button>{" "}
+              </a>{" "}
               and{" "}
-              <button
-                onClick={(e) => { e.stopPropagation(); navigate("/privacy"); }}
+              <a
+                href={PRIVACY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
                 className="text-primary hover:underline"
               >
                 Privacy Policy
-              </button>
-              . I understand that disputes will be resolved one-on-one with InboxBrief before any formal action.
+              </a>.
             </span>
           </label>
 
@@ -235,7 +208,7 @@ function TosModal({
                   Redirecting...
                 </span>
               ) : (
-                "Continue to Checkout"
+                "Continue to Payment"
               )}
             </Button>
             <Button variant="outline" className="border-border/60 text-foreground" onClick={onClose}>

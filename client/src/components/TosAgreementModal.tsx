@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -10,10 +9,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Shield, AlertTriangle } from "lucide-react";
+import { Shield } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+
+const TOS_URL =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_tos_v3_1bd41576.pdf";
+const PRIVACY_URL =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_privacy_v3_9fa80d21.pdf";
 
 interface TosAgreementModalProps {
   open: boolean;
@@ -23,12 +26,14 @@ interface TosAgreementModalProps {
   priceLabel: string;
 }
 
-export function TosAgreementModal({ open, onClose, onAccepted, planName, priceLabel }: TosAgreementModalProps) {
-  const [, navigate] = useLocation();
-  const [checkedTos, setCheckedTos] = useState(false);
-  const [checkedLiability, setCheckedLiability] = useState(false);
-  const [checkedArbitration, setCheckedArbitration] = useState(false);
-  const [checkedRefund, setCheckedRefund] = useState(false);
+export function TosAgreementModal({
+  open,
+  onClose,
+  onAccepted,
+  planName,
+  priceLabel,
+}: TosAgreementModalProps) {
+  const [checked, setChecked] = useState(false);
 
   const acceptTosMutation = trpc.legal.acceptTos.useMutation({
     onSuccess: () => {
@@ -39,11 +44,9 @@ export function TosAgreementModal({ open, onClose, onAccepted, planName, priceLa
     },
   });
 
-  const allChecked = checkedTos && checkedLiability && checkedArbitration && checkedRefund;
-
   const handleAccept = () => {
-    if (!allChecked) {
-      toast.error("Please confirm all agreements before proceeding.");
+    if (!checked) {
+      toast.error("Please confirm the agreement before proceeding.");
       return;
     }
     acceptTosMutation.mutate({ tosVersion: "1.0" });
@@ -51,123 +54,89 @@ export function TosAgreementModal({ open, onClose, onAccepted, planName, priceLa
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="bg-card border border-border/60 max-w-lg w-full max-h-[90vh] flex flex-col gap-0 p-0">
-        <DialogHeader className="p-6 pb-4 border-b border-border/40">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-primary" />
+      <DialogContent className="bg-card border border-border/60 max-w-sm w-full p-0">
+        <DialogHeader className="p-5 pb-4 border-b border-border/40">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Shield className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
-                Before you subscribe
+              <DialogTitle className="text-sm font-bold" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+                {planName} Plan
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                {planName} · {priceLabel}
+                {priceLabel} · Confirm to continue
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6 py-4 max-h-[50vh]">
-          <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-            <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4 flex gap-3">
-              <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-yellow-200/80">
-                Please read and confirm each statement below. These agreements are legally binding and govern your use of InboxBrief.
-              </p>
+        <div className="p-5 space-y-4">
+          {/* Single minimal checkbox */}
+          <label
+            className="flex items-start gap-3 cursor-pointer"
+            htmlFor="tos-modal-check"
+            onClick={() => setChecked((c) => !c)}
+          >
+            <div
+              className={`w-4 h-4 rounded border flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${
+                checked ? "bg-primary border-primary" : "border-border/60 bg-muted/20"
+              }`}
+            >
+              {checked && (
+                <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
             </div>
+            <span className="text-xs text-muted-foreground leading-relaxed select-none">
+              I agree to the{" "}
+              <a
+                href={TOS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-primary hover:underline"
+              >
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a
+                href={PRIVACY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-primary hover:underline"
+              >
+                Privacy Policy
+              </a>
+              .
+            </span>
+          </label>
 
-            <div className="space-y-3">
-              {/* ToS */}
-              <div className="flex gap-3 p-3 rounded-lg bg-background/50 border border-border/30">
-                <Checkbox
-                  id="tos-check"
-                  checked={checkedTos}
-                  onCheckedChange={(v) => setCheckedTos(!!v)}
-                  className="mt-0.5 flex-shrink-0"
-                />
-                <Label htmlFor="tos-check" className="text-xs text-foreground/80 leading-relaxed cursor-pointer">
-                  I agree to the{" "}
-                  <button
-                    type="button"
-                    onClick={() => { window.open("https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_tos_v3_1bd41576.pdf", "_blank"); }}
-                    className="text-primary hover:underline"
-                  >
-                    Terms of Service
-                  </button>
-                  {" "}and{" "}
-                  <button
-                    type="button"
-                    onClick={() => { window.open("https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_privacy_v3_9fa80d21.pdf", "_blank"); }}
-                    className="text-primary hover:underline"
-                  >
-                    Privacy Policy
-                  </button>
-                  .
-                </Label>
-              </div>
-
-              {/* Liability */}
-              <div className="flex gap-3 p-3 rounded-lg bg-background/50 border border-border/30">
-                <Checkbox
-                  id="liability-check"
-                  checked={checkedLiability}
-                  onCheckedChange={(v) => setCheckedLiability(!!v)}
-                  className="mt-0.5 flex-shrink-0"
-                />
-                <Label htmlFor="liability-check" className="text-xs text-foreground/80 leading-relaxed cursor-pointer">
-                  I understand and accept the limitation of liability provisions set forth in the Terms of Service.
-                </Label>
-              </div>
-
-              {/* Arbitration */}
-              <div className="flex gap-3 p-3 rounded-lg bg-background/50 border border-border/30">
-                <Checkbox
-                  id="arbitration-check"
-                  checked={checkedArbitration}
-                  onCheckedChange={(v) => setCheckedArbitration(!!v)}
-                  className="mt-0.5 flex-shrink-0"
-                />
-                <Label htmlFor="arbitration-check" className="text-xs text-foreground/80 leading-relaxed cursor-pointer">
-                  I agree to the dispute resolution and arbitration provisions set forth in the Terms of Service.
-                </Label>
-              </div>
-
-              {/* Refund */}
-              <div className="flex gap-3 p-3 rounded-lg bg-background/50 border border-border/30">
-                <Checkbox
-                  id="refund-check"
-                  checked={checkedRefund}
-                  onCheckedChange={(v) => setCheckedRefund(!!v)}
-                  className="mt-0.5 flex-shrink-0"
-                />
-                <Label htmlFor="refund-check" className="text-xs text-foreground/80 leading-relaxed cursor-pointer">
-                  I understand the billing, refund, and cancellation policies set forth in the Terms of Service.
-                </Label>
-              </div>
-            </div>
+          <div className="flex gap-2">
+            <Button
+              className="flex-1 bg-primary hover:bg-primary/90 text-white border-0 h-10"
+              disabled={!checked || acceptTosMutation.isPending}
+              onClick={handleAccept}
+            >
+              {acceptTosMutation.isPending ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Processing...
+                </span>
+              ) : (
+                "Continue to Payment"
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              className="text-muted-foreground hover:text-foreground h-10"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
           </div>
-        </ScrollArea>
-
-        <div className="p-6 pt-4 border-t border-border/40 flex flex-col gap-3">
-          <Button
-            className="w-full bg-primary hover:bg-primary/90 text-white border-0 h-11 disabled:opacity-40"
-            disabled={!allChecked || acceptTosMutation.isPending}
-            onClick={handleAccept}
-          >
-            {acceptTosMutation.isPending ? "Recording agreement..." : "I Agree — Continue to Payment"}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full text-muted-foreground hover:text-foreground"
-            onClick={onClose}
-          >
-            Cancel
-          </Button>
-          <p className="text-xs text-muted-foreground text-center">
-            Your agreement is recorded with a timestamp and IP address for legal compliance.
-          </p>
         </div>
       </DialogContent>
     </Dialog>
