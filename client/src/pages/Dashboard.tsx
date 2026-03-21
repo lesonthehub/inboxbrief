@@ -323,8 +323,8 @@ export default function Dashboard() {
             <span className="font-bold text-base sm:text-lg" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
-            {/* Admin shortcut — visible only to whitelisted admin emails */}
-            {user?.email && ["lesterantoine@inboxbrief.org", "lesterantoine@16starcollective.com"].includes(user.email) && (
+            {/* Admin shortcut — visible only to admin role accounts */}
+            {user?.role === "admin" && (
               <Button
                 variant="ghost"
                 size="sm"

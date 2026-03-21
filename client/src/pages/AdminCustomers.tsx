@@ -36,11 +36,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-const ADMIN_EMAILS = [
-  "lesterantoine@inboxbrief.org",
-  "lesterantoine@16starcollective.com",
-];
-
 type AdminUser = {
   id: number;
   name: string | null;
@@ -87,7 +82,7 @@ export default function AdminCustomers() {
   const [modalInput, setModalInput] = useState("");
   const [newRole, setNewRole] = useState<"user" | "admin">("user");
 
-  const isAuthorized = isAuthenticated && user?.email && ADMIN_EMAILS.includes(user.email);
+  const isAuthorized = isAuthenticated && user?.role === "admin";
 
   const { data, isLoading, refetch } = trpc.adminUsers.list.useQuery(
     { limit: 200, offset: 0 },

@@ -388,3 +388,18 @@
 ### Admin Verification
 - [x] Verified /admin/customers shows lastSignedIn dates (timeAgo + absolute date)
 - [x] Verified both /admin/customers and /admin/announcements enforce ADMIN_EMAILS whitelist
+
+## Round 13 Bug Fixes
+
+### Bug: SMS Verification OTP Not Delivered
+- [x] Root cause: announcements.getActive crashed with "db.select is not a function" (getDb() is async but was called without await in 9 places in routers.ts)
+- [x] Fixed: replaced all `const db = getDb()` with `const db = await getDb()` in routers.ts (20 occurrences)
+- [x] Twilio env vars confirmed present: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER (+18337629011)
+- [x] phoneVerification.ts and sms.ts logic verified correct
+- [x] Note: phone field shows 0000000000 and phoneVerified=false — user needs to re-enter real phone number in Settings
+
+### Bug: Admin Panel Not Visible After Login
+- [x] Root cause: user logged in with lesantoineiii@gmail.com (Google OAuth) but whitelist only had lesterantoine@inboxbrief.org
+- [x] Fixed: promoted lesantoineiii@gmail.com to role=admin in DB
+- [x] Fixed: replaced hardcoded ADMIN_EMAILS whitelist with role-based check (user?.role === 'admin') in Dashboard.tsx, AdminAnnouncements.tsx, AdminCustomers.tsx
+- [x] Admin Crown badge in Dashboard nav now shows for any role=admin account

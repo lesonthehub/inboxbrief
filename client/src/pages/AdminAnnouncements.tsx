@@ -85,12 +85,8 @@ export default function AdminAnnouncements() {
     onError: (e) => toast.error(e.message),
   });
 
-  // Enforce email whitelist — only specific accounts may access admin pages
-  const ADMIN_EMAILS = [
-    "lesterantoine@inboxbrief.org",
-    "lesterantoine@16starcollective.com",
-  ];
-  const isAuthorized = isAuthenticated && user?.email && ADMIN_EMAILS.includes(user.email);
+  // Enforce admin role — only accounts with role='admin' may access admin pages
+  const isAuthorized = isAuthenticated && user?.role === "admin";
 
   if (isAuthenticated && !isAuthorized) {
     navigate("/dashboard");

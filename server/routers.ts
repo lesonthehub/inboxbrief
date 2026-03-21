@@ -726,7 +726,7 @@ const internationalRouter = router({
 const announcementsRouter = router({
   // Public: get all active, non-expired announcements
   getActive: publicProcedure.query(async () => {
-    const db = getDb();
+    const db = await getDb();
     const now = new Date();
     const rows = await db
       .select()
@@ -744,7 +744,7 @@ const announcementsRouter = router({
   // Admin: list all announcements
   list: protectedProcedure.query(async ({ ctx }) => {
     if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
-    const db = getDb();
+    const db = await getDb();
     return db.select().from(announcements).orderBy(desc(announcements.createdAt));
   }),
 
@@ -759,7 +759,7 @@ const announcementsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
-      const db = getDb();
+      const db = await getDb();
       await db.insert(announcements).values({
         message: input.message,
         type: input.type,
@@ -783,7 +783,7 @@ const announcementsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
-      const db = getDb();
+      const db = await getDb();
       const { id, expiresAt, ...rest } = input;
       await db.update(announcements).set({
         ...rest,
@@ -797,7 +797,7 @@ const announcementsRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
-      const db = getDb();
+      const db = await getDb();
       await db.delete(announcements).where(eq(announcements.id, input.id));
       return { success: true };
     }),
@@ -853,7 +853,7 @@ const adminUsersRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot suspend your own account" });
-      const db = getDb();
+      const db = await getDb();
       await db.update(users).set({
         isActive: false,
         suspendedAt: new Date(),
@@ -868,7 +868,7 @@ const adminUsersRouter = router({
     .input(z.object({ userId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
-      const db = getDb();
+      const db = await getDb();
       await db.update(users).set({
         isActive: true,
         suspendedAt: null,
@@ -886,7 +886,7 @@ const adminUsersRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
-      const db = getDb();
+      const db = await getDb();
       await db.update(users).set({ adminNotes: input.notes }).where(eq(users.id, input.userId));
       return { success: true };
     }),
@@ -900,7 +900,7 @@ const adminUsersRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot delete your own account" });
-      const db = getDb();
+      const db = await getDb();
       // Anonymize PII, preserve audit trail
       await db.update(users).set({
         isActive: false,
