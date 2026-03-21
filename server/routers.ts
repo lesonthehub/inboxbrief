@@ -24,6 +24,7 @@ import { notifyOwner } from "./_core/notification";
 import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs, announcements } from "../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { sendVerificationOtp, verifyOtp } from "./phoneVerification";
+import { sendEmailVerificationOTP } from "./emailService";
 import { writeAuditLog } from "./security";
 
 // ─── Auth Router ───────────────────────────────────────────────────────────────
@@ -661,6 +662,87 @@ const phoneVerificationRouter = router({
   }),
 });
 
+// ─── Email Verification Router ──────────────────────────────────────────────
+
+const emailVerificationRouter = router({
+  sendCode: protectedProcedure.mutation(async ({ ctx }) => {
+    const user = await getUserById(ctx.user.id);
+    if (!user?.email) throw new TRPCError({ code: "BAD_REQUEST", message: "No email address on file." });
+    if (user.emailVerified) return { success: true, alreadyVerified: true };
+
+    // Rate-limit: check if a code was sent in the last 60 seconds
+    const now = Date.now();
+    if (user.emailVerificationExpiry && user.emailVerificationExpiry > now && (user.emailVerificationExpiry - now) > (14 * 60 * 1000)) {
+      throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "A verification code was recently sent. Please wait a moment before requesting another." });
+    }
+
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = now + 15 * 60 * 1000; // 15 minutes
+
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    await db.update(users).set({
+      emailVerificationCode: code,
+      emailVerificationExpiry: Math.floor(expiry / 1000), // store as unix seconds
+    }).where(eq(users.id, ctx.user.id));
+
+    const sent = await sendEmailVerificationOTP(user.email, code, user.name);
+    if (!sent) {
+      // SMTP not configured — return code in dev mode only
+      const isDev = process.env.NODE_ENV === "development";
+      if (isDev) {
+        console.log(`[EmailVerification] DEV MODE — code for ${user.email}: ${code}`);
+        return { success: true, devCode: code };
+      }
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Email delivery is not configured. Please contact support@inboxbrief.com." });
+    }
+
+    await writeAuditLog({ userId: ctx.user.id, action: "email_otp_sent", metadata: { email: user.email } });
+    return { success: true };
+  }),
+
+  verifyCode: protectedProcedure
+    .input(z.object({ code: z.string().length(6).regex(/^\d{6}$/, "Code must be 6 digits") }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await getUserById(ctx.user.id);
+      if (!user) throw new TRPCError({ code: "NOT_FOUND" });
+      if (user.emailVerified) return { success: true, alreadyVerified: true };
+
+      if (!user.emailVerificationCode || !user.emailVerificationExpiry) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No verification code found. Please request a new one." });
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+      if (user.emailVerificationExpiry < now) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Verification code has expired. Please request a new one." });
+      }
+
+      if (user.emailVerificationCode !== input.code) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Incorrect verification code. Please try again." });
+      }
+
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      await db.update(users).set({
+        emailVerified: true,
+        emailVerificationCode: null,
+        emailVerificationExpiry: null,
+      }).where(eq(users.id, ctx.user.id));
+
+      await writeAuditLog({ userId: ctx.user.id, action: "email_verified", metadata: { email: user.email } });
+      return { success: true };
+    }),
+
+  getStatus: protectedProcedure.query(async ({ ctx }) => {
+    const user = await getUserById(ctx.user.id);
+    return {
+      emailVerified: user?.emailVerified ?? false,
+      email: user?.email ?? null,
+    };
+  }),
+});
+
 // ─── Disclaimer Router ───────────────────────────────────────────────────────
 
 const disclaimerRouter = router({
@@ -933,6 +1015,7 @@ export const appRouter = router({
   legal: legalRouter,
   international: internationalRouter,
   phoneVerification: phoneVerificationRouter,
+  emailVerification: emailVerificationRouter,
   disclaimer: disclaimerRouter,
   announcements: announcementsRouter,
   adminUsers: adminUsersRouter,

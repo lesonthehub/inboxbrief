@@ -28,8 +28,14 @@ export interface SmsSendResult {
   error?: string;
 }
 
+// Outbound-only footer appended to every briefing SMS
+const OUTBOUND_FOOTER = "\n\nDo not reply. Support: support@inboxbrief.com";
+// Max SMS body length (Twilio auto-splits at 160, but we target 500 per plan limit)
+const MAX_SMS_CHARS = 500;
+
 /**
  * Sends an SMS briefing to the specified phone number.
+ * Appends an outbound-only footer and enforces the 500-char limit.
  * Messages over 160 chars are split by Twilio automatically.
  */
 export async function sendSmsBriefing(
@@ -43,8 +49,15 @@ export async function sendSmsBriefing(
     // Normalize phone number — ensure E.164 format
     const normalized = toPhone.startsWith("+") ? toPhone : `+1${toPhone.replace(/\D/g, "")}`;
 
+    // Enforce 500-char limit on the briefing body (before footer)
+    const maxBody = MAX_SMS_CHARS - OUTBOUND_FOOTER.length;
+    let body = message.length > maxBody
+      ? message.slice(0, maxBody - 1).replace(/\s+\S*$/, "") + "…"
+      : message;
+    body = body + OUTBOUND_FOOTER;
+
     const result = await client.messages.create({
-      body: message,
+      body,
       from,
       to: normalized,
     });

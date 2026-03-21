@@ -403,3 +403,21 @@
 - [x] Fixed: promoted lesantoineiii@gmail.com to role=admin in DB
 - [x] Fixed: replaced hardcoded ADMIN_EMAILS whitelist with role-based check (user?.role === 'admin') in Dashboard.tsx, AdminAnnouncements.tsx, AdminCustomers.tsx
 - [x] Admin Crown badge in Dashboard nav now shows for any role=admin account
+
+## Round 14 Changes
+
+### Email Verification
+- [ ] Add emailVerified, emailVerificationCode, emailVerificationExpiry fields to users table
+- [ ] Add sendEmailVerification and verifyEmail tRPC procedures
+- [ ] Add email verification step to Onboarding flow (after phone verification)
+- [ ] Add email verification UI to Settings page
+- [ ] Block briefings if email not verified (alongside phone verification check)
+- [ ] Send verification email via built-in notification or SMTP
+
+### Outbound-Only SMS Disclosure
+- [ ] Research: where and how to communicate outbound-only SMS number most effectively
+- [ ] Add "Do not reply to this number" footer to every SMS message sent
+- [ ] Add outbound-only notice in Onboarding phone step
+- [ ] Add outbound-only notice in Settings phone section
+- [ ] Add outbound-only notice in Dashboard briefing section
+- [ ] Configure Twilio number to reject/auto-respond to inbound calls and messages

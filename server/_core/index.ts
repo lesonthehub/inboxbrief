@@ -59,6 +59,21 @@ async function startServer() {
   // 5. Input sanitization: strip XSS payloads from all body fields
   app.use(sanitizeBodyMiddleware);
 
+  // ─── Twilio Inbound Webhooks ─────────────────────────────────────────────
+  // Reject all inbound voice calls with a TwiML <Reject> verb (free, no charge)
+  app.post("/api/twilio/voice", express.text({ type: "*/*" }), (_req, res) => {
+    res.set("Content-Type", "text/xml");
+    res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Reject/></Response>`);
+    console.log("[Twilio] Inbound call rejected");
+  });
+
+  // Auto-reply to any inbound SMS with a support redirect message
+  app.post("/api/twilio/sms", express.urlencoded({ extended: false }), (_req, res) => {
+    res.set("Content-Type", "text/xml");
+    res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>This number does not accept replies. For help, email support@inboxbrief.com or visit inboxbrief.org</Message></Response>`);
+    console.log("[Twilio] Inbound SMS auto-replied");
+  });
+
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // Email provider OAuth routes (Gmail, Outlook)

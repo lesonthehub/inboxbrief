@@ -71,6 +71,11 @@ export const users = mysqlTable("users", {
   failedAuthAttempts: int("failedAuthAttempts").default(0).notNull(),
   lockedUntil: timestamp("lockedUntil"),
 
+  // Email verification
+  emailVerified: boolean("emailVerified").default(false).notNull(),
+  emailVerificationCode: varchar("emailVerificationCode", { length: 6 }),
+  emailVerificationExpiry: int("emailVerificationExpiry"),
+
   // Account suspension (admin-managed)
   isActive: boolean("isActive").default(true).notNull(),
   suspendedAt: timestamp("suspendedAt"),

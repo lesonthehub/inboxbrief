@@ -1,0 +1,19 @@
+{
+  "query": "ALTER TABLE users ADD COLUMN emailVerified BOOLEAN NOT NULL DEFAULT false; ALTER TABLE users ADD COLUMN emailVerificationCode VARCHAR(6) NULL; ALTER TABLE users ADD COLUMN emailVerificationExpiry BIGINT NULL; SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'users' AND COLUMN_NAME IN ('emailVerified', 'emailVerificationCode', 'emailVerificationExpiry');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user w9dq36781ZCdLqY.69818225e846 --database XbAFtDntDvaW6nENwp7sVJ --execute ALTER TABLE users ADD COLUMN emailVerified BOOLEAN NOT NULL DEFAULT false; ALTER TABLE users ADD COLUMN emailVerificationCode VARCHAR(6) NULL; ALTER TABLE users ADD COLUMN emailVerificationExpiry BIGINT NULL; SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'users' AND COLUMN_NAME IN ('emailVerified', 'emailVerificationCode', 'emailVerificationExpiry');",
+  "rows": [
+    {
+      "COLUMN_NAME": "emailVerified"
+    },
+    {
+      "COLUMN_NAME": "emailVerificationCode"
+    },
+    {
+      "COLUMN_NAME": "emailVerificationExpiry"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nemailVerified\nemailVerificationCode\nemailVerificationExpiry\n",
+  "stderr": "",
+  "execution_time_ms": 4637
+}

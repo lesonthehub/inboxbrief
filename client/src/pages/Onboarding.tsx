@@ -416,7 +416,7 @@ export default function Onboarding() {
                     className={`bg-input border-border ${phoneError ? "border-red-500" : ""}`}
                   />
                   {phoneError && <p className="text-xs text-red-400 mt-1">{phoneError}</p>}
-                  <p className="text-xs text-muted-foreground mt-1">Standard SMS rates may apply</p>
+                  <p className="text-xs text-muted-foreground mt-1">Standard SMS rates may apply. InboxBrief sends briefings to this number — <strong>outbound only, no replies or calls accepted.</strong></p>
                 </div>
 
                 {/* Referral code (collapsible) */}

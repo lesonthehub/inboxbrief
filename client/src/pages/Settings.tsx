@@ -6,7 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Shield, MessageSquare, ArrowLeft, User, Bell, CreditCard, Lock, CheckCircle, Phone } from "lucide-react";
+import { Shield, MessageSquare, ArrowLeft, User, Bell, CreditCard, Lock, CheckCircle, Phone, Mail } from "lucide-react";
 import { PhoneVerificationModal } from "@/components/PhoneVerificationModal";
 
 const TIMEZONES = [
@@ -24,10 +24,35 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [pendingPhone, setPendingPhone] = useState<string | null>(null);
+  const [emailOtpInput, setEmailOtpInput] = useState("");
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
 
   const utils = trpc.useUtils();
   const { data: settings } = trpc.settings.get.useQuery(undefined, { enabled: isAuthenticated });
   const { data: subStatus } = trpc.subscription.getStatus.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: emailStatus, refetch: refetchEmailStatus } = trpc.emailVerification.getStatus.useQuery(undefined, { enabled: isAuthenticated });
+
+  const sendEmailCode = trpc.emailVerification.sendCode.useMutation({
+    onSuccess: (data) => {
+      setEmailOtpSent(true);
+      if ((data as { devCode?: string }).devCode) {
+        toast.info(`Dev mode — code: ${(data as { devCode?: string }).devCode}`);
+      } else {
+        toast.success("Verification code sent to your email.");
+      }
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const verifyEmailCode = trpc.emailVerification.verifyCode.useMutation({
+    onSuccess: () => {
+      toast.success("Email verified successfully!");
+      setEmailOtpSent(false);
+      setEmailOtpInput("");
+      refetchEmailStatus();
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const updateSettings = trpc.settings.update.useMutation({
     onSuccess: () => {
@@ -95,6 +120,7 @@ export default function Settings() {
     ? Math.max(0, Math.ceil((new Date(subStatus.trialEndsAt).getTime() - Date.now()) / 86400000))
     : null;
   const isPhoneVerified = subStatus?.phoneVerified ?? false;
+  const isEmailVerified = emailStatus?.emailVerified ?? false;
   const isInternational = phone && !phone.replace(/\D/g, "").startsWith("1");
 
   return (
@@ -146,12 +172,79 @@ export default function Settings() {
               <label className="text-xs text-muted-foreground mb-1 block">Name</label>
               <p className="text-sm text-foreground font-medium">{user?.name ?? "—"}</p>
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Email</label>
-              <p className="text-sm text-foreground font-medium">{user?.email ?? "—"}</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Email</label>
+                <p className="text-sm text-foreground font-medium">{user?.email ?? "—"}</p>
+              </div>
+              {isEmailVerified ? (
+                <span className="text-xs text-green-400 flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3" /> Verified
+                </span>
+              ) : (
+                <span className="text-xs text-yellow-400 flex items-center gap-1">
+                  <Mail className="w-3 h-3" /> Unverified
+                </span>
+              )}
             </div>
           </div>
         </div>
+
+        {/* Email Verification */}
+        {!isEmailVerified && (
+          <div className="bg-card border border-yellow-500/30 rounded-xl p-5 sm:p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Mail className="w-4 h-4 text-yellow-400" />
+              <h2 className="font-semibold text-foreground" style={{ fontFamily: "Space Grotesk, sans-serif" }}>Verify Your Email</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Verify your email address to secure your account and receive important service notifications.
+            </p>
+            {!emailOtpSent ? (
+              <Button
+                className="bg-yellow-500 hover:bg-yellow-600 text-black border-0 font-semibold"
+                onClick={() => sendEmailCode.mutate()}
+                disabled={sendEmailCode.isPending}
+              >
+                {sendEmailCode.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    Sending...
+                  </span>
+                ) : "Send Verification Code"}
+              </Button>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">Enter the 6-digit code sent to <strong>{user?.email}</strong>. Expires in 15 minutes.</p>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    placeholder="000000"
+                    value={emailOtpInput}
+                    onChange={(e) => setEmailOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground w-36 font-mono text-lg tracking-widest text-center"
+                  />
+                  <Button
+                    className="bg-primary hover:bg-primary/90 text-white border-0"
+                    onClick={() => verifyEmailCode.mutate({ code: emailOtpInput })}
+                    disabled={emailOtpInput.length !== 6 || verifyEmailCode.isPending}
+                  >
+                    {verifyEmailCode.isPending ? "Verifying..." : "Verify"}
+                  </Button>
+                </div>
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                  onClick={() => { setEmailOtpSent(false); setEmailOtpInput(""); }}
+                >
+                  Resend code
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Notification Settings */}
         <div className="bg-card border border-border/40 rounded-xl p-5 sm:p-6">
@@ -187,6 +280,11 @@ export default function Settings() {
                     <Phone className="w-3 h-3" /> Verification required on save
                   </span>
                 )}
+              </div>
+              <div className="mt-2 p-2.5 rounded-lg bg-muted/20 border border-border/30">
+                <p className="text-xs text-muted-foreground">
+                  <strong className="text-foreground">Outbound only.</strong> InboxBrief sends SMS briefings to this number. This number does not accept replies or phone calls. For support, email <a href="mailto:support@inboxbrief.com" className="text-primary hover:underline">support@inboxbrief.com</a>.
+                </p>
               </div>
               {isInternational && (
                 <div className="mt-2 p-2.5 rounded-lg bg-indigo-950/40 border border-indigo-500/20">
