@@ -439,3 +439,4 @@
 - [x] TosModal (Pricing.tsx): Removed entire "Key Terms Summary" block, reduced to single checkbox: "I agree to the Terms of Service and Privacy Policy."
 - [x] TosAgreementModal (Settings): Rewrote to single checkbox with same minimal language, removed 4-checkbox verbose pattern, removed navigate() calls
 - [x] DisclaimerBanner: Already correct — uses <a target="_blank"> and minimal one-liner (no changes needed)
+- [x] Update all outgoing emails to send from support@inboxbrief.org
