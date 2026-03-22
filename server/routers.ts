@@ -16,9 +16,9 @@ import {
 import { encrypt, safeDecrypt } from "./encryption";
 import { getGmailAuthUrl, getOutlookAuthUrl } from "./emailProviders";
 import { runBriefingPipeline } from "./briefingPipeline";
-import { createCheckoutSession, createPortalSession } from "./stripeProducts";
+import { createCheckoutSession, createPortalSession, getStripe } from "./stripeProducts";
+import { sendSmsBriefing, OWNER_EMAIL } from "./sms";
 import { PLANS, isSubscriptionActive, getDisplayPlans, INTERNATIONAL_SMS_SURCHARGE, isInternationalNumber } from "./plans";
-import { OWNER_EMAIL } from "./sms";
 import { processBriefingFeedback, SUPPORTED_LANGUAGES } from "./grok";
 import { notifyOwner } from "./_core/notification";
 import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs, announcements } from "../drizzle/schema";
@@ -999,6 +999,180 @@ const adminUsersRouter = router({
     }),
 });
 
+// ─── Admin Tools Router ────────────────────────────────────────────────────
+
+const adminToolsRouter = router({
+  // ─── System Stats ─────────────────────────────────────────────────────────
+  getStats: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const [allUsers, activeSubs, todayBriefings] = await Promise.all([
+      db.select({ id: users.id, isActive: users.isActive, createdAt: users.createdAt }).from(users),
+      db.select({ plan: subscriptions.plan, status: subscriptions.status }).from(subscriptions),
+      db.select({ id: briefingLogs.id }).from(briefingLogs).where(
+        and(eq(briefingLogs.smsStatus, "sent"))
+      ),
+    ]);
+
+    const totalUsers = allUsers.length;
+    const activeUsers = allUsers.filter(u => u.isActive).length;
+    const newUsersToday = allUsers.filter(u => u.createdAt && new Date(u.createdAt) >= todayStart).length;
+    const activeSubscriptions = activeSubs.filter(s => s.status === "active").length;
+    const briefingsTodayCount = todayBriefings.length;
+
+    // MRR estimate from active subscriptions
+    const planPrices: Record<string, number> = { starter: 19, pro: 39, business: 99 };
+    const mrr = activeSubs
+      .filter(s => s.status === "active")
+      .reduce((sum, s) => sum + (planPrices[s.plan ?? ""] ?? 0), 0);
+
+    return { totalUsers, activeUsers, newUsersToday, activeSubscriptions, mrr, briefingsTodayCount };
+  }),
+
+  // ─── Coupon Management ────────────────────────────────────────────────────
+  listCoupons: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+    const stripe = getStripe();
+    const coupons = await stripe.coupons.list({ limit: 100 });
+    return coupons.data.map(c => ({
+      id: c.id,
+      name: c.name ?? c.id,
+      percentOff: c.percent_off ?? null,
+      amountOff: c.amount_off ? c.amount_off / 100 : null,
+      currency: c.currency ?? null,
+      duration: c.duration,
+      durationInMonths: c.duration_in_months ?? null,
+      maxRedemptions: c.max_redemptions ?? null,
+      timesRedeemed: c.times_redeemed,
+      valid: c.valid,
+      createdAt: new Date(c.created * 1000),
+    }));
+  }),
+
+  createCoupon: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1).max(64),
+      type: z.enum(["percent", "amount"]),
+      percentOff: z.number().min(1).max(100).optional(),
+      amountOff: z.number().min(0.5).optional(), // in dollars
+      duration: z.enum(["once", "repeating", "forever"]),
+      durationInMonths: z.number().min(1).max(24).optional(),
+      maxRedemptions: z.number().min(1).optional(),
+      expiresAt: z.string().optional(), // ISO date string
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const stripe = getStripe();
+
+      const params: Record<string, unknown> = {
+        name: input.name,
+        duration: input.duration,
+      };
+
+      if (input.type === "percent") {
+        if (!input.percentOff) throw new TRPCError({ code: "BAD_REQUEST", message: "percentOff required for percent coupon" });
+        params.percent_off = input.percentOff;
+      } else {
+        if (!input.amountOff) throw new TRPCError({ code: "BAD_REQUEST", message: "amountOff required for amount coupon" });
+        params.amount_off = Math.round(input.amountOff * 100); // convert to cents
+        params.currency = "usd";
+      }
+
+      if (input.duration === "repeating") {
+        if (!input.durationInMonths) throw new TRPCError({ code: "BAD_REQUEST", message: "durationInMonths required for repeating coupon" });
+        params.duration_in_months = input.durationInMonths;
+      }
+
+      if (input.maxRedemptions) params.max_redemptions = input.maxRedemptions;
+      if (input.expiresAt) params.redeem_by = Math.floor(new Date(input.expiresAt).getTime() / 1000);
+
+      const coupon = await stripe.coupons.create(params as Parameters<typeof stripe.coupons.create>[0]);
+      await writeAuditLog({ userId: ctx.user.id, action: "coupon_created", metadata: { couponId: coupon.id, name: coupon.name } });
+      return { success: true, couponId: coupon.id };
+    }),
+
+  deleteCoupon: protectedProcedure
+    .input(z.object({ couponId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const stripe = getStripe();
+      await stripe.coupons.del(input.couponId);
+      await writeAuditLog({ userId: ctx.user.id, action: "coupon_deleted", metadata: { couponId: input.couponId } });
+      return { success: true };
+    }),
+
+  // ─── Manual Briefing Trigger ──────────────────────────────────────────────
+  triggerBriefingForUser: protectedProcedure
+    .input(z.object({ userId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      const targetUser = await getUserById(input.userId);
+      if (!targetUser) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      if (!targetUser.phone) throw new TRPCError({ code: "BAD_REQUEST", message: "User has no phone number" });
+
+      const result = await runBriefingPipeline(input.userId, "manual_admin");
+      await writeAuditLog({ userId: ctx.user.id, action: "admin_triggered_briefing", metadata: { targetUserId: input.userId } });
+      return result;
+    }),
+
+  // ─── Broadcast SMS ────────────────────────────────────────────────────────
+  broadcastSms: protectedProcedure
+    .input(z.object({
+      message: z.string().min(10).max(400),
+      targetGroup: z.enum(["all_active", "subscribers_only", "trial_only"]),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      // Get target users
+      let targetUsers = await db
+        .select({ id: users.id, phone: users.phone, phoneVerified: users.phoneVerified })
+        .from(users)
+        .where(eq(users.isActive, true));
+
+      if (input.targetGroup === "subscribers_only") {
+        const activeSubs = await db.select({ userId: subscriptions.userId }).from(subscriptions).where(eq(subscriptions.status, "active"));
+        const subUserIds = new Set(activeSubs.map(s => s.userId));
+        targetUsers = targetUsers.filter(u => subUserIds.has(u.id));
+      } else if (input.targetGroup === "trial_only") {
+        const activeSubs = await db.select({ userId: subscriptions.userId }).from(subscriptions).where(eq(subscriptions.status, "active"));
+        const subUserIds = new Set(activeSubs.map(s => s.userId));
+        targetUsers = targetUsers.filter(u => !subUserIds.has(u.id));
+      }
+
+      // Only send to verified phone numbers
+      const eligible = targetUsers.filter(u => u.phone && u.phoneVerified);
+
+      let sent = 0;
+      let failed = 0;
+      for (const u of eligible) {
+        const result = await sendSmsBriefing(u.phone!, `[InboxBrief] ${input.message}`);
+        if (result.success) sent++;
+        else failed++;
+        // Small delay to avoid Twilio rate limits
+        await new Promise(r => setTimeout(r, 100));
+      }
+
+      await writeAuditLog({
+        userId: ctx.user.id,
+        action: "admin_broadcast_sms",
+        metadata: { message: input.message.slice(0, 50), targetGroup: input.targetGroup, sent, failed },
+      });
+
+      return { success: true, sent, failed, total: eligible.length };
+    }),
+});
+
 // ─── App Router ────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -1019,5 +1193,6 @@ export const appRouter = router({
   disclaimer: disclaimerRouter,
   announcements: announcementsRouter,
   adminUsers: adminUsersRouter,
+  adminTools: adminToolsRouter,
 });
 export type AppRouter = typeof appRouter;

@@ -363,6 +363,13 @@ export default function Dashboard() {
                         <Crown className="w-3.5 h-3.5 text-amber-400" />
                         Announcements
                       </button>
+                      <button
+                        onClick={() => { setAdminMenuOpen(false); navigate("/admin/tools"); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-foreground hover:bg-muted/30 transition-colors text-left"
+                      >
+                        <Crown className="w-3.5 h-3.5 text-amber-400" />
+                        Admin Tools
+                      </button>
                     </div>
                   </>
                 )}
@@ -491,7 +498,7 @@ export default function Dashboard() {
               size="sm"
               variant="outline"
               className="border-border/60 text-foreground hover:border-primary/50 flex-1 text-xs"
-              onClick={() => toast.info("Gmail OAuth — configure GOOGLE_CLIENT_ID in Settings → Secrets to enable.")}
+              onClick={() => { window.location.href = "/api/oauth/gmail/start"; }}
             >
               <Plus className="w-3.5 h-3.5 mr-1.5" />
               Connect Gmail
@@ -500,7 +507,7 @@ export default function Dashboard() {
               size="sm"
               variant="outline"
               className="border-border/60 text-foreground hover:border-primary/50 flex-1 text-xs"
-              onClick={() => toast.info("Outlook OAuth — configure MICROSOFT_CLIENT_ID in Settings → Secrets to enable.")}
+              onClick={() => { window.location.href = "/api/oauth/outlook/start"; }}
             >
               <Plus className="w-3.5 h-3.5 mr-1.5" />
               Connect Outlook

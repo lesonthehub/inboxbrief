@@ -40,6 +40,9 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  // Trust the proxy (Manus/Nginx) so rate-limiter reads the real client IP from X-Forwarded-For
+  app.set("trust proxy", 1);
+
   // ⚠️ Stripe webhook MUST be registered BEFORE express.json() middleware
   registerStripeWebhook(app);
 

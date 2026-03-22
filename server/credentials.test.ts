@@ -26,6 +26,22 @@ describe("Twilio credentials", () => {
   });
 });
 
+describe("OAuth Redirect URIs", () => {
+  it("GOOGLE_REDIRECT_URI is set and is an absolute HTTPS URL", () => {
+    const uri = process.env.GOOGLE_REDIRECT_URI;
+    expect(uri, "GOOGLE_REDIRECT_URI must be set").toBeTruthy();
+    expect(uri).toMatch(/^https:\/\//);
+    expect(uri).toContain("/api/oauth/gmail/callback");
+  });
+
+  it("MICROSOFT_REDIRECT_URI is set and is an absolute HTTPS URL", () => {
+    const uri = process.env.MICROSOFT_REDIRECT_URI;
+    expect(uri, "MICROSOFT_REDIRECT_URI must be set").toBeTruthy();
+    expect(uri).toMatch(/^https:\/\//);
+    expect(uri).toContain("/api/oauth/outlook/callback");
+  });
+});
+
 describe("Google OAuth credentials", () => {
   it("GOOGLE_CLIENT_ID is set and non-empty", () => {
     const id = process.env.GOOGLE_CLIENT_ID;

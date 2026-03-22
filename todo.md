@@ -440,3 +440,22 @@
 - [x] TosAgreementModal (Settings): Rewrote to single checkbox with same minimal language, removed 4-checkbox verbose pattern, removed navigate() calls
 - [x] DisclaimerBanner: Already correct — uses <a target="_blank"> and minimal one-liner (no changes needed)
 - [x] Update all outgoing emails to send from support@inboxbrief.org
+
+## Round 18 Changes
+
+### Gmail/Microsoft OAuth Fix
+- [x] Audit Gmail OAuth route, callback URL, and env vars
+- [x] Audit Microsoft OAuth route, callback URL, and env vars
+- [x] Fix OAuth callback redirect URLs to use production domain
+- [x] Verify GOOGLE_CLIENT_ID/SECRET and MICROSOFT_CLIENT_ID/SECRET are wired correctly
+- [x] Test Gmail connect flow end-to-end (buttons now redirect to /api/oauth/gmail/start)
+- [x] Test Microsoft/Outlook connect flow end-to-end (buttons now redirect to /api/oauth/outlook/start)
+
+### Admin Panel Expansion
+- [x] Admin: Coupon generation (create % or $ off Stripe coupons, set expiry, usage limit)
+- [x] Admin: List all active coupons with usage stats
+- [x] Admin: Revoke/delete coupons
+- [x] Admin: System stats dashboard (total users, active subs, revenue MRR, briefings sent today)
+- [x] Admin: Manual briefing trigger for any user (by user ID)
+- [x] Admin: Broadcast SMS to all active subscribers
+- [x] Admin: Navigation updated with new admin pages (Admin Tools added to Crown dropdown)
