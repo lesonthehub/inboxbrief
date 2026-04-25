@@ -92,6 +92,7 @@ export default function Onboarding() {
   const [inboxChallenge, setInboxChallenge] = useState<InboxChallenge | null>(null);
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [smsConsent, setSmsConsent] = useState(false);
   const [referralCode, setReferralCode] = useState("");
   const [showReferral, setShowReferral] = useState(false);
   const [preferredLanguage, setPreferredLanguage] = useState("en");
@@ -155,6 +156,7 @@ export default function Onboarding() {
   const handleSubmit = () => {
     const err = validatePhone(phone);
     if (err) { setPhoneError(err); return; }
+    if (!smsConsent) { toast.error("Please agree to receive SMS briefings to continue."); return; }
     if (!userRole || !teamSize || !inboxChallenge) return;
 
     const finalBusiness = businessType === "Other" ? customBusiness || "Other" : businessType;
@@ -416,7 +418,28 @@ export default function Onboarding() {
                     className={`bg-input border-border ${phoneError ? "border-red-500" : ""}`}
                   />
                   {phoneError && <p className="text-xs text-red-400 mt-1">{phoneError}</p>}
-                  <p className="text-xs text-muted-foreground mt-1">Standard SMS rates may apply. InboxBrief sends briefings to this number — <strong>outbound only, no replies or calls accepted.</strong></p>
+                </div>
+
+                {/* SMS Consent — required for Twilio 10DLC compliance */}
+                <div className="mt-3 space-y-2">
+                  <label className="flex items-start gap-2.5 cursor-pointer group">
+                    <div
+                      onClick={() => setSmsConsent(!smsConsent)}
+                      className={`mt-0.5 w-4 h-4 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                        smsConsent
+                          ? "bg-primary border-primary"
+                          : "border-border group-hover:border-primary/60"
+                      }`}
+                    >
+                      {smsConsent && <Check className="w-2.5 h-2.5 text-white" />}
+                    </div>
+                    <span className="text-xs text-muted-foreground leading-relaxed">
+                      I agree to receive automated SMS briefings from InboxBrief at the number above. Message frequency varies based on your schedule (typically 1–3 msgs/day). Msg &amp; data rates may apply. Reply <strong className="text-foreground">STOP</strong> to cancel, <strong className="text-foreground">HELP</strong> for help. View our{" "}
+                      <a href="/privacy" target="_blank" className="text-primary underline underline-offset-2">Privacy Policy</a>{" "}and{" "}
+                      <a href="/terms" target="_blank" className="text-primary underline underline-offset-2">Terms of Service</a>.
+                    </span>
+                  </label>
+                  <p className="text-xs text-muted-foreground pl-6">Outbound only — replies and calls are not accepted.</p>
                 </div>
 
                 {/* Referral code (collapsible) */}

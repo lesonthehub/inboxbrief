@@ -459,3 +459,9 @@
 - [x] Admin: Manual briefing trigger for any user (by user ID)
 - [x] Admin: Broadcast SMS to all active subscribers
 - [x] Admin: Navigation updated with new admin pages (Admin Tools added to Crown dropdown)
+
+## Round 19 Changes
+
+### Twilio 10DLC Campaign Fix
+- [x] Update SMS opt-in CTA language in Onboarding to meet Twilio 10DLC requirements (explicit consent checkbox, message frequency, STOP/HELP instructions, privacy policy link)
+- [ ] Provide Twilio campaign resubmission guidance
