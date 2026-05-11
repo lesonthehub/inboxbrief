@@ -464,4 +464,11 @@
 
 ### Twilio 10DLC Campaign Fix
 - [x] Update SMS opt-in CTA language in Onboarding to meet Twilio 10DLC requirements (explicit consent checkbox, message frequency, STOP/HELP instructions, privacy policy link)
-- [ ] Provide Twilio campaign resubmission guidance
+- [x] Provide Twilio campaign resubmission guidance
+
+## Round 20 Changes
+
+### Twilio 30909 Fix — Public SMS Opt-In Page
+- [x] Create public /sms-opt-in page (no login required) showing consent checkbox, frequency, STOP/HELP, privacy/terms links — for Twilio CTA verification
+- [x] Register /sms-opt-in route in App.tsx
+- [x] Add link to /sms-opt-in in site footer
