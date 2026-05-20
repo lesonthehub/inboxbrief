@@ -1213,12 +1213,20 @@ const contactRouter = router({
         <pre>${consentLines}</pre>
       `;
 
-      await sendEmail({
-        to: ownerEmail,
+      const emailPayload = {
         subject: `[InboxBrief] Contact form: ${input.name}`,
         html,
         text: `Name: ${input.name}\nEmail: ${input.email}\n${input.phone ? `Phone: ${input.phone}\n` : ''}\nMessage:\n${input.message}\n\nConsent:\n${consentLines}`,
-      });
+      };
+
+      // Send to owner
+      await sendEmail({ to: ownerEmail, ...emailPayload });
+
+      // Always CC support@inboxbrief.org (unless it's already the owner address)
+      const supportEmail = 'support@inboxbrief.org';
+      if (ownerEmail.toLowerCase() !== supportEmail) {
+        await sendEmail({ to: supportEmail, ...emailPayload });
+      }
 
       // Also notify owner via platform notification
       await notifyOwner({
