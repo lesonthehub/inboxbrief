@@ -1188,9 +1188,7 @@ const contactRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      if (!input.consentPrivacy) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'You must accept the Privacy Policy and Terms of Service to submit.' });
-      }
+      // consentPrivacy is optional — no validation required
 
       const { sendEmail } = await import('./emailService');
       const ownerEmail = OWNER_EMAIL || process.env.FROM_EMAIL || 'support@inboxbrief.org';
