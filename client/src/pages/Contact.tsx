@@ -252,7 +252,7 @@ export default function Contact() {
                       <Link href="/terms" className="text-primary underline underline-offset-2 hover:text-primary/80">
                         Terms of Services
                       </Link>
-                      . <span className="text-red-400">*</span>
+.
                     </ConsentBox>
                   </div>
 
