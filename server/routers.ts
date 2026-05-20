@@ -1173,6 +1173,63 @@ const adminToolsRouter = router({
     }),
 });
 
+// ─── Contact Router ──────────────────────────────────────────────────────────
+const contactRouter = router({
+  submit: publicProcedure
+    .input(
+      z.object({
+        name: z.string().min(1).max(100),
+        email: z.string().email(),
+        phone: z.string().max(30).optional(),
+        message: z.string().min(10).max(2000),
+        consentNonMarketing: z.boolean(),
+        consentMarketing: z.boolean(),
+        consentPrivacy: z.boolean(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      if (!input.consentPrivacy) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'You must accept the Privacy Policy and Terms of Service to submit.' });
+      }
+
+      const { sendEmail } = await import('./emailService');
+      const ownerEmail = OWNER_EMAIL || process.env.FROM_EMAIL || 'support@inboxbrief.org';
+
+      const consentLines = [
+        input.consentNonMarketing ? '✓ Non-marketing SMS consent given' : '✗ Non-marketing SMS consent NOT given',
+        input.consentMarketing ? '✓ Marketing SMS consent given' : '✗ Marketing SMS consent NOT given',
+        '✓ Privacy Policy & Terms accepted',
+      ].join('\n');
+
+      const html = `
+        <h2>New Contact Form Submission</h2>
+        <p><strong>Name:</strong> ${input.name}</p>
+        <p><strong>Email:</strong> ${input.email}</p>
+        ${input.phone ? `<p><strong>Phone:</strong> ${input.phone}</p>` : ''}
+        <p><strong>Message:</strong></p>
+        <p>${input.message.replace(/\n/g, '<br>')}</p>
+        <hr/>
+        <h3>Consent</h3>
+        <pre>${consentLines}</pre>
+      `;
+
+      await sendEmail({
+        to: ownerEmail,
+        subject: `[InboxBrief] Contact form: ${input.name}`,
+        html,
+        text: `Name: ${input.name}\nEmail: ${input.email}\n${input.phone ? `Phone: ${input.phone}\n` : ''}\nMessage:\n${input.message}\n\nConsent:\n${consentLines}`,
+      });
+
+      // Also notify owner via platform notification
+      await notifyOwner({
+        title: `Contact form: ${input.name}`,
+        content: `Email: ${input.email}\n${input.phone ? `Phone: ${input.phone}\n` : ''}\n${input.message.slice(0, 200)}${input.message.length > 200 ? '...' : ''}`,
+      });
+
+      return { success: true };
+    }),
+});
+
 // ─── App Router ────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -1194,5 +1251,6 @@ export const appRouter = router({
   announcements: announcementsRouter,
   adminUsers: adminUsersRouter,
   adminTools: adminToolsRouter,
+  contact: contactRouter,
 });
 export type AppRouter = typeof appRouter;

@@ -17,6 +17,7 @@ import AdminAnnouncements from "./pages/AdminAnnouncements";
 import AdminCustomers from "./pages/AdminCustomers";
 import AdminTools from "./pages/AdminTools";
 import SmsOptIn from "./pages/SmsOptIn";
+import Contact from "./pages/Contact";
 import { DisclaimerBanner } from "./components/DisclaimerModal";
 import { AnnouncementBanner } from "./components/AnnouncementBanner";
 
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/admin/customers" component={AdminCustomers} />
       <Route path="/admin/tools" component={AdminTools} />
       <Route path="/sms-opt-in" component={SmsOptIn} />
+      <Route path="/contact" component={Contact} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

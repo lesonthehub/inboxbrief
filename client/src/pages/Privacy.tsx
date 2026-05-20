@@ -1,14 +1,20 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Shield, ArrowLeft, MessageSquare } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
-const EFFECTIVE_DATE = "March 21, 2026";
-const PRIVACY_VERSION = "3.0";
-const PRIVACY_PDF_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_privacy_v3_9fa80d21.pdf";
-const GOOGLE_PRIVACY_PDF_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_google_privacy_v3_3e6848bf.pdf";
-const COMPANY = "InboxBrief";
-const SERVICE = "InboxBrief";
-const CONTACT_EMAIL = "support@inboxbrief.com";
+const EFFECTIVE_DATE = "May 20, 2026";
+const CONTACT_EMAIL = "support@inboxbrief.org";
+
+function Section({ num, title, children }: { num: number; title: string; children: React.ReactNode }) {
+  return (
+    <section className="mb-8">
+      <h2 className="text-lg font-semibold text-foreground mb-3">
+        {num}. {title}
+      </h2>
+      <div className="text-muted-foreground leading-relaxed space-y-3 text-sm">{children}</div>
+    </section>
+  );
+}
 
 export default function Privacy() {
   const [, navigate] = useLocation();
@@ -19,16 +25,12 @@ export default function Privacy() {
         <div className="container flex items-center justify-between h-14">
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            className="font-bold text-sm text-foreground hover:text-primary transition-colors"
+            style={{ fontFamily: "Space Grotesk, sans-serif" }}
           >
-            <span className="font-bold text-sm" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
+            InboxBrief
           </button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-foreground gap-1.5"
-            onClick={() => navigate(-1 as any)}
-          >
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5" onClick={() => navigate(-1 as any)}>
             <ArrowLeft className="w-4 h-4" />
             Back
           </Button>
@@ -36,106 +38,118 @@ export default function Privacy() {
       </nav>
 
       <div className="container max-w-3xl mx-auto py-10 sm:py-16 px-4">
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Shield className="w-5 h-5 text-primary" />
-            <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Legal</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-bold mb-3" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
-            Privacy Policy
-          </h1>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <p className="text-muted-foreground text-sm">
-              Version {PRIVACY_VERSION} · Effective {EFFECTIVE_DATE}
-            </p>
-            <a
-              href={PRIVACY_PDF_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary hover:underline font-medium"
-            >
-              Download PDF ↗
-            </a>
-            <a
-              href={GOOGLE_PRIVACY_PDF_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-blue-400 hover:underline font-medium"
-            >
-              Google User Data Policy ↗
-            </a>
-          </div>
+        <div className="mb-10">
+          <h1 className="text-3xl sm:text-4xl font-bold mb-3" style={{ fontFamily: "Space Grotesk, sans-serif" }}>Privacy Policy</h1>
+          <p className="text-sm text-muted-foreground">Effective Date: {EFFECTIVE_DATE}</p>
         </div>
 
-        <div className="prose prose-invert prose-sm max-w-none space-y-8 text-foreground/90 leading-relaxed">
+        <div className="prose prose-sm max-w-none">
+          <p className="text-muted-foreground leading-relaxed mb-8 text-sm">
+            InboxBrief, ("InboxBrief", "we", "us", or "our") respects your privacy and is committed to protecting it through this Privacy Policy. This policy explains how we collect, use, disclose, and safeguard your information when you visit:{" "}
+            <a href="https://inboxbrief.org/" className="text-primary underline underline-offset-2">https://inboxbrief.org/</a>{" "}
+            or engage with our services, including SMS communications.
+          </p>
 
-          <section>
-            <p className="text-muted-foreground text-sm bg-card border border-border/40 rounded-xl p-4">
-              {COMPANY} ("we," "us," or "our") operates {SERVICE}. This Privacy Policy explains how we collect, use, disclose, and protect your information. By using the Service, you consent to the practices described herein.
+          <Section num={1} title="Information We Collect">
+            <p>We may collect the following information:</p>
+            <p><strong className="text-foreground">Personal Information:</strong> Name, email address, phone number, mailing address.</p>
+            <p><strong className="text-foreground">Mobile Information:</strong> Phone number provided for SMS communications.</p>
+            <p><strong className="text-foreground">Usage Data:</strong> IP address, browser type, pages visited, time spent on pages.</p>
+            <p><strong className="text-foreground">Cookies &amp; Tracking Data:</strong> See Section 6 below.</p>
+          </Section>
+
+          <Section num={2} title="How We Use Your Information">
+            <p>We use your information to:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Provide and manage our services</li>
+              <li>Communicate with you regarding your account or inquiries</li>
+              <li>Send SMS messages you have opted into</li>
+              <li>Improve our website and services</li>
+              <li>Comply with legal obligations</li>
+            </ul>
+          </Section>
+
+          <Section num={3} title="SMS Communications & Consent">
+            <p>
+              By providing your mobile phone number and opting in, you expressly consent to receive automated and non-automated SMS messages from InboxBrief, including but not limited to:
             </p>
-          </section>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Customer support messages</li>
+              <li>Service updates and notifications</li>
+              <li>Appointment reminders</li>
+              <li>Promotional and marketing messages</li>
+            </ul>
+            <p><strong className="text-foreground">Message Frequency:</strong> May vary.</p>
+            <p><strong className="text-foreground">Message &amp; Data Rates:</strong> Standard message and data rates may apply.</p>
+            <p><strong className="text-foreground">Opt-Out:</strong> You may opt out at any time by replying <strong className="text-foreground">STOP</strong> to any message. Reply <strong className="text-foreground">HELP</strong> for assistance.</p>
+            <p><strong className="text-foreground">Consent Not Required for Purchase:</strong> Your consent to receive SMS messages is not a condition of purchasing any goods or services.</p>
+          </Section>
 
-          <section>
-            <h2 className="text-xl font-bold text-foreground mb-3" style={{ fontFamily: "Space Grotesk, sans-serif" }}>1. Information We Collect</h2>
-            <p><strong>Account Information:</strong> Name, email address, phone number, and authentication credentials provided during registration.</p>
-            <p className="mt-2"><strong>Onboarding Data:</strong> Business type, team size, and inbox challenge answers used to personalize your experience.</p>
-            <p className="mt-2"><strong>Email Content (Transient):</strong> We access your connected email account to fetch and process emails. Raw email content is processed in memory only and is never stored in plaintext. Summaries are encrypted with AES-256-GCM before storage.</p>
-            <p className="mt-2"><strong>OAuth Tokens:</strong> Access and refresh tokens for connected email accounts are encrypted with AES-256-GCM before storage.</p>
-            <p className="mt-2"><strong>Usage Data:</strong> Briefing logs (metadata only — counts, timestamps, delivery status), feedback ratings, and schedule preferences.</p>
-            <p className="mt-2"><strong>Payment Information:</strong> Payment processing is handled entirely by Stripe. We store only Stripe customer and subscription IDs — never card numbers or financial details.</p>
-          </section>
+          <Section num={4} title="Sharing of Information">
+            <p>
+              We do not sell, rent, or share your personal information with third-party companies for their marketing purposes.
+            </p>
+            <p>
+              No mobile information will be shared with third parties/affiliates for marketing/promotional purposes. Information sharing to subcontractors in support services, such as customer service, is permitted. All other use case categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties.
+            </p>
+          </Section>
 
-          <section>
-            <h2 className="text-xl font-bold text-foreground mb-3" style={{ fontFamily: "Space Grotesk, sans-serif" }}>2. How We Use Your Information</h2>
-            <p>We use your information to: (a) provide and improve the Service; (b) generate and deliver SMS briefings; (c) process payments and manage subscriptions; (d) send service-related communications; (e) personalize briefing tone and content based on your preferences; and (f) comply with legal obligations.</p>
-            <p className="mt-2">We do not sell your personal information to third parties. We do not use your email content for advertising, profiling, or any purpose other than generating your briefings.</p>
-          </section>
+          <Section num={5} title="Data Security">
+            <p>
+              We implement reasonable administrative, technical, and physical safeguards designed to protect your information. However, no method of transmission over the internet is 100% secure.
+            </p>
+          </Section>
 
-          <section>
-            <h2 className="text-xl font-bold text-foreground mb-3" style={{ fontFamily: "Space Grotesk, sans-serif" }}>3. Data Retention</h2>
-            <p>Account data is retained for the duration of your account and for up to 90 days after deletion. Encrypted briefing summaries are retained for up to 12 months to support your briefing history. OAuth tokens are deleted when you disconnect an email account. You may request deletion of your data at any time by contacting {CONTACT_EMAIL}.</p>
-          </section>
+          <Section num={6} title="Cookies & Tracking Technologies">
+            <p>We use cookies and similar tracking technologies to:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Analyze website traffic and usage</li>
+              <li>Improve user experience</li>
+              <li>Understand user behavior</li>
+            </ul>
+            <p>
+              You may control cookie settings through your browser preferences. Disabling cookies may affect website functionality.
+            </p>
+          </Section>
 
-          <section>
-            <h2 className="text-xl font-bold text-foreground mb-3" style={{ fontFamily: "Space Grotesk, sans-serif" }}>4. Data Security</h2>
-            <p>We implement AES-256-GCM encryption for all sensitive stored data, including email summaries and OAuth tokens. Data is encrypted before it is written to our database. We use HTTPS for all data in transit. However, no security measure is 100% foolproof, and we cannot guarantee absolute security.</p>
-          </section>
+          <Section num={7} title="Your Rights & Choices">
+            <p>You have the right to:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Access, correct, or delete your personal information</li>
+              <li>Opt out of marketing communications</li>
+              <li>Withdraw SMS consent at any time by replying STOP</li>
+            </ul>
+            <p>To exercise these rights, contact us using the information below.</p>
+          </Section>
 
-          <section>
-            <h2 className="text-xl font-bold text-foreground mb-3" style={{ fontFamily: "Space Grotesk, sans-serif" }}>5. Third-Party Sharing</h2>
-            <p>We share data only with: (a) email providers (Google, Microsoft) as necessary to access your connected accounts; (b) Stripe for payment processing; (c) SMS carriers for message delivery; and (d) infrastructure providers (hosting, database) under data processing agreements. We do not share your data with advertisers or data brokers.</p>
-          </section>
+          <Section num={8} title="Children's Privacy">
+            <p>
+              Our services are not intended for individuals under the age of 18. We do not knowingly collect information from minors.
+            </p>
+          </Section>
 
-          <section>
-            <h2 className="text-xl font-bold text-foreground mb-3" style={{ fontFamily: "Space Grotesk, sans-serif" }}>6. Your Rights</h2>
-            <p>Depending on your jurisdiction, you may have rights to: access, correct, delete, or export your personal data; withdraw consent; and lodge a complaint with a supervisory authority. To exercise these rights, contact us at {CONTACT_EMAIL}.</p>
-          </section>
+          <Section num={9} title="Contact Us">
+            <p>If you have questions about this Privacy Policy or our SMS practices, contact us at:</p>
+            <p>
+              <strong className="text-foreground">Email:</strong>{" "}
+              <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary underline underline-offset-2">{CONTACT_EMAIL}</a>
+            </p>
+            <p>
+              Or use our{" "}
+              <a href="/contact" className="text-primary underline underline-offset-2">Contact Us page</a>.
+            </p>
+          </Section>
+        </div>
 
-          <section>
-            <h2 className="text-xl font-bold text-foreground mb-3" style={{ fontFamily: "Space Grotesk, sans-serif" }}>7. Cookies</h2>
-            <p>We use session cookies for authentication only. We do not use tracking cookies, advertising cookies, or third-party analytics cookies.</p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-foreground mb-3" style={{ fontFamily: "Space Grotesk, sans-serif" }}>8. Contact</h2>
-            <p>For privacy inquiries: <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline">{CONTACT_EMAIL}</a></p>
-          </section>
-
-          <div className="border-t border-border/40 pt-6 text-xs text-muted-foreground">
-            <p>{COMPANY} · Last updated: {EFFECTIVE_DATE}</p>
+        <div className="mt-10 pt-6 border-t border-border text-xs text-muted-foreground flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <span>© {new Date().getFullYear()} InboxBrief. All rights reserved.</span>
+          <div className="flex items-center gap-4">
+            <a href="/terms" className="hover:text-foreground transition-colors underline underline-offset-2">Terms of Service</a>
+            <a href="/sms-opt-in" className="hover:text-foreground transition-colors underline underline-offset-2">SMS Terms</a>
+            <a href="/contact" className="hover:text-foreground transition-colors underline underline-offset-2">Contact</a>
           </div>
         </div>
       </div>
-
-      <footer className="border-t border-border/40 py-6 px-4">
-        <div className="container flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm text-muted-foreground">© 2026 InboxBrief. All rights reserved.</span>
-          <div className="flex gap-4 text-xs text-muted-foreground">
-            <button onClick={() => navigate("/terms")} className="hover:text-foreground transition-colors">Terms</button>
-            <button onClick={() => navigate("/privacy")} className="hover:text-foreground transition-colors">Privacy</button>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

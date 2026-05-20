@@ -2,12 +2,12 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Shield, ArrowLeft, MessageSquare } from "lucide-react";
 
-const TOS_VERSION = "3.0";
-const EFFECTIVE_DATE = "March 21, 2026";
+const TOS_VERSION = "4.0";
+const EFFECTIVE_DATE = "May 20, 2026";
 const TOS_PDF_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_tos_v3_1bd41576.pdf";
 const COMPANY = "InboxBrief";
 const SERVICE = "InboxBrief";
-const CONTACT_EMAIL = "support@inboxbrief.com";
+const CONTACT_EMAIL = "support@inboxbrief.org";
 const DOMAIN = "inboxbrief.org";
 
 export default function Terms() {
@@ -44,7 +44,7 @@ export default function Terms() {
             <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Legal</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold mb-3" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
-            Terms of Service
+            Terms of Services
           </h1>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <p className="text-muted-foreground text-sm">
@@ -62,6 +62,22 @@ export default function Terms() {
         </div>
 
         <div className="prose prose-invert prose-sm max-w-none space-y-8 text-foreground/90 leading-relaxed">
+
+          {/* SMS Program sections from InboxBrief.txt — prepended before existing detailed terms */}
+          <section>
+            <h2 className="text-xl font-bold text-foreground mb-3" style={{ fontFamily: "Space Grotesk, sans-serif" }}>SMS Program Description</h2>
+            <p className="text-muted-foreground text-sm mb-4">InboxBrief offers SMS messaging programs that may include:</p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground text-sm mb-4">
+              <li>Account notifications</li>
+              <li>Customer support communications</li>
+              <li>Appointment reminders</li>
+              <li>Promotional offers and updates (where consent is provided)</li>
+            </ul>
+            <p className="text-muted-foreground text-sm"><strong className="text-foreground">Opt-Out:</strong> Reply <strong className="text-foreground">STOP</strong> at any time to unsubscribe. Reply <strong className="text-foreground">HELP</strong> or contact: <a href="mailto:support@inboxbrief.org" className="text-primary hover:underline">support@inboxbrief.org</a></p>
+            <p className="text-muted-foreground text-sm mt-2"><strong className="text-foreground">Message Frequency &amp; Costs:</strong> Message frequency may vary. Message and data rates may apply depending on your carrier plan.</p>
+            <p className="text-muted-foreground text-sm mt-2"><strong className="text-foreground">Carrier Disclaimer:</strong> Wireless carriers are not liable for delayed or undelivered messages.</p>
+            <p className="text-muted-foreground text-sm mt-2"><strong className="text-foreground">Eligibility:</strong> You must be at least 18 years old to participate in our SMS programs.</p>
+          </section>
 
           <section>
             <p className="text-muted-foreground text-sm bg-card border border-border/40 rounded-xl p-4">

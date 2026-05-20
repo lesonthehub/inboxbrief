@@ -98,7 +98,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <span className="font-bold text-base sm:text-lg text-foreground" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -106,6 +106,14 @@ export default function Home() {
               onClick={() => navigate("/pricing")}
             >
               Pricing
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground hidden sm:inline-flex"
+              onClick={() => navigate("/contact")}
+            >
+              Contact
             </Button>
             {isAuthenticated ? (
               <Button
@@ -488,6 +496,12 @@ export default function Home() {
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               Enterprise
+            </button>
+            <button
+              onClick={() => navigate("/contact")}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Contact
             </button>
             <button
               onClick={() => navigate("/terms")}

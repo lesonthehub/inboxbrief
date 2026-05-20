@@ -472,3 +472,26 @@
 - [x] Create public /sms-opt-in page (no login required) showing consent checkbox, frequency, STOP/HELP, privacy/terms links — for Twilio CTA verification
 - [x] Register /sms-opt-in route in App.tsx
 - [x] Add link to /sms-opt-in in site footer
+
+## Round 21 Changes
+
+### Change 1 — Contact Us Page & Header Nav
+- [x] Create /contact page with proper header/nav including all main pages
+- [x] Add Contact Us to site header navigation
+
+### Change 2 — Button Audit
+- [x] Audit all buttons across the site for broken links or placeholder toasts
+- [x] Fix any non-functional buttons
+
+### Change 3 — Contact Us Form
+- [x] Add contact form with name, email, optional mobile, message fields
+- [x] Add non-marketing SMS consent checkbox (unchecked by default)
+- [x] Add marketing SMS consent checkbox (unchecked by default)
+- [x] Add Privacy Policy + Terms acceptance checkbox (unchecked by default)
+- [x] Wire form to backend tRPC procedure and send email notification to owner
+
+### Change 4 — Privacy Policy Rewrite
+- [x] Rewrite Privacy Policy to match provided format (9 sections including SMS communications)
+
+### Change 5 — Terms of Service Rewrite
+- [x] Rewrite Terms of Service to match provided format (9 sections including SMS program)
