@@ -61,7 +61,7 @@ export default function Contact() {
     if (!name.trim()) { toast.error("Please enter your name."); return; }
     if (!email.trim()) { toast.error("Please enter your email address."); return; }
     if (!message.trim() || message.trim().length < 10) { toast.error("Please enter a message (at least 10 characters)."); return; }
-    if (!consentPrivacy) { toast.error("You must accept the Privacy Policy and Terms of Service to submit."); return; }
+    // consentPrivacy is optional — no longer required to submit
 
     submitMutation.mutate({
       name: name.trim(),
@@ -258,7 +258,7 @@ export default function Contact() {
 
                   <Button
                     type="submit"
-                    disabled={submitMutation.isPending || !consentPrivacy}
+                    disabled={submitMutation.isPending}
                     className="w-full bg-primary hover:bg-primary/90 text-white border-0"
                   >
                     {submitMutation.isPending ? (
@@ -274,7 +274,7 @@ export default function Contact() {
                     )}
                   </Button>
                   <p className="text-xs text-muted-foreground text-center">
-                    Fields marked <span className="text-red-400">*</span> are required. The Privacy Policy acceptance is required to submit.
+                    Fields marked <span className="text-red-400">*</span> are required.
                   </p>
                 </form>
               )}
