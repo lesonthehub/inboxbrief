@@ -495,3 +495,19 @@
 
 ### Change 5 — Terms of Service Rewrite
 - [x] Rewrite Terms of Service to match provided format (9 sections including SMS program)
+
+## Round 22 Changes
+
+### Google & Microsoft OAuth Verification Prep
+- [x] Add Google API Limited Use Data Disclosure section to Privacy Policy
+- [x] Add Microsoft/Outlook data handling section to Privacy Policy
+- [x] Create public /data-usage page explaining Gmail and Outlook data access
+- [x] Add /data-usage to site footer and nav
+
+## Round 22 Changes
+
+### Google & Microsoft OAuth Verification Prep
+- [x] Add Google API Limited Use Data Disclosure section to Privacy Policy
+- [x] Add Microsoft/Outlook data handling section to Privacy Policy
+- [x] Create public /data-usage page explaining Gmail and Outlook data access
+- [x] Add /data-usage to site footer and nav

@@ -521,14 +521,12 @@ export default function Home() {
             >
               SMS Terms
             </button>
-            <a
-              href="https://d2xsxph8kpxj0f.cloudfront.net/310419663030996517/XbAFtDntDvaW6nENwp7sVJ/inboxbrief_google_privacy_v3_3e6848bf.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => navigate("/data-usage")}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              Google Data Policy
-            </a>
+              Data Usage
+            </button>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Shield className="w-3.5 h-3.5 text-green-400" />
               <span>AES-256-GCM Encrypted</span>
