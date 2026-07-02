@@ -1,7 +1,7 @@
 /**
  * Stripe Product & Price Configuration
  * Create these products once in your Stripe dashboard, then set the price IDs as env vars.
- * STRIPE_PRICE_STARTER, STRIPE_PRICE_PRO, STRIPE_PRICE_BUSINESS
+ * STRIPE_PRICE_SOLO, STRIPE_PRICE_PRO, STRIPE_PRICE_BUSINESS, STRIPE_PRICE_ENTERPRISE
  */
 import Stripe from "stripe";
 
@@ -11,11 +11,13 @@ export function getStripe(): Stripe {
   return new Stripe(key, { apiVersion: "2025-01-27.acacia" });
 }
 
+export type StripePlanId = "solo" | "pro" | "business" | "enterprise";
+
 export interface CheckoutSessionParams {
   userId: number;
   userEmail: string;
   userName: string;
-  plan: "starter" | "pro" | "business";
+  plan: StripePlanId;
   origin: string; // window.location.origin from frontend
 }
 
@@ -64,21 +66,24 @@ export async function createPortalSession(stripeCustomerId: string, origin: stri
   return session.url;
 }
 
-export function getPriceIdForPlan(plan: "starter" | "pro" | "business"): string | null {
+export function getPriceIdForPlan(plan: StripePlanId): string | null {
   const map: Record<string, string | undefined> = {
-    starter: process.env.STRIPE_PRICE_STARTER,
+    solo: process.env.STRIPE_PRICE_SOLO ?? process.env.STRIPE_PRICE_STARTER,
     pro: process.env.STRIPE_PRICE_PRO,
     business: process.env.STRIPE_PRICE_BUSINESS,
+    enterprise: process.env.STRIPE_PRICE_ENTERPRISE,
   };
   return map[plan] ?? null;
 }
 
-export function getPlanFromPriceId(priceId: string): "starter" | "pro" | "business" | null {
-  const starter = process.env.STRIPE_PRICE_STARTER;
+export function getPlanFromPriceId(priceId: string): StripePlanId | null {
+  const solo = process.env.STRIPE_PRICE_SOLO ?? process.env.STRIPE_PRICE_STARTER;
   const pro = process.env.STRIPE_PRICE_PRO;
   const business = process.env.STRIPE_PRICE_BUSINESS;
-  if (priceId === starter) return "starter";
+  const enterprise = process.env.STRIPE_PRICE_ENTERPRISE;
+  if (priceId === solo) return "solo";
   if (priceId === pro) return "pro";
   if (priceId === business) return "business";
+  if (priceId === enterprise) return "enterprise";
   return null;
 }

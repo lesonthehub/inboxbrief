@@ -180,7 +180,7 @@ const subscriptionRouter = router({
         userId: ctx.user.id,
         userEmail: user.email ?? OWNER_EMAIL,
         userName: user.name ?? "InboxBrief User",
-        plan: input.plan as "solo" | "pro" | "business",
+        plan: input.plan as "solo" | "pro" | "business" | "enterprise",
         origin: input.origin,
       });
 
