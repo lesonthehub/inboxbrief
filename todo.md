@@ -526,3 +526,14 @@
 - [x] Add US/CA phone number regex validation to phoneVerification.sendCode in routers.ts
 - [x] Reject obviously fake numbers (0000000000, invalid area codes) with clear error message
 - [x] Validation: strip non-digits, strip leading 1 for 11-digit numbers, test /^[2-9]\d{2}[2-9]\d{6}$/
+
+## Round 24 Changes
+
+### Forget Phone / Forget Email
+- [x] Add settings.forgetPhone tRPC mutation — clears phone and phoneVerified=false, writes audit log
+- [x] Add settings.forgetEmail tRPC mutation — clears emailVerified, emailVerificationCode, emailVerificationExpiry, writes audit log
+- [x] Settings.tsx: "Forget number" button next to Mobile Number label (only shown when a verified number exists)
+- [x] Settings.tsx: "Forget" button next to email Verified badge in Account section
+- [x] Both buttons open a ConfirmDialog modal (AlertTriangle icon, Cancel + red confirm button) before taking action
+- [x] After confirming forget phone: phone field cleared, subscription status invalidated, user must re-enter and re-verify
+- [x] After confirming forget email: email verification status cleared, user must re-verify before sending briefings

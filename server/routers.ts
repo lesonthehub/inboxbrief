@@ -358,6 +358,26 @@ const settingsRouter = router({
     }),
 
   getSupportedLanguages: publicProcedure.query(() => SUPPORTED_LANGUAGES),
+
+  forgetPhone: protectedProcedure.mutation(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    await db.update(users)
+      .set({ phone: null, phoneVerified: false })
+      .where(eq(users.id, ctx.user.id));
+    await writeAuditLog({ userId: ctx.user.id, action: "phone_forgotten", metadata: {} });
+    return { success: true };
+  }),
+
+  forgetEmail: protectedProcedure.mutation(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    await db.update(users)
+      .set({ emailVerified: false, emailVerificationCode: null, emailVerificationExpiry: null })
+      .where(eq(users.id, ctx.user.id));
+    await writeAuditLog({ userId: ctx.user.id, action: "email_verification_reset", metadata: {} });
+    return { success: true };
+  }),
 });
 
 // ─── Referral Router ───────────────────────────────────────────────────────────────

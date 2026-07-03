@@ -6,7 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Shield, MessageSquare, ArrowLeft, User, Bell, CreditCard, Lock, CheckCircle, Phone, Mail } from "lucide-react";
+import { Shield, MessageSquare, ArrowLeft, User, Bell, CreditCard, Lock, CheckCircle, Phone, Mail, Trash2, AlertTriangle } from "lucide-react";
 import { PhoneVerificationModal } from "@/components/PhoneVerificationModal";
 
 const TIMEZONES = [
@@ -14,6 +14,54 @@ const TIMEZONES = [
   "America/Phoenix", "America/Anchorage", "Pacific/Honolulu", "Europe/London",
   "Europe/Paris", "Asia/Tokyo", "Australia/Sydney",
 ];
+
+/** Simple inline confirmation dialog rendered as a card overlay */
+function ConfirmDialog({
+  title,
+  message,
+  confirmLabel,
+  onConfirm,
+  onCancel,
+  isPending,
+}: {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isPending: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+      <div className="bg-card border border-border/60 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
+          <div>
+            <h3 className="font-semibold text-foreground text-base" style={{ fontFamily: "Space Grotesk, sans-serif" }}>{title}</h3>
+            <p className="text-sm text-muted-foreground mt-1">{message}</p>
+          </div>
+        </div>
+        <div className="flex gap-3 pt-1">
+          <Button
+            variant="outline"
+            className="flex-1 border-border/60 text-muted-foreground hover:text-foreground bg-transparent"
+            onClick={onCancel}
+            disabled={isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            className="flex-1 bg-red-600 hover:bg-red-500 text-white border-0 font-semibold"
+            onClick={onConfirm}
+            disabled={isPending}
+          >
+            {isPending ? "Removing..." : confirmLabel}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Settings() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -26,6 +74,10 @@ export default function Settings() {
   const [pendingPhone, setPendingPhone] = useState<string | null>(null);
   const [emailOtpInput, setEmailOtpInput] = useState("");
   const [emailOtpSent, setEmailOtpSent] = useState(false);
+
+  // Forget confirmation state
+  const [confirmForgetPhone, setConfirmForgetPhone] = useState(false);
+  const [confirmForgetEmail, setConfirmForgetEmail] = useState(false);
 
   const utils = trpc.useUtils();
   const { data: settings } = trpc.settings.get.useQuery(undefined, { enabled: isAuthenticated });
@@ -52,6 +104,26 @@ export default function Settings() {
       refetchEmailStatus();
     },
     onError: (err) => toast.error(err.message),
+  });
+
+  const forgetPhone = trpc.settings.forgetPhone.useMutation({
+    onSuccess: () => {
+      toast.success("Phone number removed. You'll need to re-enter and verify a number to receive briefings.");
+      setConfirmForgetPhone(false);
+      setPhone("");
+      utils.settings.get.invalidate();
+      utils.subscription.getStatus.invalidate();
+    },
+    onError: (err) => { toast.error(err.message); setConfirmForgetPhone(false); },
+  });
+
+  const forgetEmail = trpc.settings.forgetEmail.useMutation({
+    onSuccess: () => {
+      toast.success("Email verification cleared. You'll need to re-verify your email to unlock all features.");
+      setConfirmForgetEmail(false);
+      refetchEmailStatus();
+    },
+    onError: (err) => { toast.error(err.message); setConfirmForgetEmail(false); },
   });
 
   const updateSettings = trpc.settings.update.useMutation({
@@ -125,6 +197,28 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Confirmation dialogs */}
+      {confirmForgetPhone && (
+        <ConfirmDialog
+          title="Forget phone number?"
+          message="This will remove your saved phone number and clear its verified status. You will need to enter and verify a new number before SMS briefings can be sent again."
+          confirmLabel="Yes, forget it"
+          onConfirm={() => forgetPhone.mutate()}
+          onCancel={() => setConfirmForgetPhone(false)}
+          isPending={forgetPhone.isPending}
+        />
+      )}
+      {confirmForgetEmail && (
+        <ConfirmDialog
+          title="Reset email verification?"
+          message="This will clear your email's verified status. You will need to re-verify your email address before you can send briefings or access all features."
+          confirmLabel="Yes, reset it"
+          onConfirm={() => forgetEmail.mutate()}
+          onCancel={() => setConfirmForgetEmail(false)}
+          isPending={forgetEmail.isPending}
+        />
+      )}
+
       {/* Phone Verification Modal */}
       {showPhoneVerification && pendingPhone && (
         <PhoneVerificationModal
@@ -172,20 +266,32 @@ export default function Settings() {
               <label className="text-xs text-muted-foreground mb-1 block">Name</label>
               <p className="text-sm text-foreground font-medium">{user?.name ?? "—"}</p>
             </div>
-            <div className="flex items-center justify-between">
-              <div>
+            {/* Email row with verified badge + forget button */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
                 <label className="text-xs text-muted-foreground mb-1 block">Email</label>
-                <p className="text-sm text-foreground font-medium">{user?.email ?? "—"}</p>
+                <p className="text-sm text-foreground font-medium truncate">{user?.email ?? "—"}</p>
               </div>
-              {isEmailVerified ? (
-                <span className="text-xs text-green-400 flex items-center gap-1">
-                  <CheckCircle className="w-3 h-3" /> Verified
-                </span>
-              ) : (
-                <span className="text-xs text-yellow-400 flex items-center gap-1">
-                  <Mail className="w-3 h-3" /> Unverified
-                </span>
-              )}
+              <div className="flex items-center gap-2 shrink-0">
+                {isEmailVerified ? (
+                  <>
+                    <span className="text-xs text-green-400 flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" /> Verified
+                    </span>
+                    <button
+                      onClick={() => setConfirmForgetEmail(true)}
+                      className="text-xs text-muted-foreground hover:text-red-400 flex items-center gap-1 transition-colors"
+                      title="Reset email verification"
+                    >
+                      <Trash2 className="w-3 h-3" /> Forget
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-xs text-yellow-400 flex items-center gap-1">
+                    <Mail className="w-3 h-3" /> Unverified
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -254,7 +360,19 @@ export default function Settings() {
           </div>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Mobile Number</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-foreground">Mobile Number</label>
+                {/* Forget phone — only show when a verified number is saved */}
+                {isPhoneVerified && settings?.phone && (
+                  <button
+                    onClick={() => setConfirmForgetPhone(true)}
+                    className="text-xs text-muted-foreground hover:text-red-400 flex items-center gap-1 transition-colors"
+                    title="Remove phone number"
+                  >
+                    <Trash2 className="w-3 h-3" /> Forget number
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Input
                   type="tel"
