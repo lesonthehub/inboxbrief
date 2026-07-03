@@ -511,3 +511,18 @@
 - [x] Add Microsoft/Outlook data handling section to Privacy Policy
 - [x] Create public /data-usage page explaining Gmail and Outlook data access
 - [x] Add /data-usage to site footer and nav
+
+## Round 23 Changes
+
+### Email Verification Banner & Gate
+- [x] Add emailVerifCode and showEmailVerifInput state vars to Dashboard.tsx
+- [x] Add trpc.emailVerification.getStatus query, sendCode mutation, verifyCode mutation to Dashboard.tsx
+- [x] Add isEmailVerifiedFinal const derived from emailVerifStatus
+- [x] Add email gate in handleTrigger (blocks briefing if email not verified)
+- [x] Add yellow verification banner JSX before Top Nav (shows Send Verification Email button, then 6-digit code input after send)
+- [x] Banner auto-hides once email is verified (isEmailVerifiedFinal becomes true)
+
+### Phone Number Format Validation
+- [x] Add US/CA phone number regex validation to phoneVerification.sendCode in routers.ts
+- [x] Reject obviously fake numbers (0000000000, invalid area codes) with clear error message
+- [x] Validation: strip non-digits, strip leading 1 for 11-digit numbers, test /^[2-9]\d{2}[2-9]\d{6}$/

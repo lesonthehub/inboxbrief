@@ -607,6 +607,16 @@ const phoneVerificationRouter = router({
   sendCode: protectedProcedure
     .input(z.object({ phone: z.string().min(10).max(20) }))
     .mutation(async ({ ctx, input }) => {
+      // Validate US/CA phone number — reject obviously fake numbers like 0000000000
+      const digitsOnly = input.phone.replace(/\D/g, "");
+      const phoneDigits = digitsOnly.startsWith("1") && digitsOnly.length === 11 ? digitsOnly.slice(1) : digitsOnly;
+      const validUsPhone = /^[2-9]\d{2}[2-9]\d{6}$/.test(phoneDigits);
+      if (!validUsPhone) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Please enter a valid US or Canadian phone number (e.g. 555-867-5309).",
+        });
+      }
       const result = await sendVerificationOtp(ctx.user.id, input.phone);
       if (!result.success) {
         if (result.error === "rate_limited") {

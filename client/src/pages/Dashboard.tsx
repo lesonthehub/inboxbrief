@@ -174,10 +174,26 @@ export default function Dashboard() {
   const [copiedInviteLink, setCopiedInviteLink] = useState(false);
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const [emailVerifCode, setEmailVerifCode] = useState("");
+  const [showEmailVerifInput, setShowEmailVerifInput] = useState(false);
 
   const utils = trpc.useUtils();
 
   const { data: subStatus, isLoading: subLoading } = trpc.subscription.getStatus.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: emailVerifStatus, refetch: refetchEmailVerif } = trpc.emailVerification.getStatus.useQuery(undefined, { enabled: isAuthenticated });
+  const sendVerifEmail = trpc.emailVerification.sendCode.useMutation({
+    onSuccess: () => { toast.success("Verification email sent! Check your inbox."); setShowEmailVerifInput(true); },
+    onError: (err) => toast.error(err.message),
+  });
+  const verifyEmailCode = trpc.emailVerification.verifyCode.useMutation({
+    onSuccess: () => {
+      toast.success("Email verified! You now have full access.");
+      refetchEmailVerif();
+      setEmailVerifCode("");
+      setShowEmailVerifInput(false);
+    },
+    onError: (err) => toast.error(err.message),
+  });
   const { data: emailAccounts } = trpc.emailAccounts.list.useQuery(undefined, { enabled: isAuthenticated });
   const { data: history, isLoading: historyLoading } = trpc.briefing.history.useQuery({ limit: 15 }, { enabled: isAuthenticated });
   const { data: settings } = trpc.settings.get.useQuery(undefined, { enabled: isAuthenticated });
@@ -252,6 +268,7 @@ export default function Dashboard() {
     );
   }
 
+  const isEmailVerifiedFinal = emailVerifStatus?.emailVerified ?? false;
   const isActive = subStatus?.isActive;
   const phoneVerified = subStatus?.phoneVerified ?? false;
   const userPhone = subStatus?.phone ?? user?.email ?? "";
@@ -269,6 +286,11 @@ export default function Dashboard() {
     }
     if (!emailAccounts || emailAccounts.length === 0) {
       toast.error("Connect an email account first.");
+      return;
+    }
+    // Email verification gate
+    if (!isEmailVerifiedFinal) {
+      toast.error("Please verify your email address before sending briefings.");
       return;
     }
     // Phone verification gate — must verify before first briefing or after number change
@@ -316,6 +338,50 @@ export default function Dashboard() {
           }}
           onClose={() => setShowPhoneVerification(false)}
         />
+      )}
+      {/* Email Verification Banner */}
+      {!isEmailVerifiedFinal && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-3">
+          <div className="container max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="flex items-center gap-2 flex-1">
+              <Mail className="w-4 h-4 text-yellow-400 shrink-0" />
+              <p className="text-sm text-yellow-200">
+                <span className="font-semibold">Email not verified.</span> Verify your email to unlock all features including briefings.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {!showEmailVerifInput ? (
+                <Button
+                  size="sm"
+                  className="bg-yellow-500 hover:bg-yellow-400 text-black font-semibold text-xs h-8"
+                  onClick={() => sendVerifEmail.mutate()}
+                  disabled={sendVerifEmail.isPending}
+                >
+                  {sendVerifEmail.isPending ? "Sending..." : "Send Verification Email"}
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Enter 6-digit code"
+                    value={emailVerifCode}
+                    onChange={e => setEmailVerifCode(e.target.value)}
+                    maxLength={6}
+                    className="w-36 h-8 text-xs bg-background/60 border-yellow-500/40"
+                  />
+                  <Button
+                    size="sm"
+                    className="bg-yellow-500 hover:bg-yellow-400 text-black font-semibold text-xs h-8"
+                    onClick={() => verifyEmailCode.mutate({ code: emailVerifCode })}
+                    disabled={verifyEmailCode.isPending || emailVerifCode.length !== 6}
+                  >
+                    {verifyEmailCode.isPending ? "Verifying..." : "Verify"}
+                  </Button>
+                  <button className="text-xs text-yellow-400 underline" onClick={() => sendVerifEmail.mutate()}>Resend</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
       {/* Top Nav */}
       <nav className="border-b border-border/40 bg-background/90 backdrop-blur-xl sticky top-0 z-40">
