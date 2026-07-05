@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, email, role, createdAt FROM users WHERE email = 'lesantoineiii@gmail.com';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user w9dq36781ZCdLqY.69818225e846 --database XbAFtDntDvaW6nENwp7sVJ --execute SELECT id, email, role, createdAt FROM users WHERE email = 'lesantoineiii@gmail.com';",
+  "rows": [
+    {
+      "id": "1",
+      "email": "lesantoineiii@gmail.com",
+      "role": "owner",
+      "createdAt": "2026-03-10 17:32:20"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\trole\tcreatedAt\n1\tlesantoineiii@gmail.com\towner\t2026-03-10 17:32:20\n",
+  "stderr": "",
+  "execution_time_ms": 600
+}
