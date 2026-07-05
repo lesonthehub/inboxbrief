@@ -857,7 +857,7 @@ const announcementsRouter = router({
 
   // Admin: list all announcements
   list: protectedProcedure.query(async ({ ctx }) => {
-    if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+    if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
     const db = await getDb();
     return db.select().from(announcements).orderBy(desc(announcements.createdAt));
   }),
@@ -872,7 +872,7 @@ const announcementsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       await db.insert(announcements).values({
         message: input.message,
@@ -896,7 +896,7 @@ const announcementsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       const { id, expiresAt, ...rest } = input;
       await db.update(announcements).set({
@@ -910,7 +910,7 @@ const announcementsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       await db.delete(announcements).where(eq(announcements.id, input.id));
       return { success: true };
@@ -927,7 +927,7 @@ const adminUsersRouter = router({
       offset: z.number().min(0).default(0),
     }))
     .query(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       const [users, total] = await Promise.all([
         getAllUsersAdmin(input.limit, input.offset),
         getAdminUserCount(),
@@ -939,7 +939,7 @@ const adminUsersRouter = router({
   getDetail: protectedProcedure
     .input(z.object({ userId: z.number() }))
     .query(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       const detail = await getUserWithSubscriptionAdmin(input.userId);
       if (!detail) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
       return detail;
@@ -1061,7 +1061,7 @@ const adminUsersRouter = router({
 const adminToolsRouter = router({
   // ─── System Stats ─────────────────────────────────────────────────────────
   getStats: protectedProcedure.query(async ({ ctx }) => {
-    if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+    if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
@@ -1093,7 +1093,7 @@ const adminToolsRouter = router({
 
   // ─── Coupon Management ────────────────────────────────────────────────────
   listCoupons: protectedProcedure.query(async ({ ctx }) => {
-    if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+    if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
     const stripe = getStripe();
     const coupons = await stripe.coupons.list({ limit: 100 });
     return coupons.data.map(c => ({
@@ -1123,7 +1123,7 @@ const adminToolsRouter = router({
       expiresAt: z.string().optional(), // ISO date string
     }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       const stripe = getStripe();
 
       const params: Record<string, unknown> = {
@@ -1156,7 +1156,7 @@ const adminToolsRouter = router({
   deleteCoupon: protectedProcedure
     .input(z.object({ couponId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       const stripe = getStripe();
       await stripe.coupons.del(input.couponId);
       await writeAuditLog({ userId: ctx.user.id, action: "coupon_deleted", metadata: { couponId: input.couponId } });
@@ -1167,7 +1167,7 @@ const adminToolsRouter = router({
   triggerBriefingForUser: protectedProcedure
     .input(z.object({ userId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
@@ -1187,7 +1187,7 @@ const adminToolsRouter = router({
       targetGroup: z.enum(["all_active", "subscribers_only", "trial_only"]),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 

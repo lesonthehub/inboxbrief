@@ -30,7 +30,7 @@ export const loginWithWarmUp = async (returnPath?: string): Promise<void> => {
   try {
     await Promise.race([
       fetch("/api/health"),
-      new Promise<void>(resolve => setTimeout(resolve, 8000)),
+      new Promise<void>(resolve => setTimeout(resolve, 2000)),
     ]);
   } catch {
     // Ignore errors — proceed to login even if ping fails

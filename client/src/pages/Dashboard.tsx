@@ -268,7 +268,8 @@ export default function Dashboard() {
     );
   }
 
-  const isEmailVerifiedFinal = emailVerifStatus?.emailVerified ?? false;
+  const isEmailVerifiedFinal = !!emailVerifStatus?.emailVerified;
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   const isActive = subStatus?.isActive;
   const phoneVerified = subStatus?.phoneVerified ?? false;
   const userPhone = subStatus?.phone ?? user?.email ?? "";
@@ -340,7 +341,7 @@ export default function Dashboard() {
         />
       )}
       {/* Email Verification Banner */}
-      {!isEmailVerifiedFinal && (
+      {!isEmailVerifiedFinal && !bannerDismissed && (
         <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-3">
           <div className="container max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="flex items-center gap-2 flex-1">
@@ -351,14 +352,17 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {!showEmailVerifInput ? (
-                <Button
-                  size="sm"
-                  className="bg-yellow-500 hover:bg-yellow-400 text-black font-semibold text-xs h-8"
-                  onClick={() => sendVerifEmail.mutate()}
-                  disabled={sendVerifEmail.isPending}
-                >
-                  {sendVerifEmail.isPending ? "Sending..." : "Send Verification Email"}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-yellow-500 hover:bg-yellow-400 text-black font-semibold text-xs h-8"
+                    onClick={() => sendVerifEmail.mutate()}
+                    disabled={sendVerifEmail.isPending}
+                  >
+                    {sendVerifEmail.isPending ? "Sending..." : "Send Verification Email"}
+                  </Button>
+                  <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setBannerDismissed(true)} aria-label="Dismiss">✕</button>
+                </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <Input
@@ -377,6 +381,7 @@ export default function Dashboard() {
                     {verifyEmailCode.isPending ? "Verifying..." : "Verify"}
                   </Button>
                   <button className="text-xs text-yellow-400 underline" onClick={() => sendVerifEmail.mutate()}>Resend</button>
+                  <button className="text-xs text-muted-foreground hover:text-foreground ml-1" onClick={() => setBannerDismissed(true)} aria-label="Dismiss">✕</button>
                 </div>
               )}
             </div>
