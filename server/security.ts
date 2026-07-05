@@ -19,20 +19,24 @@ import { auditLogs } from "../drizzle/schema";
 
 // ─── 1. Helmet Security Headers ──────────────────────────────────────────────
 
+const isDev = process.env.NODE_ENV !== "production";
+
 export const helmetMiddleware = helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://api.stripe.com", "https://api.manus.im"],
-      frameSrc: ["https://js.stripe.com", "https://hooks.stripe.com"],
-      objectSrc: ["'none'"],
-      upgradeInsecureRequests: [],
-    },
-  },
+  contentSecurityPolicy: isDev
+    ? false  // Disable CSP entirely in dev so Vite HMR/WebSocket works in the preview iframe
+    : {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com"],
+          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+          fontSrc: ["'self'", "https://fonts.gstatic.com"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'", "https://api.stripe.com", "https://api.manus.im"],
+          frameSrc: ["https://js.stripe.com", "https://hooks.stripe.com"],
+          objectSrc: ["'none'"],
+          upgradeInsecureRequests: [],
+        },
+      },
   hsts: {
     maxAge: 31536000, // 1 year
     includeSubDomains: true,
