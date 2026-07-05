@@ -386,9 +386,12 @@ export default function Dashboard() {
       {/* Top Nav */}
       <nav className="border-b border-border/40 bg-background/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="container flex items-center justify-between h-14 sm:h-16">
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
             <span className="font-bold text-base sm:text-lg" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
-          </div>
+          </button>
           <div className="flex items-center gap-1 sm:gap-2">
             {/* Admin dropdown — click-toggle, works on mobile and desktop */}
             {user?.role === "admin" && (
@@ -445,11 +448,13 @@ export default function Dashboard() {
               <Shield className="w-3.5 h-3.5" />
               Data Encrypted
             </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/settings")} className="text-muted-foreground hover:text-foreground p-2">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/settings")} className="text-muted-foreground hover:text-foreground gap-1.5 px-2.5">
               <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs">Settings</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={logout} className="text-muted-foreground hover:text-foreground p-2">
+            <Button variant="ghost" size="sm" onClick={logout} className="text-muted-foreground hover:text-foreground gap-1.5 px-2.5">
               <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs">Sign out</span>
             </Button>
           </div>
         </div>

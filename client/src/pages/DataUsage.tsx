@@ -30,7 +30,7 @@ export default function DataUsage() {
             variant="ghost"
             size="sm"
             className="text-muted-foreground hover:text-foreground gap-1.5"
-            onClick={() => navigate(-1 as any)}
+            onClick={() => navigate("/")}
           >
             <ArrowLeft className="w-4 h-4" />
             Back

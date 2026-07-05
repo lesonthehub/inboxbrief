@@ -236,15 +236,23 @@ export default function Settings() {
       {/* Nav */}
       <nav className="border-b border-border/40 bg-background/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="container flex items-center justify-between h-16">
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <div className="flex items-center gap-2">
-              <span className="font-bold" style={{ fontFamily: "Space Grotesk, sans-serif" }}>InboxBrief</span>
-            </div>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/")}
+              className="font-bold text-foreground hover:opacity-80 transition-opacity"
+              style={{ fontFamily: "Space Grotesk, sans-serif" }}
+            >
+              InboxBrief
+            </button>
+            <span className="text-border/60 hidden sm:inline">|</span>
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="hidden sm:flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Dashboard
+            </button>
+          </div>
           <div className="hidden sm:flex items-center gap-1.5 border border-green-500/30 bg-green-500/10 px-3 py-1.5 rounded-full text-xs font-medium text-green-400">
             <Shield className="w-3.5 h-3.5" />
             Data Encrypted

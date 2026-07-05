@@ -167,8 +167,8 @@ export default function AdminCustomers() {
       <nav className="sticky top-0 z-50 border-b border-border/40 bg-background/90 backdrop-blur-xl">
         <div className="container flex items-center justify-between h-14">
           <button
-            onClick={() => navigate("/dashboard")}
-            className="font-bold text-sm"
+            onClick={() => navigate("/")}
+            className="font-bold text-sm text-foreground hover:opacity-80 transition-opacity"
             style={{ fontFamily: "Space Grotesk, sans-serif" }}
           >
             InboxBrief

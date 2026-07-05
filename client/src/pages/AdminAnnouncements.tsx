@@ -135,12 +135,11 @@ export default function AdminAnnouncements() {
       <nav className="sticky top-0 z-50 border-b border-border/40 bg-background/90 backdrop-blur-xl">
         <div className="container flex items-center justify-between h-14">
           <button
-            onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => navigate("/")}
+            className="font-bold text-sm text-foreground hover:opacity-80 transition-opacity"
+            style={{ fontFamily: "Space Grotesk, sans-serif" }}
           >
-            <span className="font-bold text-sm" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
-              InboxBrief
-            </span>
+            InboxBrief
           </button>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground text-xs" onClick={() => navigate("/admin/customers")}>

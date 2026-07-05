@@ -537,3 +537,17 @@
 - [x] Both buttons open a ConfirmDialog modal (AlertTriangle icon, Cancel + red confirm button) before taking action
 - [x] After confirming forget phone: phone field cleared, subscription status invalidated, user must re-enter and re-verify
 - [x] After confirming forget email: email verification status cleared, user must re-verify before sending briefings
+
+## Round 25 Changes
+
+### Navigation & Branding Fixes
+- [x] Dashboard: InboxBrief title is now a clickable button linking to homepage (/)
+- [x] Dashboard: Settings button now shows "Settings" text label on desktop
+- [x] Dashboard: Logout button now shows "Sign out" text label on desktop
+- [x] Settings: InboxBrief title links to homepage; added explicit "← Dashboard" back link on desktop
+- [x] AdminAnnouncements: InboxBrief title links to homepage instead of /dashboard
+- [x] AdminCustomers: InboxBrief title links to homepage instead of /dashboard
+- [x] ManusDialog.tsx: Replaced "Please login with Manus to continue" / "Login with Manus" with InboxBrief branding
+- [x] Privacy.tsx: Fixed navigate(-1 as any) → navigate("/") to prevent /-1 broken URL
+- [x] Terms.tsx: Fixed navigate(-1 as any) → navigate("/") to prevent /-1 broken URL
+- [x] DataUsage.tsx: Fixed navigate(-1 as any) → navigate("/") to prevent /-1 broken URL
