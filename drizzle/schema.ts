@@ -16,7 +16,7 @@ export const users = mysqlTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "admin", "owner"]).default("user").notNull(),
 
   // Lead-qualifying onboarding answers
   phone: varchar("phone", { length: 32 }),
@@ -75,6 +75,11 @@ export const users = mysqlTable("users", {
   emailVerified: boolean("emailVerified").default(false).notNull(),
   emailVerificationCode: varchar("emailVerificationCode", { length: 6 }),
   emailVerificationExpiry: int("emailVerificationExpiry"),
+
+  // TOTP / Authenticator app (admin & owner only)
+  totpSecret: text("totpSecret"),
+  totpEnabled: boolean("totpEnabled").default(false).notNull(),
+  totpEnabledAt: timestamp("totpEnabledAt"),
 
   // Account suspension (admin-managed)
   isActive: boolean("isActive").default(true).notNull(),
@@ -252,3 +257,42 @@ export const announcements = mysqlTable("announcements", {
 
 export type Announcement = typeof announcements.$inferSelect;
 export type InsertAnnouncement = typeof announcements.$inferInsert;
+
+// ─── Admin Activity Log ───────────────────────────────────────────────────────
+// Immutable log of all admin/owner actions on customer accounts — visible only to owner
+
+export const adminActivityLog = mysqlTable("admin_activity_log", {
+  id: int("id").autoincrement().primaryKey(),
+  actorId: int("actorId").notNull(),       // admin or owner who performed the action
+  actorEmail: varchar("actorEmail", { length: 320 }),
+  actorRole: varchar("actorRole", { length: 16 }).notNull(),
+  targetUserId: int("targetUserId"),        // customer account affected (null for non-user actions)
+  targetEmail: varchar("targetEmail", { length: 320 }),
+  action: varchar("action", { length: 64 }).notNull(), // e.g. "suspend", "grant_service", "set_role"
+  details: text("details"),                // JSON or human-readable context
+  totpVerified: boolean("totpVerified").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AdminActivityLog = typeof adminActivityLog.$inferSelect;
+export type InsertAdminActivityLog = typeof adminActivityLog.$inferInsert;
+
+// ─── Service Grants ───────────────────────────────────────────────────────────
+// Owner-issued service access that bypasses the subscription/payment requirement
+
+export const serviceGrants = mysqlTable("service_grants", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  grantedBy: int("grantedBy").notNull(),   // owner userId
+  grantedByEmail: varchar("grantedByEmail", { length: 320 }),
+  reason: text("reason"),
+  plan: mysqlEnum("plan", ["solo", "pro", "business", "enterprise"]).default("pro").notNull(),
+  expiresAt: timestamp("expiresAt"),        // null = never expires
+  isActive: boolean("isActive").default(true).notNull(),
+  revokedAt: timestamp("revokedAt"),
+  revokedReason: text("revokedReason"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ServiceGrant = typeof serviceGrants.$inferSelect;
+export type InsertServiceGrant = typeof serviceGrants.$inferInsert;

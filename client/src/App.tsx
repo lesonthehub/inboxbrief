@@ -19,6 +19,7 @@ import AdminTools from "./pages/AdminTools";
 import SmsOptIn from "./pages/SmsOptIn";
 import Contact from "./pages/Contact";
 import DataUsage from "./pages/DataUsage";
+import OwnerDashboard from "./pages/OwnerDashboard";
 import { DisclaimerBanner } from "./components/DisclaimerModal";
 import { AnnouncementBanner } from "./components/AnnouncementBanner";
 
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/sms-opt-in" component={SmsOptIn} />
       <Route path="/contact" component={Contact} />
       <Route path="/data-usage" component={DataUsage} />
+      <Route path="/owner" component={OwnerDashboard} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

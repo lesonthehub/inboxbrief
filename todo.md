@@ -551,3 +551,20 @@
 - [x] Privacy.tsx: Fixed navigate(-1 as any) → navigate("/") to prevent /-1 broken URL
 - [x] Terms.tsx: Fixed navigate(-1 as any) → navigate("/") to prevent /-1 broken URL
 - [x] DataUsage.tsx: Fixed navigate(-1 as any) → navigate("/") to prevent /-1 broken URL
+
+## Round 26 Changes
+
+- [x] Added `owner` role to user role enum (schema + DB ALTER TABLE migration)
+- [x] Added `admin_activity_log` table (actor, target, action, TOTP verified flag, timestamp)
+- [x] Added `service_grants` table (owner can grant/revoke service access without payment plan)
+- [x] Added `totpSecret`, `totpEnabled`, `totpEnabledAt` fields to users table
+- [x] Added `verifyAdminTotp` server helper (validates speakeasy TOTP code, window=1)
+- [x] Added `logAdminActivity` server helper (writes to admin_activity_log)
+- [x] Added `totpRouter` (setup QR code, enable, verify, disable, getStatus)
+- [x] Added `ownerRouter` (getActivityLog, grantService, revokeService, listServiceGrants, setAdminRole, listAdmins)
+- [x] All admin mutations (suspend, unsuspend, setRole, updateNotes, softDelete) now require totpCode + log activity
+- [x] AdminCustomers.tsx: added TOTP code input field to all action modals
+- [x] Created OwnerDashboard.tsx at /owner (activity log, service grants, admin management)
+- [x] Promoted lesantoineiii@gmail.com to owner role in database
+- [x] Switched from otplib to speakeasy for TOTP (compatible with Google Authenticator, Authy, 1Password)
+- [x] Added /owner route to App.tsx

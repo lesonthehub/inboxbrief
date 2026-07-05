@@ -81,6 +81,7 @@ export default function AdminCustomers() {
   const [modalType, setModalType] = useState<ModalType>(null);
   const [modalInput, setModalInput] = useState("");
   const [newRole, setNewRole] = useState<"user" | "admin">("user");
+  const [totpCode, setTotpCode] = useState("");
 
   const isAuthorized = isAuthenticated && user?.role === "admin";
 
@@ -126,22 +127,24 @@ export default function AdminCustomers() {
     setModalType(null);
     setSelectedUser(null);
     setModalInput("");
+    setTotpCode("");
   }
 
   function handleConfirm() {
     if (!selectedUser) return;
+    if (totpCode.length !== 6) return toast.error("Enter your 6-digit authenticator code");
     if (modalType === "suspend") {
       if (!modalInput.trim()) return toast.error("Reason is required");
-      suspendMutation.mutate({ userId: selectedUser.id, reason: modalInput.trim() });
+      suspendMutation.mutate({ userId: selectedUser.id, reason: modalInput.trim(), totpCode });
     } else if (modalType === "unsuspend") {
-      unsuspendMutation.mutate({ userId: selectedUser.id });
+      unsuspendMutation.mutate({ userId: selectedUser.id, totpCode });
     } else if (modalType === "notes") {
-      notesMutation.mutate({ userId: selectedUser.id, notes: modalInput });
+      notesMutation.mutate({ userId: selectedUser.id, notes: modalInput, totpCode });
     } else if (modalType === "delete") {
       if (!modalInput.trim()) return toast.error("Reason is required");
-      deleteMutation.mutate({ userId: selectedUser.id, reason: modalInput.trim() });
+      deleteMutation.mutate({ userId: selectedUser.id, reason: modalInput.trim(), totpCode });
     } else if (modalType === "role") {
-      roleMutation.mutate({ userId: selectedUser.id, role: newRole });
+      roleMutation.mutate({ userId: selectedUser.id, role: newRole, totpCode });
     }
   }
 
@@ -386,6 +389,21 @@ export default function AdminCustomers() {
                 {newRole === "admin" && " This grants full admin access to all admin pages."}
               </p>
             )}
+
+            {/* TOTP gate — always required */}
+            <div className="pt-2 border-t border-border">
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Authenticator code (required)</label>
+              <Input
+                placeholder="6-digit code from your app"
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                maxLength={6}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                className="font-mono tracking-widest text-center"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Open your authenticator app (Google Authenticator, Authy, etc.) and enter the current code.</p>
+            </div>
           </div>
 
           <DialogFooter className="flex-col sm:flex-row gap-2">

@@ -21,11 +21,13 @@ import { sendSmsBriefing, OWNER_EMAIL } from "./sms";
 import { PLANS, isSubscriptionActive, getDisplayPlans, INTERNATIONAL_SMS_SURCHARGE, isInternationalNumber } from "./plans";
 import { processBriefingFeedback, SUPPORTED_LANGUAGES } from "./grok";
 import { notifyOwner } from "./_core/notification";
-import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs, announcements } from "../drizzle/schema";
+import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs, announcements, adminActivityLog, serviceGrants } from "../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { sendVerificationOtp, verifyOtp } from "./phoneVerification";
 import { sendEmailVerificationOTP } from "./emailService";
 import { writeAuditLog } from "./security";
+import speakeasy from "speakeasy";
+import QRCode from "qrcode";
 
 // ─── Auth Router ───────────────────────────────────────────────────────────────
 
@@ -948,11 +950,17 @@ const adminUsersRouter = router({
     .input(z.object({
       userId: z.number(),
       role: z.enum(["user", "admin"]),
+      totpCode: z.string().length(6),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot change your own role" });
+      await verifyAdminTotp(ctx.user.id, input.totpCode);
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
       await updateUser(input.userId, { role: input.role });
+      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target?.email ?? null, action: "set_role", details: JSON.stringify({ newRole: input.role }), totpVerified: true });
       return { success: true };
     }),
 
@@ -961,32 +969,41 @@ const adminUsersRouter = router({
     .input(z.object({
       userId: z.number(),
       reason: z.string().min(1).max(500),
+      totpCode: z.string().length(6),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot suspend your own account" });
+      await verifyAdminTotp(ctx.user.id, input.totpCode);
       const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
       await db.update(users).set({
         isActive: false,
         suspendedAt: new Date(),
         suspendedReason: input.reason,
         suspendedBy: ctx.user.id,
       }).where(eq(users.id, input.userId));
+      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target?.email ?? null, action: "suspend", details: input.reason, totpVerified: true });
       return { success: true };
     }),
 
   // Unsuspend a user account
   unsuspend: protectedProcedure
-    .input(z.object({ userId: z.number() }))
+    .input(z.object({ userId: z.number(), totpCode: z.string().length(6) }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+      await verifyAdminTotp(ctx.user.id, input.totpCode);
       const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
       await db.update(users).set({
         isActive: true,
         suspendedAt: null,
         suspendedReason: null,
         suspendedBy: null,
       }).where(eq(users.id, input.userId));
+      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target?.email ?? null, action: "unsuspend", totpVerified: true });
       return { success: true };
     }),
 
@@ -995,11 +1012,16 @@ const adminUsersRouter = router({
     .input(z.object({
       userId: z.number(),
       notes: z.string().max(2000),
+      totpCode: z.string().length(6),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+      await verifyAdminTotp(ctx.user.id, input.totpCode);
       const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
       await db.update(users).set({ adminNotes: input.notes }).where(eq(users.id, input.userId));
+      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target?.email ?? null, action: "update_notes", totpVerified: true });
       return { success: true };
     }),
 
@@ -1008,11 +1030,15 @@ const adminUsersRouter = router({
     .input(z.object({
       userId: z.number(),
       reason: z.string().min(1).max(500),
+      totpCode: z.string().length(6),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot delete your own account" });
+      await verifyAdminTotp(ctx.user.id, input.totpCode);
       const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
       // Anonymize PII, preserve audit trail
       await db.update(users).set({
         isActive: false,
@@ -1025,6 +1051,7 @@ const adminUsersRouter = router({
         suspendedBy: ctx.user.id,
         adminNotes: `Account soft-deleted by admin ${ctx.user.id} on ${new Date().toISOString()}. Reason: ${input.reason}`,
       }).where(eq(users.id, input.userId));
+      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target?.email ?? null, action: "soft_delete", details: input.reason, totpVerified: true });
       return { success: true };
     }),
 });
@@ -1266,6 +1293,246 @@ const contactRouter = router({
     }),
 });
 
+// ─── Helper: write admin activity log ───────────────────────────────────────
+async function logAdminActivity({
+  actorId, actorEmail, actorRole, targetUserId, targetEmail, action, details, totpVerified,
+}: {
+  actorId: number; actorEmail?: string | null; actorRole: string;
+  targetUserId?: number | null; targetEmail?: string | null;
+  action: string; details?: string; totpVerified?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(adminActivityLog).values({
+    actorId, actorEmail: actorEmail ?? null, actorRole,
+    targetUserId: targetUserId ?? null, targetEmail: targetEmail ?? null,
+    action, details: details ?? null,
+    totpVerified: totpVerified ?? false,
+  });
+}
+
+// ─── Helper: verify admin TOTP code ────────────────────────────────────────
+async function verifyAdminTotp(userId: number, code: string) {
+  const db = await getDb();
+  if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+  const [row] = await db.select({ totpSecret: users.totpSecret, totpEnabled: users.totpEnabled }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!row?.totpEnabled || !row.totpSecret) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Authenticator app not set up. Please enable TOTP in Settings before making changes to customer accounts." });
+  }
+  const secret = safeDecrypt(row.totpSecret);
+  if (!secret) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Could not decrypt TOTP secret" });
+  const isValid = speakeasy.totp.verify({ secret, encoding: 'base32', token: code, window: 1 });
+  if (!isValid) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid authenticator code. Please check your app and try again." });
+}
+
+// ─── TOTP Router (admin & owner only) ────────────────────────────────────────
+const totpRouter = router({
+  // Generate a new TOTP secret and return a QR code data URL for enrollment
+  setup: protectedProcedure.mutation(async ({ ctx }) => {
+    if (ctx.user.role !== "admin" && ctx.user.role !== "owner") {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Admin or owner access required" });
+    }
+    const secretObj = speakeasy.generateSecret({ length: 20, name: `InboxBrief:${ctx.user.email ?? ctx.user.name ?? 'admin'}`, issuer: 'InboxBrief' });
+    const secret = secretObj.base32;
+    const encryptedSecret = encrypt(secret);
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    // Store encrypted secret but don't enable yet (enable after first verify)
+    await db.update(users).set({ totpSecret: encryptedSecret, totpEnabled: false }).where(eq(users.id, ctx.user.id));
+    const otpAuthUrl = secretObj.otpauth_url ?? speakeasy.otpauthURL({ secret, label: ctx.user.email ?? ctx.user.name ?? 'admin', issuer: 'InboxBrief', encoding: 'base32' });
+    const qrCodeDataUrl = await QRCode.toDataURL(otpAuthUrl);
+    return { qrCodeDataUrl, secret };
+  }),
+
+  // Verify a TOTP code and enable TOTP for the account
+  enable: protectedProcedure
+    .input(z.object({ code: z.string().length(6) }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [row] = await db.select({ totpSecret: users.totpSecret }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
+      if (!row?.totpSecret) throw new TRPCError({ code: "BAD_REQUEST", message: "Run setup first" });
+      const secret = safeDecrypt(row.totpSecret);
+      if (!secret) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Could not decrypt TOTP secret" });
+      const isValid = speakeasy.totp.verify({ secret, encoding: 'base32', token: input.code, window: 1 });
+      if (!isValid) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid code — check your authenticator app and try again" });
+      await db.update(users).set({ totpEnabled: true, totpEnabledAt: new Date() }).where(eq(users.id, ctx.user.id));
+      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, action: "totp_enabled" });
+      return { success: true };
+    }),
+
+  // Verify a TOTP code without enabling (used as a gate before sensitive actions)
+  verify: protectedProcedure
+    .input(z.object({ code: z.string().length(6) }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [row] = await db.select({ totpSecret: users.totpSecret, totpEnabled: users.totpEnabled }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
+      if (!row?.totpEnabled || !row.totpSecret) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Authenticator app not set up. Please enable TOTP in Settings first." });
+      }
+      const secret = safeDecrypt(row.totpSecret);
+      if (!secret) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const isValid = speakeasy.totp.verify({ secret, encoding: 'base32', token: input.code, window: 1 });
+      if (!isValid) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid code" });
+      return { success: true };
+    }),
+
+  // Disable TOTP (requires current TOTP code)
+  disable: protectedProcedure
+    .input(z.object({ code: z.string().length(6) }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [row] = await db.select({ totpSecret: users.totpSecret, totpEnabled: users.totpEnabled }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
+      if (!row?.totpEnabled || !row.totpSecret) throw new TRPCError({ code: "BAD_REQUEST", message: "TOTP is not enabled" });
+      const secret = safeDecrypt(row.totpSecret);
+      if (!secret) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const isValid = speakeasy.totp.verify({ secret, encoding: 'base32', token: input.code, window: 1 });
+      if (!isValid) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid code" });
+      await db.update(users).set({ totpEnabled: false, totpSecret: null, totpEnabledAt: null }).where(eq(users.id, ctx.user.id));
+      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, action: "totp_disabled" });
+      return { success: true };
+    }),
+
+  getStatus: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const [row] = await db.select({ totpEnabled: users.totpEnabled, totpEnabledAt: users.totpEnabledAt }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
+    return { totpEnabled: row?.totpEnabled ?? false, totpEnabledAt: row?.totpEnabledAt ?? null };
+  }),
+});
+
+// ─── Owner Router ─────────────────────────────────────────────────────────────
+const ownerRouter = router({
+  // View admin activity log (owner only)
+  getActivityLog: protectedProcedure
+    .input(z.object({
+      limit: z.number().min(1).max(500).default(100),
+      offset: z.number().min(0).default(0),
+      actorId: z.number().optional(),
+      action: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Owner access required" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      let q = db.select().from(adminActivityLog).orderBy(desc(adminActivityLog.createdAt)).limit(input.limit).offset(input.offset);
+      const rows = await q;
+      return rows;
+    }),
+
+  // Grant service access to a user without payment (owner only)
+  grantService: protectedProcedure
+    .input(z.object({
+      userId: z.number(),
+      plan: z.enum(["solo", "pro", "business", "enterprise"]),
+      reason: z.string().max(500).optional(),
+      expiresAt: z.string().datetime().optional(), // ISO string or null for never
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Owner access required" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
+      // Deactivate any existing active grants for this user
+      await db.update(serviceGrants).set({ isActive: false, revokedAt: new Date(), revokedReason: "Superseded by new grant" }).where(and(eq(serviceGrants.userId, input.userId), eq(serviceGrants.isActive, true)));
+      await db.insert(serviceGrants).values({
+        userId: input.userId,
+        grantedBy: ctx.user.id,
+        grantedByEmail: ctx.user.email ?? null,
+        reason: input.reason ?? null,
+        plan: input.plan,
+        expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+        isActive: true,
+      });
+      await logAdminActivity({
+        actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role,
+        targetUserId: input.userId, targetEmail: target?.email ?? null,
+        action: "grant_service",
+        details: JSON.stringify({ plan: input.plan, reason: input.reason, expiresAt: input.expiresAt }),
+      });
+      return { success: true };
+    }),
+
+  // Revoke service access (owner only)
+  revokeService: protectedProcedure
+    .input(z.object({
+      userId: z.number(),
+      reason: z.string().max(500).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Owner access required" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
+      await db.update(serviceGrants).set({ isActive: false, revokedAt: new Date(), revokedReason: input.reason ?? null }).where(and(eq(serviceGrants.userId, input.userId), eq(serviceGrants.isActive, true)));
+      await logAdminActivity({
+        actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role,
+        targetUserId: input.userId, targetEmail: target?.email ?? null,
+        action: "revoke_service",
+        details: JSON.stringify({ reason: input.reason }),
+      });
+      return { success: true };
+    }),
+
+  // List all service grants (owner only)
+  listServiceGrants: protectedProcedure
+    .input(z.object({ activeOnly: z.boolean().default(true) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const rows = input.activeOnly
+        ? await db.select().from(serviceGrants).where(eq(serviceGrants.isActive, true)).orderBy(desc(serviceGrants.createdAt))
+        : await db.select().from(serviceGrants).orderBy(desc(serviceGrants.createdAt));
+      return rows;
+    }),
+
+  // Promote or demote admins (owner only — can set any role including owner)
+  setAdminRole: protectedProcedure
+    .input(z.object({
+      userId: z.number(),
+      role: z.enum(["user", "admin", "owner"]),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Owner access required" });
+      if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot change your own role" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
+      await db.update(users).set({ role: input.role }).where(eq(users.id, input.userId));
+      await logAdminActivity({
+        actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role,
+        targetUserId: input.userId, targetEmail: target?.email ?? null,
+        action: "set_role",
+        details: JSON.stringify({ newRole: input.role }),
+      });
+      return { success: true };
+    }),
+
+  // List all admins and owners (owner only)
+  listAdmins: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const rows = await db.select({
+      id: users.id, name: users.name, email: users.email, role: users.role,
+      totpEnabled: users.totpEnabled, totpEnabledAt: users.totpEnabledAt, createdAt: users.createdAt,
+    }).from(users).where(eq(users.role, "admin"));
+    return rows;
+  }),
+});
+
 // ─── App Router ────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -1288,5 +1555,7 @@ export const appRouter = router({
   adminUsers: adminUsersRouter,
   adminTools: adminToolsRouter,
   contact: contactRouter,
+  totp: totpRouter,
+  owner: ownerRouter,
 });
 export type AppRouter = typeof appRouter;
