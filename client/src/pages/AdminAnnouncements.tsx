@@ -50,7 +50,7 @@ export default function AdminAnnouncements() {
   const [form, setForm] = useState<AnnouncementForm>(EMPTY_FORM);
 
   const { data: announcements, isLoading } = trpc.announcements.list.useQuery(undefined, {
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && (user?.role === "admin" || user?.role === "owner"),
   });
 
   const createMutation = trpc.announcements.create.useMutation({
@@ -86,7 +86,7 @@ export default function AdminAnnouncements() {
   });
 
   // Enforce admin role — only accounts with role='admin' may access admin pages
-  const isAuthorized = isAuthenticated && user?.role === "admin";
+  const isAuthorized = isAuthenticated && (user?.role === "admin" || user?.role === "owner");
 
   if (isAuthenticated && !isAuthorized) {
     navigate("/dashboard");

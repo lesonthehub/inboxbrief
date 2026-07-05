@@ -68,12 +68,12 @@ export default function AdminTools() {
 
   // ── Queries ────────────────────────────────────────────────────────────────
   const { data: stats, refetch: refetchStats } = trpc.adminTools.getStats.useQuery(undefined, {
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && (user?.role === "admin" || user?.role === "owner"),
     refetchInterval: 30000,
   });
 
   const { data: coupons, refetch: refetchCoupons } = trpc.adminTools.listCoupons.useQuery(undefined, {
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && (user?.role === "admin" || user?.role === "owner"),
   });
 
   // ── Mutations ──────────────────────────────────────────────────────────────
@@ -144,7 +144,7 @@ export default function AdminTools() {
   }
 
   // ── Auth guard ─────────────────────────────────────────────────────────────
-  if (!isAuthenticated || user?.role !== "admin") {
+  if (!isAuthenticated || (user?.role !== "admin" && user?.role !== "owner")) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Access denied.</p>

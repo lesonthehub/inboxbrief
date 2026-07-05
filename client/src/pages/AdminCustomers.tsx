@@ -83,7 +83,7 @@ export default function AdminCustomers() {
   const [newRole, setNewRole] = useState<"user" | "admin">("user");
   const [totpCode, setTotpCode] = useState("");
 
-  const isAuthorized = isAuthenticated && user?.role === "admin";
+  const isAuthorized = isAuthenticated && (user?.role === "admin" || user?.role === "owner");
 
   const { data, isLoading, refetch } = trpc.adminUsers.list.useQuery(
     { limit: 200, offset: 0 },
