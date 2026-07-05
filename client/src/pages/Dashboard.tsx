@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+import { getLoginUrl, loginWithWarmUp } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -252,7 +252,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      window.location.href = getLoginUrl("/dashboard");
+      loginWithWarmUp("/dashboard");
     }
   }, [isAuthenticated, authLoading]);
 

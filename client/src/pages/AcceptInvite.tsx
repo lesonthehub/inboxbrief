@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { MessageSquare, CheckCircle, XCircle, Loader2, Users } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+import { getLoginUrl, loginWithWarmUp } from "@/const";
 import { toast } from "sonner";
 
 export default function AcceptInvite() {
@@ -137,7 +137,7 @@ export default function AcceptInvite() {
               <Button
                 className="w-full bg-primary hover:bg-primary/90 text-white border-0 h-11"
                 onClick={() => {
-                  window.location.href = getLoginUrl(`/invite/${token}`);
+                  loginWithWarmUp(`/invite/${token}`);
                 }}
               >
                 Sign in to Accept Invite

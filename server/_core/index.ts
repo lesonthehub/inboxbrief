@@ -77,6 +77,11 @@ async function startServer() {
     console.log("[Twilio] Inbound SMS auto-replied");
   });
 
+  // Health / warm-up endpoint — used by the frontend to wake the server before OAuth redirect
+  app.get("/api/health", (_req, res) => {
+    res.json({ ok: true, ts: Date.now() });
+  });
+
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // Email provider OAuth routes (Gmail, Outlook)

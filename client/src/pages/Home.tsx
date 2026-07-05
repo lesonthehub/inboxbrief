@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+import { getLoginUrl, loginWithWarmUp } from "@/const";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import {
@@ -86,7 +86,7 @@ export default function Home() {
     if (isAuthenticated) {
       navigate("/dashboard");
     } else {
-      window.location.href = getLoginUrl("/onboarding");
+      loginWithWarmUp("/onboarding");
     }
   };
 
@@ -129,7 +129,7 @@ export default function Home() {
                   size="sm"
                   variant="ghost"
                   className="text-muted-foreground hover:text-foreground hidden sm:inline-flex"
-                  onClick={() => { window.location.href = getLoginUrl("/dashboard"); }}
+                  onClick={() => { loginWithWarmUp("/dashboard"); }}
                 >
                   Log In
                 </Button>
@@ -192,7 +192,7 @@ export default function Home() {
               Already have an account?{" "}
               <button
                 className="text-primary hover:underline font-medium"
-                onClick={() => { window.location.href = getLoginUrl("/dashboard"); }}
+                onClick={() => { loginWithWarmUp("/dashboard"); }}
               >
                 Log in here
               </button>

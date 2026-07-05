@@ -18,3 +18,22 @@ export const getLoginUrl = (returnPath?: string) => {
 
   return url.toString();
 };
+
+/**
+ * Warm up the server before redirecting to OAuth.
+ * On Autoscale hosting the server can be cold — pinging /api/health first
+ * ensures it is warm before the OAuth code arrives at the callback.
+ * The ping fires and we wait up to 8 seconds, then redirect regardless.
+ */
+export const loginWithWarmUp = async (returnPath?: string): Promise<void> => {
+  const loginUrl = getLoginUrl(returnPath);
+  try {
+    await Promise.race([
+      fetch("/api/health"),
+      new Promise<void>(resolve => setTimeout(resolve, 8000)),
+    ]);
+  } catch {
+    // Ignore errors — proceed to login even if ping fails
+  }
+  window.location.href = loginUrl;
+};
