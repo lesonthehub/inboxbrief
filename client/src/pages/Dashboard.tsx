@@ -176,6 +176,7 @@ export default function Dashboard() {
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [emailVerifCode, setEmailVerifCode] = useState("");
   const [showEmailVerifInput, setShowEmailVerifInput] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -269,7 +270,6 @@ export default function Dashboard() {
   }
 
   const isEmailVerifiedFinal = !!emailVerifStatus?.emailVerified;
-  const [bannerDismissed, setBannerDismissed] = useState(false);
   const isActive = subStatus?.isActive;
   const phoneVerified = subStatus?.phoneVerified ?? false;
   const userPhone = subStatus?.phone ?? user?.email ?? "";
