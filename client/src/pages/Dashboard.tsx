@@ -278,6 +278,11 @@ export default function Dashboard() {
     ? Math.max(0, Math.ceil((new Date(subStatus.trialEndsAt).getTime() - Date.now()) / 86400000))
     : null;
   const isTeamPlan = subStatus?.plan === "business" || subStatus?.plan === "enterprise";
+  const isSoloPlan = subStatus?.plan === "solo";
+  const isPro = subStatus?.plan === "pro" || subStatus?.plan === "business" || subStatus?.plan === "enterprise";
+  const manualBriefingsToday = (subStatus as { manualBriefingsToday?: number } | undefined)?.manualBriefingsToday ?? 0;
+  const manualLimit = isSoloPlan ? 0 : isPro ? 2 : 0; // Pro/Business = 2/day, Solo = 0
+  const trialAlreadyUsed = !!(user as { trialUsed?: boolean } | null)?.trialUsed && !isActive;
 
   const handleTrigger = () => {
     if (!isActive) {
@@ -540,6 +545,14 @@ export default function Dashboard() {
           {isActive && (!emailAccounts || emailAccounts.length === 0) && (
             <p className="text-xs text-yellow-400 mt-3">Connect an email account below first</p>
           )}
+          {isActive && isPro && (
+            <p className="text-xs text-muted-foreground mt-3">
+              Manual briefings today: <span className={manualBriefingsToday >= manualLimit ? "text-red-400 font-semibold" : "text-foreground font-semibold"}>{manualBriefingsToday}/{manualLimit}</span>
+            </p>
+          )}
+          {isActive && isSoloPlan && (
+            <p className="text-xs text-muted-foreground mt-3">Manual briefings are available on Pro plan and above.</p>
+          )}
         </div>
 
         {/* Email Accounts */}
@@ -579,6 +592,11 @@ export default function Dashboard() {
             <p className="text-sm text-muted-foreground mb-3">No email accounts connected yet.</p>
           )}
 
+          {isSoloPlan && (
+            <div className="mb-3 p-2.5 rounded-lg bg-blue-950/40 border border-blue-500/20">
+              <p className="text-xs text-blue-300">Solo plan includes <strong>Gmail only</strong>. Upgrade to Pro or above to connect Outlook.</p>
+            </div>
+          )}
           <div className="flex flex-col sm:flex-row gap-2">
             <Button
               size="sm"
@@ -589,15 +607,17 @@ export default function Dashboard() {
               <Plus className="w-3.5 h-3.5 mr-1.5" />
               Connect Gmail
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-border/60 text-foreground hover:border-primary/50 flex-1 text-xs"
-              onClick={() => { window.location.href = "/api/oauth/outlook/start"; }}
-            >
-              <Plus className="w-3.5 h-3.5 mr-1.5" />
-              Connect Outlook
-            </Button>
+            {!isSoloPlan && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-border/60 text-foreground hover:border-primary/50 flex-1 text-xs"
+                onClick={() => { window.location.href = "/api/oauth/outlook/start"; }}
+              >
+                <Plus className="w-3.5 h-3.5 mr-1.5" />
+                Connect Outlook
+              </Button>
+            )}
           </div>
         </div>
 

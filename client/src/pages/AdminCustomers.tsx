@@ -275,9 +275,13 @@ export default function AdminCustomers() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant="outline" className="text-xs">
-                          {u.role === "admin" ? <><Crown className="w-3 h-3 mr-1" />Admin</> : <><User className="w-3 h-3 mr-1" />User</>}
-                        </Badge>
+                        {u.role === "owner" ? (
+                          <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/40 text-xs"><Crown className="w-3 h-3 mr-1" />Owner</Badge>
+                        ) : u.role === "admin" ? (
+                          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/40 text-xs"><Crown className="w-3 h-3 mr-1" />Admin</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs"><User className="w-3 h-3 mr-1" />User</Badge>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">{timeAgo(u.lastSignedIn)}</td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
@@ -303,7 +307,13 @@ export default function AdminCustomers() {
                       ) : (
                         <Badge className="bg-red-500/15 text-red-400 border-red-500/30 text-xs">Suspended</Badge>
                       )}
-                      <Badge variant="outline" className="text-xs">{u.role}</Badge>
+                      {u.role === "owner" ? (
+                          <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/40 text-xs"><Crown className="w-3 h-3 mr-1" />Owner</Badge>
+                        ) : u.role === "admin" ? (
+                          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/40 text-xs"><Crown className="w-3 h-3 mr-1" />Admin</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs"><User className="w-3 h-3 mr-1" />User</Badge>
+                        )}
                       <span className="text-xs text-muted-foreground">Last: {timeAgo(u.lastSignedIn)}</span>
                     </div>
                   </div>

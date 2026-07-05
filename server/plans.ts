@@ -193,6 +193,54 @@ export function getMaxSeats(plan: PlanId): number {
   return PLANS[plan].maxSeats;
 }
 
+/**
+ * Returns the max manual briefings per day for a plan.
+ * Solo: 0 (manual not allowed — scheduled only)
+ * Pro: 2
+ * Business: 2
+ * Enterprise: unlimited (-1)
+ * Trial: 3
+ */
+export function getManualBriefingLimit(plan: PlanId): number {
+  switch (plan) {
+    case "solo": return 0;       // manual not available on Solo
+    case "pro": return 2;
+    case "business": return 2;
+    case "enterprise": return -1;
+    case "trial": return 3;
+    default: return 0;
+  }
+}
+
+/**
+ * Returns true if the plan allows Outlook integration.
+ * Solo is Gmail-only.
+ */
+export function planAllowsOutlook(plan: PlanId): boolean {
+  return plan !== "solo";
+}
+
+/**
+ * Returns the default schedule times for a new user based on their plan.
+ * Times are HH:mm strings in 24h format, comma-separated for multiple.
+ */
+export function getDefaultScheduleTimes(plan: PlanId): { scheduleType: string; scheduleTimes: string } {
+  switch (plan) {
+    case "solo":
+      return { scheduleType: "daily_morning", scheduleTimes: "08:00" };
+    case "pro":
+      return { scheduleType: "twice_daily", scheduleTimes: "08:00,13:00" };
+    case "business":
+      return { scheduleType: "custom", scheduleTimes: "08:00,12:00,17:00" };
+    case "enterprise":
+      return { scheduleType: "custom", scheduleTimes: "08:00,12:00,17:00" };
+    case "trial":
+      return { scheduleType: "twice_daily", scheduleTimes: "08:00,17:00" };
+    default:
+      return { scheduleType: "daily_morning", scheduleTimes: "08:00" };
+  }
+}
+
 /** Returns true if the subscription status allows triggering a briefing. */
 export function isSubscriptionActive(status: string): boolean {
   return ["active", "trialing"].includes(status);

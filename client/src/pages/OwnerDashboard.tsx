@@ -101,6 +101,21 @@ export default function OwnerDashboard() {
   // Activity log search
   const [logSearch, setLogSearch] = useState("");
 
+  // Enterprise Plan Builder state
+  const [epCompanyName, setEpCompanyName] = useState("");
+  const [epContactEmail, setEpContactEmail] = useState("");
+  const [epEmailsPerBriefing, setEpEmailsPerBriefing] = useState(200);
+  const [epManualsPerDay, setEpManualsPerDay] = useState(2);
+  const [epScheduledPerDay, setEpScheduledPerDay] = useState(3);
+  const [epTeamMembers, setEpTeamMembers] = useState(10);
+  const [epPriceMonthly, setEpPriceMonthly] = useState("");
+  const [epPriceAnnual, setEpPriceAnnual] = useState("");
+  const [epNotes, setEpNotes] = useState("");
+  const [epAssignUserId, setEpAssignUserId] = useState("");
+  const [epShowForm, setEpShowForm] = useState(false);
+  const [epAssignPlanId, setEpAssignPlanId] = useState<number | null>(null);
+  const [epAssignTarget, setEpAssignTarget] = useState("");
+
   const { data: activityLog, refetch: refetchLog, isLoading: logLoading } =
     trpc.owner.getActivityLog.useQuery({ limit: 200, offset: 0 });
 
@@ -109,6 +124,39 @@ export default function OwnerDashboard() {
 
   const { data: admins, refetch: refetchAdmins, isLoading: adminsLoading } =
     trpc.owner.listAdmins.useQuery();
+
+  const { data: enterprisePlansData, refetch: refetchEnterprisePlans } =
+    trpc.enterprise.listCustomPlans.useQuery({ activeOnly: false });
+
+  // Estimate query — driven by current form values
+  const { data: priceEstimate } = trpc.enterprise.estimatePrice.useQuery({
+    emailsPerBriefing: epEmailsPerBriefing,
+    manualBriefingsPerDay: epManualsPerDay,
+    scheduledBriefingsPerDay: epScheduledPerDay,
+    maxTeamMembers: epTeamMembers,
+  }, { enabled: epShowForm });
+
+  const createEnterprisePlanMut = trpc.enterprise.createCustomPlan.useMutation({
+    onSuccess: () => {
+      toast.success("Enterprise plan created");
+      setEpShowForm(false);
+      setEpCompanyName(""); setEpContactEmail(""); setEpPriceMonthly(""); setEpPriceAnnual(""); setEpNotes(""); setEpAssignUserId("");
+      refetchEnterprisePlans();
+      refetchLog();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const assignEnterprisePlanMut = trpc.enterprise.assignPlanToUser.useMutation({
+    onSuccess: () => {
+      toast.success("Plan assigned to user");
+      setEpAssignPlanId(null);
+      setEpAssignTarget("");
+      refetchEnterprisePlans();
+      refetchLog();
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const grantServiceMut = trpc.owner.grantService.useMutation({
     onSuccess: () => {
@@ -220,6 +268,9 @@ export default function OwnerDashboard() {
             </TabsTrigger>
             <TabsTrigger value="admins" className="gap-2">
               <ShieldCheck className="w-4 h-4" /> Admin Management
+            </TabsTrigger>
+            <TabsTrigger value="enterprise" className="gap-2">
+              <Crown className="w-4 h-4 text-yellow-500" /> Enterprise Plans
             </TabsTrigger>
           </TabsList>
 
@@ -497,8 +548,203 @@ export default function OwnerDashboard() {
               )}
             </div>
           </TabsContent>
+
+          {/* ── Enterprise Plans ── */}
+          <TabsContent value="enterprise">
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-semibold text-foreground text-lg">Enterprise Plan Builder</h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">Create custom plans with tailored pricing, email limits, and team sizes.</p>
+                </div>
+                <Button size="sm" onClick={() => setEpShowForm(!epShowForm)} className="gap-2">
+                  {epShowForm ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                  {epShowForm ? "Cancel" : "New Plan"}
+                </Button>
+              </div>
+
+              {/* Create Plan Form */}
+              {epShowForm && (
+                <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+                  <h3 className="font-semibold text-foreground">New Custom Plan</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Company Name *</label>
+                      <Input value={epCompanyName} onChange={(e) => setEpCompanyName(e.target.value)} placeholder="Acme Corp" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Contact Email *</label>
+                      <Input value={epContactEmail} onChange={(e) => setEpContactEmail(e.target.value)} placeholder="cto@acme.com" type="email" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Emails per Briefing (max read)</label>
+                      <Input type="number" min={1} max={10000} value={epEmailsPerBriefing} onChange={(e) => setEpEmailsPerBriefing(Number(e.target.value))} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Manual Briefings / Day</label>
+                      <Input type="number" min={0} max={100} value={epManualsPerDay} onChange={(e) => setEpManualsPerDay(Number(e.target.value))} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Scheduled Briefings / Day</label>
+                      <Input type="number" min={1} max={24} value={epScheduledPerDay} onChange={(e) => setEpScheduledPerDay(Number(e.target.value))} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Max Team Members</label>
+                      <Input type="number" min={1} max={10000} value={epTeamMembers} onChange={(e) => setEpTeamMembers(Number(e.target.value))} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Price / Month ($)</label>
+                      <Input type="number" min={0} value={epPriceMonthly} onChange={(e) => setEpPriceMonthly(e.target.value)} placeholder="499" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Price / Year ($) — optional</label>
+                      <Input type="number" min={0} value={epPriceAnnual} onChange={(e) => setEpPriceAnnual(e.target.value)} placeholder="4990" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Assign to User ID — optional</label>
+                      <Input type="number" min={1} value={epAssignUserId} onChange={(e) => setEpAssignUserId(e.target.value)} placeholder="User ID" />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-xs text-muted-foreground mb-1 block">Internal Notes</label>
+                      <Textarea value={epNotes} onChange={(e) => setEpNotes(e.target.value)} placeholder="Special requirements, SLA notes..." rows={2} />
+                    </div>
+                  </div>
+
+                  {/* Estimate Calculator */}
+                  {priceEstimate && (
+                    <div className="bg-muted/30 border border-border/40 rounded-lg p-4">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Price Estimate</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                        <div>
+                          <p className="text-muted-foreground text-xs">Monthly</p>
+                          <p className="font-bold text-foreground">${priceEstimate.estimatedMonthly.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs">Annual (15% off)</p>
+                          <p className="font-bold text-foreground">${priceEstimate.estimatedAnnual.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs">Base / Seat</p>
+                          <p className="font-bold text-foreground">${priceEstimate.breakdown.basePerSeat}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs">Multipliers</p>
+                          <p className="font-bold text-foreground">{priceEstimate.breakdown.emailMultiplier}× email, {priceEstimate.breakdown.briefingMultiplier}× briefing</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" onClick={() => setEpShowForm(false)}>Cancel</Button>
+                    <Button
+                      disabled={createEnterprisePlanMut.isPending || !epCompanyName || !epContactEmail}
+                      onClick={() => {
+                        createEnterprisePlanMut.mutate({
+                          companyName: epCompanyName,
+                          contactEmail: epContactEmail,
+                          emailsPerBriefing: epEmailsPerBriefing,
+                          manualBriefingsPerDay: epManualsPerDay,
+                          scheduledBriefingsPerDay: epScheduledPerDay,
+                          maxTeamMembers: epTeamMembers,
+                          pricePerMonth: Number(epPriceMonthly) || 0,
+                          pricePerYear: epPriceAnnual ? Number(epPriceAnnual) : undefined,
+                          notes: epNotes || undefined,
+                          assignedUserId: epAssignUserId ? Number(epAssignUserId) : undefined,
+                        });
+                      }}
+                    >
+                      {createEnterprisePlanMut.isPending ? "Creating..." : "Create Plan"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Existing Plans List */}
+              <div className="bg-card border border-border rounded-xl p-6">
+                <h3 className="font-semibold text-foreground mb-4">Existing Enterprise Plans</h3>
+                {!enterprisePlansData || enterprisePlansData.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No enterprise plans created yet.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left border-b border-border">
+                          <th className="pb-2 text-muted-foreground font-medium">Company</th>
+                          <th className="pb-2 text-muted-foreground font-medium">Contact</th>
+                          <th className="pb-2 text-muted-foreground font-medium">Seats</th>
+                          <th className="pb-2 text-muted-foreground font-medium">$/mo</th>
+                          <th className="pb-2 text-muted-foreground font-medium">Assigned User</th>
+                          <th className="pb-2 text-muted-foreground font-medium">Status</th>
+                          <th className="pb-2 text-muted-foreground font-medium">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/40">
+                        {enterprisePlansData.map((plan) => (
+                          <tr key={plan.id} className="py-2">
+                            <td className="py-2 font-medium text-foreground">{plan.companyName}</td>
+                            <td className="py-2 text-muted-foreground">{plan.contactEmail}</td>
+                            <td className="py-2 text-muted-foreground">{plan.maxTeamMembers}</td>
+                            <td className="py-2 text-muted-foreground">${plan.pricePerMonth}</td>
+                            <td className="py-2 text-muted-foreground">{plan.assignedUserId ?? "—"}</td>
+                            <td className="py-2">
+                              <Badge variant={plan.isActive ? "default" : "secondary"}>
+                                {plan.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            </td>
+                            <td className="py-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs h-7"
+                                onClick={() => { setEpAssignPlanId(plan.id); setEpAssignTarget(""); }}
+                              >
+                                Assign User
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
+
+      {/* Assign Enterprise Plan dialog */}
+      <Dialog open={epAssignPlanId !== null} onOpenChange={(o) => { if (!o) setEpAssignPlanId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Enterprise Plan</DialogTitle>
+            <DialogDescription>Enter the User ID to assign Plan #{epAssignPlanId} to.</DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <label className="text-sm text-muted-foreground mb-1 block">User ID</label>
+            <Input
+              type="number"
+              placeholder="User ID"
+              value={epAssignTarget}
+              onChange={(e) => setEpAssignTarget(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEpAssignPlanId(null)}>Cancel</Button>
+            <Button
+              disabled={assignEnterprisePlanMut.isPending || !epAssignTarget}
+              onClick={() => {
+                if (!epAssignPlanId) return;
+                assignEnterprisePlanMut.mutate({ planId: epAssignPlanId, userId: Number(epAssignTarget) });
+              }}
+            >
+              {assignEnterprisePlanMut.isPending ? "Assigning..." : "Assign"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Revoke dialog */}
       <Dialog open={!!revokeTarget} onOpenChange={(o) => { if (!o) setRevokeTarget(null); }}>

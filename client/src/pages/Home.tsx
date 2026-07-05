@@ -3,6 +3,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl, loginWithWarmUp } from "@/const";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
 import {
   Shield, Zap, Clock, MessageSquare, Lock, ChevronRight,
   Star, CheckCircle, Globe, Users, Gift, RefreshCw,
@@ -82,6 +83,13 @@ export default function Home() {
   const [, navigate] = useLocation();
   const [activeSmsLang, setActiveSmsLang] = useState(0);
 
+  // Check if the logged-in user has already used their trial
+  const { data: subStatus } = trpc.billing.getSubscriptionStatus.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+  const isActive = subStatus?.isActive ?? false;
+  const trialAlreadyUsed = !!(subStatus as { trialUsed?: boolean } | undefined)?.trialUsed && !isActive;
+
   const handleGetStarted = () => {
     if (isAuthenticated) {
       navigate("/dashboard");
@@ -133,13 +141,23 @@ export default function Home() {
                 >
                   Log In
                 </Button>
-                <Button
-                  size="sm"
-                  className="bg-primary hover:bg-primary/90 text-white border-0"
-                  onClick={handleGetStarted}
-                >
-                  Start Free Trial
-                </Button>
+                {!trialAlreadyUsed ? (
+                  <Button
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90 text-white border-0"
+                    onClick={handleGetStarted}
+                  >
+                    Start Free Trial
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90 text-white border-0"
+                    onClick={() => navigate("/pricing")}
+                  >
+                    Choose a Plan
+                  </Button>
+                )}
               </>
             )}
           </div>
@@ -164,15 +182,27 @@ export default function Home() {
             InboxBrief reads your Gmail or Outlook, filters out the noise, and texts you a natural-sounding briefing — encrypted end-to-end, delivered on your schedule, in your language.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-10 sm:mb-12">
-            <Button
-              size="lg"
-              className="bg-primary hover:bg-primary/90 text-white border-0 text-sm sm:text-base md:text-lg px-5 sm:px-8 py-4 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30"
-              onClick={handleGetStarted}
-              disabled={loading}
-            >
-              💬 Start Free — 7 Days Full Access
-              <ChevronRight className="w-5 h-5 ml-1 flex-shrink-0" />
-            </Button>
+            {!trialAlreadyUsed ? (
+              <Button
+                size="lg"
+                className="bg-primary hover:bg-primary/90 text-white border-0 text-sm sm:text-base md:text-lg px-5 sm:px-8 py-4 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30"
+                onClick={handleGetStarted}
+                disabled={loading}
+              >
+                💬 Start Free — 7 Days Full Access
+                <ChevronRight className="w-5 h-5 ml-1 flex-shrink-0" />
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                className="bg-primary hover:bg-primary/90 text-white border-0 text-sm sm:text-base md:text-lg px-5 sm:px-8 py-4 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30"
+                onClick={() => navigate("/pricing")}
+                disabled={loading}
+              >
+                💬 Choose a Plan
+                <ChevronRight className="w-5 h-5 ml-1 flex-shrink-0" />
+              </Button>
+            )}
             <Button
               size="lg"
               variant="outline"

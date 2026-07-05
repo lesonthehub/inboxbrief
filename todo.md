@@ -568,3 +568,17 @@
 - [x] Promoted lesantoineiii@gmail.com to owner role in database
 - [x] Switched from otplib to speakeasy for TOTP (compatible with Google Authenticator, Authy, 1Password)
 - [x] Added /owner route to App.tsx
+
+## Round 27 Features
+
+- [x] Show role badge (Owner/Admin/User) on admin customer list rows
+- [x] Owner can promote user to owner with TOTP + email confirmation double-verification
+- [x] Per-plan schedule time limits (Solo: 1x/day, Starter: 2x/day, Pro: 3x/day, Business: 4x/day, Enterprise: custom)
+- [x] User time format preference (12h / 24h) stored per user and used in schedule UI
+- [x] Manual briefing blocked for plans below Pro; Pro/Business limited to 2 manual/day; Enterprise custom limit
+- [x] Solo plan restricted to Gmail only (no Outlook connect)
+- [x] Trial exhaustion gate: hide "Start Free 7-Day Trial" CTA once trial has been used or account exists
+- [x] Default briefing schedules spaced through business day (Solo=8am, Pro=8am+1pm, Business/Enterprise=8am+12pm+5pm)
+- [x] Admin activity log lag fix (pagination / limit query)
+- [x] Enterprise custom plan builder: custom email count, manual limit, team size, plan name, pricing, estimate calculator
+- [x] Enterprise plan assignment to users by owner/admin

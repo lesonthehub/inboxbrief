@@ -76,6 +76,16 @@ export const users = mysqlTable("users", {
   emailVerificationCode: varchar("emailVerificationCode", { length: 6 }),
   emailVerificationExpiry: int("emailVerificationExpiry"),
 
+  // Time format preference
+  timeFormat: mysqlEnum("timeFormat", ["12h", "24h"]).default("12h").notNull(),
+
+  // Manual briefing daily counter (reset each calendar day)
+  manualBriefingsToday: int("manualBriefingsToday").default(0).notNull(),
+  manualBriefingsDate: varchar("manualBriefingsDate", { length: 10 }),  // YYYY-MM-DD
+
+  // Enterprise custom plan assignment (null = use Stripe plan)
+  enterprisePlanId: int("enterprisePlanId"),
+
   // TOTP / Authenticator app (admin & owner only)
   totpSecret: text("totpSecret"),
   totpEnabled: boolean("totpEnabled").default(false).notNull(),
@@ -296,3 +306,31 @@ export const serviceGrants = mysqlTable("service_grants", {
 
 export type ServiceGrant = typeof serviceGrants.$inferSelect;
 export type InsertServiceGrant = typeof serviceGrants.$inferInsert;
+
+// ─── Enterprise Custom Plans ──────────────────────────────────────────────────
+// Owner/admin-created custom plans for enterprise sales (bypasses Stripe tiers)
+export const enterprisePlans = mysqlTable("enterprise_plans", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 128 }).notNull(),
+  description: text("description"),
+  // Limits (-1 = unlimited)
+  emailLimit: int("emailLimit").default(200).notNull(),
+  smsPerDay: int("smsPerDay").default(5).notNull(),
+  maxSeats: int("maxSeats").default(10).notNull(),
+  maxManualPerDay: int("maxManualPerDay").default(5).notNull(),
+  // Pricing
+  monthlyPrice: int("monthlyPrice").default(0).notNull(),  // USD cents
+  annualPrice: int("annualPrice").default(0).notNull(),    // USD cents/year
+  // Features
+  allowOutlook: boolean("allowOutlook").default(true).notNull(),
+  allowGmail: boolean("allowGmail").default(true).notNull(),
+  customFeatures: text("customFeatures"),  // JSON array of feature strings
+  // Sales metadata
+  notes: text("notes"),
+  createdBy: int("createdBy").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EnterprisePlan = typeof enterprisePlans.$inferSelect;
+export type InsertEnterprisePlan = typeof enterprisePlans.$inferInsert;

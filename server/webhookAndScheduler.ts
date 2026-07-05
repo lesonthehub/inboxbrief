@@ -103,6 +103,26 @@ async function handleStripeEvent(event: Stripe.Event, stripe: Stripe) {
         },
       });
 
+      // Set default schedule times based on plan for new subscribers
+      const defaultScheduleMap: Record<string, { scheduleType: string; scheduleTimes: string }> = {
+        solo:       { scheduleType: "custom", scheduleTimes: "08:00" },
+        trial:      { scheduleType: "custom", scheduleTimes: "08:00" },
+        pro:        { scheduleType: "custom", scheduleTimes: "08:00,13:00" },
+        business:   { scheduleType: "custom", scheduleTimes: "08:00,12:00,17:00" },
+        enterprise: { scheduleType: "custom", scheduleTimes: "08:00,12:00,17:00" },
+      };
+      const planKey = (plan ?? "pro") as string;
+      const defaultSched = defaultScheduleMap[planKey] ?? defaultScheduleMap.pro;
+      // Only set default if user has no schedule yet (scheduleType is null or 'manual')
+      const [existingUser] = await db.select({ scheduleType: users.scheduleType }).from(users).where(eq(users.id, userId)).limit(1);
+      if (existingUser && (!existingUser.scheduleType || existingUser.scheduleType === "manual")) {
+        await db.update(users).set({
+          scheduleType: defaultSched.scheduleType,
+          scheduleTimes: defaultSched.scheduleTimes,
+        }).where(eq(users.id, userId));
+        console.log(`[Webhook] Set default schedule for user ${userId} on plan ${planKey}: ${defaultSched.scheduleTimes}`);
+      }
+
       console.log(`[Webhook] Subscription activated for user ${userId} on plan ${plan}`);
       break;
     }

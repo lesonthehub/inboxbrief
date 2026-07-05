@@ -18,7 +18,7 @@ import { decrypt, encrypt } from "./encryption";
 import { fetchGmailEmails, fetchOutlookEmails } from "./emailProviders";
 import { classifyEmails, generateSmsBriefing } from "./grok";
 import { sendSmsBriefing } from "./sms";
-import { getEmailLimit, isSubscriptionActive } from "./plans";
+import { getEmailLimit, isSubscriptionActive, getManualBriefingLimit, planAllowsOutlook, PLANS } from "./plans";
 import type { PlanId } from "./plans";
 
 export interface PipelineResult {
@@ -165,10 +165,34 @@ export async function runBriefingPipeline(
     );
   }
 
+  // ── Manual briefing limit (Pro/Business = 2/day, Solo = 0, Enterprise = unlimited) ──
+  if (triggerType === "manual" && isPaidActive) {
+    const manualLimit = getManualBriefingLimit(currentPlan);
+    if (manualLimit === 0) {
+      return { success: false, smsSent: false, emailsFetched: 0, highPriorityCount: 0, generalCount: 0, ignoredCount: 0,
+        error: "Manual briefings are not available on the Solo plan. Please set up a scheduled briefing in Settings." };
+    }
+    if (manualLimit > 0) {
+      const today = new Date().toISOString().slice(0, 10);
+      let manualCount = 0;
+      if (user.manualBriefingsDate === today) {
+        manualCount = user.manualBriefingsToday ?? 0;
+      }
+      if (manualCount >= manualLimit) {
+        return { success: false, smsSent: false, emailsFetched: 0, highPriorityCount: 0, generalCount: 0, ignoredCount: 0,
+          error: `You've used all ${manualLimit} manual briefings allowed today on the ${currentPlan} plan. Scheduled briefings will continue as normal.` };
+      }
+      await db.update(users).set({
+        manualBriefingsToday: manualCount + 1,
+        manualBriefingsDate: today,
+      }).where(eq(users.id, userId));
+    }
+  }
+
   // ── Paid plan: over-limit check ───────────────────────────────────────────
   if (isPaidActive && emailLimit !== -1) {
     const todayCount = await countBriefingsToday(userId);
-    const dailyBriefingLimit = currentPlan === "solo" ? 3 : currentPlan === "pro" ? 5 : 10;
+    const dailyBriefingLimit = PLANS[currentPlan]?.smsPerDay ?? 3;
 
     if (todayCount >= dailyBriefingLimit) {
       if (!user.graceBriefingUsed) {
@@ -194,9 +218,12 @@ export async function runBriefingPipeline(
     }
   }
 
-  // 2. Load connected email accounts
-  const accounts = await db.select().from(emailAccounts)
+  // 2. Load connected email accounts (Solo plan: Gmail only)
+  const allAccounts = await db.select().from(emailAccounts)
     .where(and(eq(emailAccounts.userId, userId), eq(emailAccounts.isActive, true)));
+  const accounts = planAllowsOutlook(currentPlan)
+    ? allAccounts
+    : allAccounts.filter(a => a.provider === "gmail");
 
   if (accounts.length === 0) {
     return { success: false, smsSent: false, emailsFetched: 0, highPriorityCount: 0, generalCount: 0, ignoredCount: 0, error: "No email accounts connected" };

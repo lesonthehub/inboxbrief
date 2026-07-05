@@ -18,10 +18,10 @@ import { getGmailAuthUrl, getOutlookAuthUrl } from "./emailProviders";
 import { runBriefingPipeline } from "./briefingPipeline";
 import { createCheckoutSession, createPortalSession, getStripe } from "./stripeProducts";
 import { sendSmsBriefing, OWNER_EMAIL } from "./sms";
-import { PLANS, isSubscriptionActive, getDisplayPlans, INTERNATIONAL_SMS_SURCHARGE, isInternationalNumber } from "./plans";
+import { PLANS, isSubscriptionActive, getDisplayPlans, INTERNATIONAL_SMS_SURCHARGE, isInternationalNumber, planAllowsOutlook, getManualBriefingLimit } from "./plans";
 import { processBriefingFeedback, SUPPORTED_LANGUAGES } from "./grok";
 import { notifyOwner } from "./_core/notification";
-import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs, announcements, adminActivityLog, serviceGrants } from "../drizzle/schema";
+import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs, announcements, adminActivityLog, serviceGrants, enterprisePlans } from "../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { sendVerificationOtp, verifyOtp } from "./phoneVerification";
 import { sendEmailVerificationOTP } from "./emailService";
@@ -229,6 +229,16 @@ const emailAccountsRouter = router({
   getOutlookAuthUrl: protectedProcedure
     .input(z.object({ origin: z.string().url() }))
     .query(async ({ ctx, input }) => {
+      // Solo plan: Gmail only — block Outlook auth
+      const db = await getDb();
+      if (db) {
+        const [sub] = await db.select({ plan: subscriptions.plan }).from(subscriptions)
+          .where(and(eq(subscriptions.userId, ctx.user.id), eq(subscriptions.status, "active")))
+          .limit(1);
+        if (sub?.plan === "solo") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Outlook integration is not available on the Solo plan. Please upgrade to Pro or higher." });
+        }
+      }
       const state = Buffer.from(JSON.stringify({ userId: ctx.user.id, origin: input.origin })).toString("base64");
       const url = getOutlookAuthUrl(state);
       return { url };
@@ -331,6 +341,8 @@ const briefingRouter = router({
 const settingsRouter = router({
   get: protectedProcedure.query(async ({ ctx }) => {
     const user = await getUserById(ctx.user.id);
+    const today = new Date().toISOString().slice(0, 10);
+    const manualUsedToday = user?.manualBriefingsDate === today ? (user?.manualBriefingsToday ?? 0) : 0;
     return {
       phone: user?.phone ?? null,
       scheduleType: user?.scheduleType ?? "manual",
@@ -340,6 +352,8 @@ const settingsRouter = router({
       toneStyle: user?.toneStyle ?? "conversational",
       keywordsInclude: user?.keywordsInclude ?? null,
       keywordsExclude: user?.keywordsExclude ?? null,
+      timeFormat: user?.timeFormat ?? "12h",
+      manualBriefingsUsedToday: manualUsedToday,
     };
   }),
 
@@ -353,6 +367,7 @@ const settingsRouter = router({
       toneStyle: z.enum(["concise", "conversational", "detailed"]).optional(),
       keywordsInclude: z.string().max(500).optional(),
       keywordsExclude: z.string().max(500).optional(),
+      timeFormat: z.enum(["12h", "24h"]).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await updateUser(ctx.user.id, input);
@@ -565,6 +580,148 @@ const teamInviteRouter = router({
 // ─── Enterprise Contact Router ─────────────────────────────────────────────────
 
 const enterpriseRouter = router({
+  // ─── Custom Enterprise Plan CRUD (owner/admin only) ───────────────────────
+
+  createCustomPlan: protectedProcedure
+    .input(z.object({
+      companyName: z.string().min(1).max(128),
+      contactEmail: z.string().email(),
+      emailsPerBriefing: z.number().int().min(1).max(10000),
+      manualBriefingsPerDay: z.number().int().min(0).max(100),
+      maxTeamMembers: z.number().int().min(1).max(10000),
+      scheduledBriefingsPerDay: z.number().int().min(1).max(24),
+      pricePerMonth: z.number().min(0),
+      pricePerYear: z.number().min(0).optional(),
+      notes: z.string().max(2000).optional(),
+      assignedUserId: z.number().int().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "owner" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [plan] = await db.insert(enterprisePlans).values({
+        companyName: input.companyName,
+        contactEmail: input.contactEmail,
+        emailsPerBriefing: input.emailsPerBriefing,
+        manualBriefingsPerDay: input.manualBriefingsPerDay,
+        scheduledBriefingsPerDay: input.scheduledBriefingsPerDay,
+        maxTeamMembers: input.maxTeamMembers,
+        pricePerMonth: String(input.pricePerMonth),
+        pricePerYear: input.pricePerYear != null ? String(input.pricePerYear) : null,
+        notes: input.notes ?? null,
+        assignedUserId: input.assignedUserId ?? null,
+        createdBy: ctx.user.id,
+        isActive: true,
+      });
+      await logAdminActivity({
+        actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role,
+        targetUserId: input.assignedUserId ?? null, targetEmail: input.contactEmail,
+        action: "create_enterprise_plan",
+        details: JSON.stringify({ companyName: input.companyName, pricePerMonth: input.pricePerMonth }),
+      });
+      return { success: true };
+    }),
+
+  listCustomPlans: protectedProcedure
+    .input(z.object({ activeOnly: z.boolean().default(true) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "owner" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const rows = input.activeOnly
+        ? await db.select().from(enterprisePlans).where(eq(enterprisePlans.isActive, true)).orderBy(desc(enterprisePlans.createdAt))
+        : await db.select().from(enterprisePlans).orderBy(desc(enterprisePlans.createdAt));
+      return rows;
+    }),
+
+  updateCustomPlan: protectedProcedure
+    .input(z.object({
+      planId: z.number().int(),
+      companyName: z.string().min(1).max(128).optional(),
+      contactEmail: z.string().email().optional(),
+      emailsPerBriefing: z.number().int().min(1).max(10000).optional(),
+      manualBriefingsPerDay: z.number().int().min(0).max(100).optional(),
+      maxTeamMembers: z.number().int().min(1).max(10000).optional(),
+      scheduledBriefingsPerDay: z.number().int().min(1).max(24).optional(),
+      pricePerMonth: z.number().min(0).optional(),
+      pricePerYear: z.number().min(0).optional(),
+      notes: z.string().max(2000).optional(),
+      isActive: z.boolean().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "owner" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { planId, ...updates } = input;
+      const updateData: Record<string, unknown> = {};
+      if (updates.companyName !== undefined) updateData.companyName = updates.companyName;
+      if (updates.contactEmail !== undefined) updateData.contactEmail = updates.contactEmail;
+      if (updates.emailsPerBriefing !== undefined) updateData.emailsPerBriefing = updates.emailsPerBriefing;
+      if (updates.manualBriefingsPerDay !== undefined) updateData.manualBriefingsPerDay = updates.manualBriefingsPerDay;
+      if (updates.maxTeamMembers !== undefined) updateData.maxTeamMembers = updates.maxTeamMembers;
+      if (updates.scheduledBriefingsPerDay !== undefined) updateData.scheduledBriefingsPerDay = updates.scheduledBriefingsPerDay;
+      if (updates.pricePerMonth !== undefined) updateData.pricePerMonth = String(updates.pricePerMonth);
+      if (updates.pricePerYear !== undefined) updateData.pricePerYear = String(updates.pricePerYear);
+      if (updates.notes !== undefined) updateData.notes = updates.notes;
+      if (updates.isActive !== undefined) updateData.isActive = updates.isActive;
+      await db.update(enterprisePlans).set(updateData).where(eq(enterprisePlans.id, planId));
+      await logAdminActivity({
+        actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role,
+        targetUserId: null, targetEmail: null,
+        action: "update_enterprise_plan",
+        details: JSON.stringify({ planId, ...updateData }),
+      });
+      return { success: true };
+    }),
+
+  assignPlanToUser: protectedProcedure
+    .input(z.object({ planId: z.number().int(), userId: z.number().int() }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "owner" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
+      await db.update(users).set({ enterprisePlanId: input.planId }).where(eq(users.id, input.userId));
+      await db.update(enterprisePlans).set({ assignedUserId: input.userId }).where(eq(enterprisePlans.id, input.planId));
+      await logAdminActivity({
+        actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role,
+        targetUserId: input.userId, targetEmail: target?.email ?? null,
+        action: "assign_enterprise_plan",
+        details: JSON.stringify({ planId: input.planId }),
+      });
+      return { success: true };
+    }),
+
+  // Estimate calculator — returns monthly/annual price estimate for a custom config
+  estimatePrice: protectedProcedure
+    .input(z.object({
+      emailsPerBriefing: z.number().int().min(1).max(10000),
+      manualBriefingsPerDay: z.number().int().min(0).max(100),
+      scheduledBriefingsPerDay: z.number().int().min(1).max(24),
+      maxTeamMembers: z.number().int().min(1).max(10000),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "owner" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      // Base price: $49/mo per seat, scaled by feature usage
+      const basePerSeat = 49;
+      const emailTier = input.emailsPerBriefing <= 200 ? 1.0 : input.emailsPerBriefing <= 500 ? 1.3 : input.emailsPerBriefing <= 2000 ? 1.6 : 2.0;
+      const briefingTier = (input.scheduledBriefingsPerDay + input.manualBriefingsPerDay) <= 3 ? 1.0 :
+        (input.scheduledBriefingsPerDay + input.manualBriefingsPerDay) <= 6 ? 1.2 : 1.5;
+      const monthly = Math.round(basePerSeat * input.maxTeamMembers * emailTier * briefingTier);
+      const annual = Math.round(monthly * 12 * 0.85); // 15% annual discount
+      return {
+        estimatedMonthly: monthly,
+        estimatedAnnual: annual,
+        breakdown: {
+          basePerSeat,
+          seats: input.maxTeamMembers,
+          emailMultiplier: emailTier,
+          briefingMultiplier: briefingTier,
+          annualDiscount: "15%",
+        },
+      };
+    }),
+
   contact: publicProcedure
     .input(z.object({
       name: z.string().min(1).max(128),
@@ -1417,17 +1574,29 @@ const ownerRouter = router({
   // View admin activity log (owner only)
   getActivityLog: protectedProcedure
     .input(z.object({
-      limit: z.number().min(1).max(500).default(100),
+      limit: z.number().min(1).max(200).default(50),
       offset: z.number().min(0).default(0),
       actorId: z.number().optional(),
       action: z.string().optional(),
+      search: z.string().max(100).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Owner access required" });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      let q = db.select().from(adminActivityLog).orderBy(desc(adminActivityLog.createdAt)).limit(input.limit).offset(input.offset);
-      const rows = await q;
+      const { like, or } = await import("drizzle-orm");
+      const conditions = [];
+      if (input.actorId) conditions.push(eq(adminActivityLog.actorId, input.actorId));
+      if (input.action) conditions.push(eq(adminActivityLog.action, input.action));
+      if (input.search) {
+        const s = `%${input.search}%`;
+        conditions.push(or(like(adminActivityLog.actorEmail, s), like(adminActivityLog.targetEmail, s), like(adminActivityLog.action, s)));
+      }
+      const rows = await db.select().from(adminActivityLog)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(adminActivityLog.createdAt))
+        .limit(input.limit)
+        .offset(input.offset);
       return rows;
     }),
 
@@ -1498,15 +1667,21 @@ const ownerRouter = router({
       return rows;
     }),
 
-  // Promote or demote admins (owner only — can set any role including owner)
+  // Promote or demote admins (owner only — promoting to owner requires TOTP)
   setAdminRole: protectedProcedure
     .input(z.object({
       userId: z.number(),
       role: z.enum(["user", "admin", "owner"]),
+      totpCode: z.string().length(6).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Owner access required" });
       if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot change your own role" });
+      // Promoting to owner requires TOTP verification
+      if (input.role === "owner") {
+        if (!input.totpCode) throw new TRPCError({ code: "BAD_REQUEST", message: "TOTP code required to promote to owner" });
+        await verifyAdminTotp(ctx.user.id, input.totpCode);
+      }
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
@@ -1525,10 +1700,11 @@ const ownerRouter = router({
     if (ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const { inArray } = await import("drizzle-orm");
     const rows = await db.select({
       id: users.id, name: users.name, email: users.email, role: users.role,
       totpEnabled: users.totpEnabled, totpEnabledAt: users.totpEnabledAt, createdAt: users.createdAt,
-    }).from(users).where(eq(users.role, "admin"));
+    }).from(users).where(inArray(users.role, ["admin", "owner"]));
     return rows;
   }),
 });

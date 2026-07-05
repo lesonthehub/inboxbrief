@@ -69,6 +69,7 @@ export default function Settings() {
 
   const [phone, setPhone] = useState("");
   const [timezone, setTimezone] = useState("America/Chicago");
+  const [timeFormat, setTimeFormat] = useState<"12h" | "24h">("12h");
   const [saving, setSaving] = useState(false);
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [pendingPhone, setPendingPhone] = useState<string | null>(null);
@@ -156,6 +157,7 @@ export default function Settings() {
     if (settings) {
       setPhone(settings.phone ?? "");
       setTimezone(settings.timezone ?? "America/Chicago");
+      setTimeFormat((settings.timeFormat as "12h" | "24h") ?? "12h");
     }
   }, [settings]);
 
@@ -169,13 +171,13 @@ export default function Settings() {
       setSaving(false);
       return;
     }
-    updateSettings.mutate({ phone, timezone });
+    updateSettings.mutate({ phone, timezone, timeFormat });
   };
 
   const handlePhoneVerified = () => {
     setShowPhoneVerification(false);
     // Save settings with the newly verified phone
-    updateSettings.mutate({ phone: pendingPhone ?? phone, timezone });
+    updateSettings.mutate({ phone: pendingPhone ?? phone, timezone, timeFormat });
     setPendingPhone(null);
   };
 
@@ -432,6 +434,34 @@ export default function Settings() {
                 ))}
               </select>
               <p className="text-xs text-muted-foreground mt-1">Used to schedule automated briefings at the right local time.</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Time Format</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTimeFormat("12h")}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    timeFormat === "12h"
+                      ? "bg-primary text-white border-primary"
+                      : "bg-transparent border-border/60 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  12-hour (1:00 PM)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTimeFormat("24h")}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    timeFormat === "24h"
+                      ? "bg-primary text-white border-primary"
+                      : "bg-transparent border-border/60 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  24-hour (13:00)
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Choose how briefing times are displayed.</p>
             </div>
             <Button
               className="bg-primary hover:bg-primary/90 text-white border-0"
