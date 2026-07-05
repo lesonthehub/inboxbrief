@@ -56,9 +56,13 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.role = user.role;
       updateSet.role = user.role;
     } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
+      // Always ensure the owner account has the owner role
+      values.role = 'owner';
+      updateSet.role = 'owner';
     }
+    // NOTE: if role is not specified and user is not the owner,
+    // we do NOT include role in updateSet — this preserves any
+    // existing admin/owner role that was manually assigned.
 
     if (!values.lastSignedIn) {
       values.lastSignedIn = new Date();
