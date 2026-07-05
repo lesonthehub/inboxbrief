@@ -28,12 +28,15 @@ export const getLoginUrl = (returnPath?: string) => {
 export const loginWithWarmUp = async (returnPath?: string): Promise<void> => {
   const loginUrl = getLoginUrl(returnPath);
   try {
-    await Promise.race([
-      fetch("/api/health"),
-      new Promise<void>(resolve => setTimeout(resolve, 2000)),
-    ]);
+    // Wait up to 8s for the server to warm up before redirecting to OAuth.
+    // The OAuth code has a ~60s window, so we can afford to wait.
+    // Production Autoscale cold starts typically take 5-15s.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    await fetch("/api/health", { signal: controller.signal });
+    clearTimeout(timeoutId);
   } catch {
-    // Ignore errors — proceed to login even if ping fails
+    // Ignore errors (timeout or network) — proceed to login regardless
   }
   window.location.href = loginUrl;
 };
