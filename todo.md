@@ -582,3 +582,15 @@
 - [x] Admin activity log lag fix (pagination / limit query)
 - [x] Enterprise custom plan builder: custom email count, manual limit, team size, plan name, pricing, estimate calculator
 - [x] Enterprise plan assignment to users by owner/admin
+
+## Round 28 Fixes
+
+- [x] Firefox desktop CSS fix: add `color: transparent` fallback alongside `-webkit-text-fill-color: transparent` for text-gradient class
+- [x] Dev preview CSS fix: disable strict CSP in development mode to allow Vite HMR module loading
+- [x] OAuth warmup timeout increased from 2s to 8s to handle cold-start on Autoscale hosting
+- [x] Mobile UI: Home page hero buttons full-width on mobile, better spacing and rounded corners
+- [x] Mobile UI: Home page footer centered on mobile with proper flex-wrap
+- [x] Mobile UI: Dashboard welcome section truncates long names, plan status wraps cleanly
+- [x] Mobile UI: Dashboard main briefing button better sizing on mobile
+- [x] Mobile UI: Pricing page footer stacked and centered on mobile
+- [x] Mobile UI: Enterprise page footer centered on mobile

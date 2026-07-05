@@ -484,25 +484,25 @@ export default function Dashboard() {
 
         {/* Welcome + Plan Status */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
               {user?.name ? `Hey, ${user.name.split(" ")[0]}` : "Your Dashboard"}
             </h1>
-            <p className="text-muted-foreground text-sm mt-0.5">
-              {isActive ? `Active · ${planName}` : "No active subscription"}
+            <p className="text-muted-foreground text-sm mt-0.5 flex flex-wrap items-center gap-1">
+              <span>{isActive ? `Active · ${planName}` : "No active subscription"}</span>
               {trialDaysLeft !== null && trialDaysLeft > 0 && (
-                <span className="ml-2 text-primary font-medium">· {trialDaysLeft} days left in trial</span>
+                <span className="text-primary font-medium">· {trialDaysLeft} days left in trial</span>
               )}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {!isActive && (
-              <Button size="sm" className="bg-primary hover:bg-primary/90 text-white border-0" onClick={() => navigate("/pricing")}>
+              <Button size="sm" className="bg-primary hover:bg-primary/90 text-white border-0 text-xs" onClick={() => navigate("/pricing")}>
                 Choose a Plan
               </Button>
             )}
             {isActive && subStatus?.plan === "trial" && (
-              <Button size="sm" variant="outline" className="border-primary/50 text-primary hover:bg-primary/10" onClick={() => navigate("/pricing")}>
+              <Button size="sm" variant="outline" className="border-primary/50 text-primary hover:bg-primary/10 text-xs" onClick={() => navigate("/pricing")}>
                 Upgrade
               </Button>
             )}
@@ -510,7 +510,7 @@ export default function Dashboard() {
         </div>
 
         {/* ── THE MAIN BUTTON ─────────────────────────────────────────────── */}
-        <div className="bg-card border border-border/40 rounded-2xl p-6 sm:p-8 text-center shadow-xl shadow-primary/5">
+        <div className="bg-card border border-border/40 rounded-2xl p-5 sm:p-8 text-center shadow-xl shadow-primary/5">
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="inline-flex items-center gap-1.5 border border-green-500/30 bg-green-500/10 px-3 py-1 rounded-full text-xs font-medium text-green-400">
               <Lock className="w-3 h-3" />
@@ -524,7 +524,7 @@ export default function Dashboard() {
           </p>
           <Button
             size="lg"
-            className="bg-primary hover:bg-primary/90 text-white border-0 text-lg sm:text-xl px-8 sm:px-12 py-6 sm:py-7 h-auto w-full sm:w-auto shadow-lg shadow-primary/30 transition-all hover:shadow-primary/50 hover:scale-[1.02] active:scale-[0.98]"
+            className="bg-primary hover:bg-primary/90 text-white border-0 text-base sm:text-xl px-8 sm:px-12 py-5 sm:py-7 h-auto w-full sm:w-auto shadow-lg shadow-primary/30 transition-all hover:shadow-primary/50 hover:scale-[1.02] active:scale-[0.98] rounded-xl"
             onClick={handleTrigger}
             disabled={triggerBriefing.isPending || !isActive}
           >

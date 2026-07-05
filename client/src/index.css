@@ -115,8 +115,9 @@
   .text-gradient {
     background: linear-gradient(135deg, oklch(0.80 0.15 274), oklch(0.65 0.22 274), oklch(0.70 0.20 300));
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent; /* Firefox fallback: color:transparent works alongside background-clip:text */
   }
   .glass-card {
     background: oklch(0.16 0.018 264 / 0.8);

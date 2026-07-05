@@ -110,7 +110,7 @@ export default function Home() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-muted-foreground hover:text-foreground hidden sm:inline-flex"
+              className="text-muted-foreground hover:text-foreground hidden sm:inline-flex text-xs"
               onClick={() => navigate("/pricing")}
             >
               Pricing
@@ -118,7 +118,7 @@ export default function Home() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-muted-foreground hover:text-foreground hidden sm:inline-flex"
+              className="text-muted-foreground hover:text-foreground hidden sm:inline-flex text-xs"
               onClick={() => navigate("/contact")}
             >
               Contact
@@ -126,7 +126,7 @@ export default function Home() {
             {isAuthenticated ? (
               <Button
                 size="sm"
-                className="bg-primary hover:bg-primary/90 text-white border-0"
+                className="bg-primary hover:bg-primary/90 text-white border-0 text-xs"
                 onClick={() => navigate("/dashboard")}
               >
                 Dashboard
@@ -136,7 +136,7 @@ export default function Home() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="text-muted-foreground hover:text-foreground hidden sm:inline-flex"
+                  className="text-muted-foreground hover:text-foreground hidden sm:inline-flex text-xs"
                   onClick={() => { loginWithWarmUp("/dashboard"); }}
                 >
                   Log In
@@ -144,7 +144,7 @@ export default function Home() {
                 {!trialAlreadyUsed ? (
                   <Button
                     size="sm"
-                    className="bg-primary hover:bg-primary/90 text-white border-0"
+                    className="bg-primary hover:bg-primary/90 text-white border-0 text-xs px-3"
                     onClick={handleGetStarted}
                   >
                     Start Free Trial
@@ -152,7 +152,7 @@ export default function Home() {
                 ) : (
                   <Button
                     size="sm"
-                    className="bg-primary hover:bg-primary/90 text-white border-0"
+                    className="bg-primary hover:bg-primary/90 text-white border-0 text-xs px-3"
                     onClick={() => navigate("/pricing")}
                   >
                     Choose a Plan
@@ -181,38 +181,38 @@ export default function Home() {
           <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed">
             InboxBrief reads your Gmail or Outlook, filters out the noise, and texts you a natural-sounding briefing — encrypted end-to-end, delivered on your schedule, in your language.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-10 sm:mb-12">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-8 sm:mb-12 w-full max-w-sm sm:max-w-none mx-auto">
             {!trialAlreadyUsed ? (
               <Button
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-white border-0 text-sm sm:text-base md:text-lg px-5 sm:px-8 py-4 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30"
+                className="bg-primary hover:bg-primary/90 text-white border-0 text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30 rounded-xl"
                 onClick={handleGetStarted}
                 disabled={loading}
               >
                 💬 Start Free — 7 Days Full Access
-                <ChevronRight className="w-5 h-5 ml-1 flex-shrink-0" />
+                <ChevronRight className="w-4 h-4 ml-1 flex-shrink-0" />
               </Button>
             ) : (
               <Button
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-white border-0 text-sm sm:text-base md:text-lg px-5 sm:px-8 py-4 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30"
+                className="bg-primary hover:bg-primary/90 text-white border-0 text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30 rounded-xl"
                 onClick={() => navigate("/pricing")}
                 disabled={loading}
               >
                 💬 Choose a Plan
-                <ChevronRight className="w-5 h-5 ml-1 flex-shrink-0" />
+                <ChevronRight className="w-4 h-4 ml-1 flex-shrink-0" />
               </Button>
             )}
             <Button
               size="lg"
               variant="outline"
-              className="text-sm sm:text-base md:text-lg px-5 sm:px-8 py-4 sm:py-6 h-auto border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/50 bg-transparent w-full sm:w-auto"
+              className="text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 h-auto border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/50 bg-transparent w-full sm:w-auto rounded-xl"
               onClick={() => navigate("/pricing")}
             >
               View Plans
             </Button>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /><span>AES-256-GCM Encrypted</span></div>
             <div className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /><span>No credit card for trial</span></div>
             <div className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /><span>8 languages supported</span></div>
@@ -496,7 +496,7 @@ export default function Home() {
             </p>
             <Button
               size="lg"
-              className="bg-primary hover:bg-primary/90 text-white border-0 text-sm sm:text-base md:text-lg px-6 sm:px-10 py-4 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30"
+              className="bg-primary hover:bg-primary/90 text-white border-0 text-sm sm:text-base px-6 sm:px-10 py-5 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30 rounded-xl"
               onClick={handleGetStarted}
             >
               💬 Get My First Briefing Free
@@ -510,9 +510,9 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-border/40 py-6 sm:py-8 px-4">
-        <div className="container flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+        <div className="container flex flex-col items-center gap-4 sm:flex-row sm:justify-between sm:gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">© {new Date().getFullYear()} InboxBrief. All rights reserved.</span>
+            <span className="text-sm text-muted-foreground text-center sm:text-left">© {new Date().getFullYear()} InboxBrief. All rights reserved.</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             <button

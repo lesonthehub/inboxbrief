@@ -354,11 +354,11 @@ export default function Pricing() {
       {/* Pricing Cards */}
       <section className="px-4 pb-10">
         <div className="container max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-4">
             {PLAN_DETAILS.map((plan) => (
               <div
                 key={plan.id}
-                className={`rounded-2xl p-5 sm:p-6 flex flex-col relative ${
+                className={`rounded-2xl p-5 sm:p-5 flex flex-col relative ${
                   plan.highlighted
                     ? "bg-primary/10 border-2 border-primary shadow-xl shadow-primary/20"
                     : "bg-card border border-border/40"
@@ -527,17 +527,18 @@ export default function Pricing() {
 
       {/* Footer */}
       <footer className="border-t border-border/40 py-8 px-4">
-        <div className="container flex flex-col sm:flex-row items-center justify-center gap-3 text-xs text-muted-foreground flex-wrap">
+        <div className="container flex flex-col items-center gap-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <Shield className="w-3.5 h-3.5 text-green-400" />
             <span>All data encrypted at rest with AES-256-GCM</span>
           </div>
-          <span className="hidden sm:block text-border">·</span>
-          <span>© 2026 InboxBrief</span>
-          <span className="hidden sm:block text-border">·</span>
-          <button onClick={() => navigate("/terms")} className="hover:text-foreground transition-colors">Terms</button>
-          <span className="hidden sm:block text-border">·</span>
-          <button onClick={() => navigate("/privacy")} className="hover:text-foreground transition-colors">Privacy</button>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <span>© 2026 InboxBrief</span>
+            <span className="text-border">·</span>
+            <button onClick={() => navigate("/terms")} className="hover:text-foreground transition-colors">Terms</button>
+            <span className="text-border">·</span>
+            <button onClick={() => navigate("/privacy")} className="hover:text-foreground transition-colors">Privacy</button>
+          </div>
         </div>
       </footer>
     </div>
