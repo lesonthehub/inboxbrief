@@ -21,7 +21,14 @@ const ENTERPRISE_FEATURES = [
 export default function Enterprise() {
   const [, navigate] = useLocation();
   const [submitted, setSubmitted] = useState(false);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    email: string;
+    company: string;
+    teamSize: "6_15" | "16_50" | "51_200" | "200_plus" | "";
+    useCase: string;
+    message: string;
+  }>({
     name: "",
     email: "",
     company: "",
@@ -45,7 +52,8 @@ export default function Enterprise() {
       toast.error("Please fill in all required fields.");
       return;
     }
-    contactMutation.mutate(form);
+    if (!form.teamSize) { toast.error("Please select a team size."); return; }
+    contactMutation.mutate({ ...form, teamSize: form.teamSize as "6_15" | "16_50" | "51_200" | "200_plus" });
   };
 
   return (
@@ -176,7 +184,7 @@ export default function Enterprise() {
 
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Team Size *</Label>
-                  <Select value={form.teamSize} onValueChange={v => setForm(f => ({ ...f, teamSize: v }))}>
+                  <Select value={form.teamSize} onValueChange={v => setForm(f => ({ ...f, teamSize: v as "6_15" | "16_50" | "51_200" | "200_plus" }))}>
                     <SelectTrigger className="bg-background border-border/60 text-sm">
                       <SelectValue placeholder="Select team size" />
                     </SelectTrigger>

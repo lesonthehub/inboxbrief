@@ -269,11 +269,11 @@ export async function processBriefingFeedback(
   const existingExclude = (currentPrefs.keywordsExclude ?? "").split(",").filter(Boolean);
 
   const newInclude = feedback.addKeywords
-    ? [...new Set([...existingInclude, ...feedback.addKeywords.split(",").map(k => k.trim())])]
+    ? Array.from(new Set(existingInclude.concat(feedback.addKeywords.split(",").map(k => k.trim()))))
     : existingInclude;
 
   const newExclude = feedback.removeKeywords
-    ? [...new Set([...existingExclude, ...feedback.removeKeywords.split(",").map(k => k.trim())])]
+    ? Array.from(new Set(existingExclude.concat(feedback.removeKeywords.split(",").map(k => k.trim()))))
     : existingExclude;
 
   return {

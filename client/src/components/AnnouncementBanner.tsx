@@ -64,7 +64,7 @@ export function AnnouncementBanner() {
               </div>
               {/* Dismiss button — absolutely positioned right so it doesn't affect centering */}
               <button
-                onClick={() => setDismissed((prev) => new Set([...prev, announcement.id]))}
+                onClick={() => setDismissed((prev) => { const next = new Set(Array.from(prev)); next.add(announcement.id); return next; })}
                 className={`absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 flex-shrink-0 p-0.5 rounded hover:opacity-70 transition-opacity ${style.text}`}
                 aria-label="Dismiss"
               >

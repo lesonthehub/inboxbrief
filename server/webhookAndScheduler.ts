@@ -19,7 +19,7 @@ import { PLANS } from "./plans";
 function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;
-  return new Stripe(key, { apiVersion: "2025-01-27.acacia" });
+  return new Stripe(key, { apiVersion: "2026-02-25.clover" });
 }
 
 // ── Webhook Registration ──────────────────────────────────────────────────────
@@ -90,7 +90,7 @@ async function handleStripeEvent(event: Stripe.Event, stripe: Stripe) {
         stripeSubscriptionId: subId,
         plan: plan ?? "pro",
         status: "active",
-        currentPeriodEnd: new Date(stripeSub.current_period_end * 1000),
+        currentPeriodEnd: (stripeSub as any).current_period_end ? new Date((stripeSub as any).current_period_end * 1000) : undefined,
         cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
       }).onDuplicateKeyUpdate({
         set: {
@@ -98,7 +98,7 @@ async function handleStripeEvent(event: Stripe.Event, stripe: Stripe) {
           stripeSubscriptionId: subId,
           plan: plan ?? "pro",
           status: "active",
-          currentPeriodEnd: new Date(stripeSub.current_period_end * 1000),
+          currentPeriodEnd: (stripeSub as any).current_period_end ? new Date((stripeSub as any).current_period_end * 1000) : undefined,
           cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
         },
       });
@@ -117,7 +117,7 @@ async function handleStripeEvent(event: Stripe.Event, stripe: Stripe) {
       const [existingUser] = await db.select({ scheduleType: users.scheduleType }).from(users).where(eq(users.id, userId)).limit(1);
       if (existingUser && (!existingUser.scheduleType || existingUser.scheduleType === "manual")) {
         await db.update(users).set({
-          scheduleType: defaultSched.scheduleType,
+          scheduleType: defaultSched.scheduleType as "manual" | "daily_morning" | "daily_evening" | "twice_daily" | "custom",
           scheduleTimes: defaultSched.scheduleTimes,
         }).where(eq(users.id, userId));
         console.log(`[Webhook] Set default schedule for user ${userId} on plan ${planKey}: ${defaultSched.scheduleTimes}`);
@@ -142,8 +142,8 @@ async function handleStripeEvent(event: Stripe.Event, stripe: Stripe) {
       await db.update(subscriptions)
         .set({
           plan: plan ?? existing[0].plan,
-          status: sub.status as "active" | "canceled" | "past_due" | "trialing" | "paused",
-          currentPeriodEnd: new Date(sub.current_period_end * 1000),
+          status: (sub.status === "paused" ? "past_due" : sub.status) as "active" | "canceled" | "past_due" | "trialing" | "incomplete" | "unpaid",
+          currentPeriodEnd: (sub as any).current_period_end ? new Date(((sub as any).current_period_end as number) * 1000) : undefined,
           cancelAtPeriodEnd: sub.cancel_at_period_end,
         })
         .where(eq(subscriptions.stripeCustomerId, customerId));
@@ -193,10 +193,10 @@ async function handleStripeEvent(event: Stripe.Event, stripe: Stripe) {
   }
 }
 
-function getPlanByPriceId(priceId: string): "starter" | "pro" | "business" | null {
+function getPlanByPriceId(priceId: string): "solo" | "pro" | "business" | null {
   for (const [key, plan] of Object.entries(PLANS)) {
     if (plan.stripePriceId === priceId) {
-      return key as "starter" | "pro" | "business";
+      return key as "solo" | "pro" | "business";
     }
   }
   return null;

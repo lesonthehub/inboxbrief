@@ -82,7 +82,7 @@ type AdminUser = {
 
 export default function OwnerDashboard() {
   const [, navigate] = useLocation();
-  const { user, isLoading: authLoading } = useAuth({ redirectOnUnauthenticated: true });
+  const { user, loading: authLoading } = useAuth({ redirectOnUnauthenticated: true });
 
   // Grant service state
   const [grantUserId, setGrantUserId] = useState("");

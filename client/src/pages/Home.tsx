@@ -84,11 +84,12 @@ export default function Home() {
   const [activeSmsLang, setActiveSmsLang] = useState(0);
 
   // Check if the logged-in user has already used their trial
-  const { data: subStatus } = trpc.billing.getSubscriptionStatus.useQuery(undefined, {
+  const { data: subStatus } = trpc.subscription.getStatus.useQuery(undefined, {
     enabled: isAuthenticated,
   });
+  const { data: meData } = trpc.auth.me.useQuery(undefined, { enabled: isAuthenticated });
   const isActive = subStatus?.isActive ?? false;
-  const trialAlreadyUsed = !!(subStatus as { trialUsed?: boolean } | undefined)?.trialUsed && !isActive;
+  const trialAlreadyUsed = !!(meData as { trialUsed?: boolean } | undefined)?.trialUsed && !isActive;
 
   const handleGetStarted = () => {
     if (isAuthenticated) {

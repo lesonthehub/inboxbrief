@@ -99,7 +99,7 @@ const onboardingRouter = router({
         userRole: input.userRole,
         teamSize: input.teamSize,
         inboxChallenge: input.inboxChallenge,
-        preferredLanguage: input.preferredLanguage,
+        language: input.preferredLanguage,
         onboardingComplete: true,
         trialStartedAt: now,
         trialEndsAt,
@@ -599,9 +599,10 @@ const enterpriseRouter = router({
       if (ctx.user.role !== "owner" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const [plan] = await db.insert(enterprisePlans).values({
-        companyName: input.companyName,
-        contactEmail: input.contactEmail,
+      await db.insert(enterprisePlans).values({
+        name: input.companyName ?? "Enterprise Plan",
+        companyName: input.companyName ?? null,
+        contactEmail: input.contactEmail ?? null,
         emailsPerBriefing: input.emailsPerBriefing,
         manualBriefingsPerDay: input.manualBriefingsPerDay,
         scheduledBriefingsPerDay: input.scheduledBriefingsPerDay,
@@ -998,6 +999,7 @@ const announcementsRouter = router({
   // Public: get all active, non-expired announcements
   getActive: publicProcedure.query(async () => {
     const db = await getDb();
+    if (!db) return [];
     const now = new Date();
     const rows = await db
       .select()
@@ -1016,6 +1018,7 @@ const announcementsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
     const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
     return db.select().from(announcements).orderBy(desc(announcements.createdAt));
   }),
 
@@ -1031,6 +1034,7 @@ const announcementsRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       await db.insert(announcements).values({
         message: input.message,
         type: input.type,
@@ -1055,6 +1059,7 @@ const announcementsRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const { id, expiresAt, ...rest } = input;
       await db.update(announcements).set({
         ...rest,
@@ -1069,6 +1074,7 @@ const announcementsRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       await db.delete(announcements).where(eq(announcements.id, input.id));
       return { success: true };
     }),
@@ -1332,7 +1338,7 @@ const adminToolsRouter = router({
       if (!targetUser) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
       if (!targetUser.phone) throw new TRPCError({ code: "BAD_REQUEST", message: "User has no phone number" });
 
-      const result = await runBriefingPipeline(input.userId, "manual_admin");
+      const result = await runBriefingPipeline(input.userId, "manual");
       await writeAuditLog({ userId: ctx.user.id, action: "admin_triggered_briefing", metadata: { targetUserId: input.userId } });
       return result;
     }),

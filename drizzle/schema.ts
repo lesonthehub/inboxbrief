@@ -312,19 +312,30 @@ export type InsertServiceGrant = typeof serviceGrants.$inferInsert;
 export const enterprisePlans = mysqlTable("enterprise_plans", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 128 }).notNull(),
+  // Company / contact info
+  companyName: varchar("companyName", { length: 128 }),
+  contactEmail: varchar("contactEmail", { length: 320 }),
   description: text("description"),
   // Limits (-1 = unlimited)
   emailLimit: int("emailLimit").default(200).notNull(),
+  emailsPerBriefing: int("emailsPerBriefing").default(200).notNull(),
   smsPerDay: int("smsPerDay").default(5).notNull(),
   maxSeats: int("maxSeats").default(10).notNull(),
+  maxTeamMembers: int("maxTeamMembers").default(10).notNull(),
   maxManualPerDay: int("maxManualPerDay").default(5).notNull(),
-  // Pricing
+  manualBriefingsPerDay: int("manualBriefingsPerDay").default(5).notNull(),
+  scheduledBriefingsPerDay: int("scheduledBriefingsPerDay").default(3).notNull(),
+  // Pricing (stored as strings to allow decimal values)
   monthlyPrice: int("monthlyPrice").default(0).notNull(),  // USD cents
   annualPrice: int("annualPrice").default(0).notNull(),    // USD cents/year
+  pricePerMonth: varchar("pricePerMonth", { length: 32 }),
+  pricePerYear: varchar("pricePerYear", { length: 32 }),
   // Features
   allowOutlook: boolean("allowOutlook").default(true).notNull(),
   allowGmail: boolean("allowGmail").default(true).notNull(),
   customFeatures: text("customFeatures"),  // JSON array of feature strings
+  // Assignment
+  assignedUserId: int("assignedUserId"),
   // Sales metadata
   notes: text("notes"),
   createdBy: int("createdBy").notNull(),

@@ -7,4 +7,9 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // Social login providers (account sign-in only — separate from Gmail/Outlook briefing connections)
+  googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+  googleLoginRedirectUri: process.env.GOOGLE_LOGIN_REDIRECT_URI ?? "",
+  // Future providers: add MICROSOFT_LOGIN_CLIENT_ID, APPLE_LOGIN_CLIENT_ID here
 };

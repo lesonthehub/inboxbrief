@@ -18,12 +18,12 @@ export default function AcceptInvite() {
   const [accepted, setAccepted] = useState(false);
 
   // Validate the invite token
-  const { data: invite, isLoading: inviteLoading, error: inviteError } = trpc.team.validateInvite.useQuery(
+  const { data: invite, isLoading: inviteLoading, error: inviteError } = trpc.teamInvite.validateInvite.useQuery(
     { token },
     { enabled: !!token, retry: false }
   );
 
-  const acceptMutation = trpc.team.acceptInvite.useMutation({
+  const acceptMutation = trpc.teamInvite.acceptInvite.useMutation({
     onSuccess: () => {
       setAccepted(true);
       toast.success("You've joined the team!");
