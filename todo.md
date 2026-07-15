@@ -605,3 +605,10 @@
 - [x] Onboarding: make phone number optional (can be added later in Settings)
 - [x] Onboarding: SMS consent checkbox only required when phone number is provided
 - [x] Onboarding: server-side phone validation updated to accept optional phone
+
+## Round 30 — Google Sign-In as Native Login
+
+- [x] server/_core/index.ts: import and register registerGoogleLoginRoutes from socialLogin.ts
+- [x] client/src/const.ts: add googleLoginWithWarmUp() helper (mirrors loginWithWarmUp but redirects to /api/auth/google/login)
+- [x] client/src/pages/Home.tsx: import googleLoginWithWarmUp; replace Manus login with Google Sign-In for nav Log In button; add prominent "Sign in with Google" button below hero CTAs; update "Log in here" link to use Google Sign-In
+- [x] All 65 tests pass

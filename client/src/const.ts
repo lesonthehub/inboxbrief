@@ -20,11 +20,23 @@ export const getLoginUrl = (returnPath?: string) => {
 };
 
 /**
- * Warm up the server before redirecting to OAuth.
- * On Autoscale hosting the server can be cold — pinging /api/health first
- * ensures it is warm before the OAuth code arrives at the callback.
- * The ping fires and we wait up to 8 seconds, then redirect regardless.
+ * Redirect to Google Sign-In (native account login, not Gmail briefing connection).
+ * Warms up the server first to avoid cold-start issues.
  */
+export const googleLoginWithWarmUp = async (returnPath?: string): Promise<void> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    await fetch("/api/health", { signal: controller.signal });
+    clearTimeout(timeoutId);
+  } catch {
+    // Ignore — proceed regardless
+  }
+  const params = new URLSearchParams();
+  if (returnPath) params.set("returnPath", returnPath);
+  window.location.href = `/api/auth/google/login?${params.toString()}`;
+};
+
 export const loginWithWarmUp = async (returnPath?: string): Promise<void> => {
   const loginUrl = getLoginUrl(returnPath);
   try {
