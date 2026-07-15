@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
-const EFFECTIVE_DATE = "May 23, 2026";
+const EFFECTIVE_DATE = "July 15, 2026";
 const CONTACT_EMAIL = "support@inboxbrief.org";
 
 function Section({ num, title, children }: { num: number; title: string; children: React.ReactNode }) {
@@ -140,30 +140,39 @@ export default function Privacy() {
           <div className="rounded-xl border border-border/60 bg-muted/30 p-5 mb-8">
             <h2 className="text-base font-semibold text-foreground mb-3">10. Google API Services — Limited Use Disclosure</h2>
             <div className="text-muted-foreground leading-relaxed space-y-3 text-sm">
-              <p>
-                InboxBrief's use of information received from Google APIs adheres to the{" "}
-                <a
-                  href="https://developers.google.com/terms/api-services-user-data-policy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline underline-offset-2"
-                >
-                  Google API Services User Data Policy
-                </a>
-                , including the Limited Use requirements.
-              </p>
-              <p><strong className="text-foreground">Scope accessed:</strong> <code className="text-xs bg-muted px-1 py-0.5 rounded">https://www.googleapis.com/auth/gmail.readonly</code> — read-only access to your Gmail messages.</p>
-              <p><strong className="text-foreground">Purpose:</strong> We access Gmail data solely to read email subjects, senders, and body text in order to generate your personalized SMS inbox briefing. No other use is made of this data.</p>
-              <p><strong className="text-foreground">What we do NOT do with Google user data:</strong></p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>We do not use Google user data to develop, improve, or train generalized AI or ML models</li>
-                <li>We do not sell Google user data to any third party</li>
-                <li>We do not use Google user data for advertising purposes</li>
-                <li>We do not allow humans to read your Google user data unless you have given us explicit permission, or it is necessary for security purposes (e.g., investigating abuse), or required by law</li>
-                <li>We do not transfer Google user data to third parties except as necessary to provide the briefing service (e.g., AI summarization), and only under confidentiality obligations consistent with this policy</li>
-              </ul>
-              <p><strong className="text-foreground">Data retention:</strong> Email content is processed in memory to generate your briefing and is not stored in plaintext. Encrypted summaries are retained for your briefing history and can be deleted upon request.</p>
-              <p><strong className="text-foreground">Revocation:</strong> You may revoke InboxBrief's access to your Gmail at any time from your Dashboard → Connected Accounts, or from your{" "}
+              {/* Required affirmative Limited Use statement */}
+              <div className="rounded-lg border border-border/60 bg-muted/40 p-4 mb-2">
+                <p className="text-foreground font-medium text-sm">
+                  The use of raw or derived user data received from Google Workspace APIs will adhere to the{" "}
+                  <a
+                    href="https://developers.google.com/terms/api-services-user-data-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline underline-offset-2"
+                  >
+                    Google API Services User Data Policy
+                  </a>
+                  , including the Limited Use requirements.
+                </p>
+              </div>
+
+              <p><strong className="text-foreground">Scope requested:</strong> <code className="text-xs bg-muted px-1 py-0.5 rounded">https://www.googleapis.com/auth/gmail.readonly</code> — read-only access to Gmail messages and settings. This is the narrowest scope available for reading email content.</p>
+
+              <p><strong className="text-foreground">What Gmail data is accessed:</strong> When you connect your Gmail account, InboxBrief reads email subjects, sender names and addresses, timestamps, and body text of recent emails in your inbox. No attachments are downloaded. No emails are sent, modified, or deleted.</p>
+
+              <p><strong className="text-foreground">How Gmail data is used:</strong> Gmail data is used exclusively to generate your personalized SMS inbox briefing — a concise, AI-summarized digest of your most important emails. It is not used for any other purpose.</p>
+
+              <p><strong className="text-foreground">What Gmail data is shared:</strong> Raw email content is passed to an AI summarization service (operating under strict confidentiality obligations) solely to generate your briefing text. Gmail data is not sold, shared with advertisers, data brokers, or any other third party.</p>
+
+              <p><strong className="text-foreground">How Gmail data is protected:</strong> OAuth access tokens are encrypted with AES-256-GCM before storage. Email content is processed in memory and is never written to disk in plaintext. All data in transit uses TLS 1.2 or higher.</p>
+
+              <p><strong className="text-foreground">Data retention and deletion:</strong> Raw email content is never stored — it is processed in memory and discarded immediately after your briefing is generated. Encrypted briefing summaries are retained in your account history and are permanently deleted when you delete your account or disconnect Gmail. You may request deletion at any time by contacting <a href="mailto:support@inboxbrief.org" className="text-primary underline underline-offset-2">support@inboxbrief.org</a>.</p>
+
+              <p><strong className="text-foreground">AI/ML model training restrictions:</strong> Gmail user data is never used to develop, improve, or train generalized AI or ML models. Gmail data is not transferred to any third-party service for the purpose of training AI or ML models. The AI summarization service used by InboxBrief processes your data only to generate your briefing and does not retain it for model training.</p>
+
+              <p><strong className="text-foreground">Human access restrictions:</strong> InboxBrief employees and contractors do not read your Gmail data unless you have explicitly granted permission, it is necessary to investigate a security incident, or it is required by law.</p>
+
+              <p><strong className="text-foreground">Revocation:</strong> You may revoke InboxBrief's access to your Gmail at any time from your Dashboard → Connected Accounts, or directly from your{" "}
                 <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Google Account permissions page</a>.
               </p>
             </div>

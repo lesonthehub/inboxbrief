@@ -57,7 +57,7 @@ const onboardingRouter = router({
 
   complete: protectedProcedure
     .input(z.object({
-      phone: z.string().min(10).max(20),
+      phone: z.string().min(10).max(20).optional(),
       businessType: z.string().min(1).max(128),
       // Q1: What best describes your role?
       userRole: z.enum(["solo_owner", "team_lead", "executive", "operations", "other"]),

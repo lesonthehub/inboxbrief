@@ -594,3 +594,14 @@
 - [x] Mobile UI: Dashboard main briefing button better sizing on mobile
 - [x] Mobile UI: Pricing page footer stacked and centered on mobile
 - [x] Mobile UI: Enterprise page footer centered on mobile
+
+## Round 29 — Google OAuth Verification Compliance
+
+- [x] Privacy Policy: update effective date to July 15, 2026
+- [x] Privacy Policy: add required affirmative Google Limited Use statement (exact wording from Google policy)
+- [x] Privacy Policy: expand Gmail data disclosures — what is accessed, how it's used, what's shared, how it's protected, retention/deletion policy
+- [x] Privacy Policy: add AI/ML model training restriction statement
+- [x] Privacy Policy: add human access restriction statement
+- [x] Onboarding: make phone number optional (can be added later in Settings)
+- [x] Onboarding: SMS consent checkbox only required when phone number is provided
+- [x] Onboarding: server-side phone validation updated to accept optional phone

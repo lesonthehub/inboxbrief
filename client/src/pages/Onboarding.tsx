@@ -148,6 +148,7 @@ export default function Onboarding() {
   };
 
   const validatePhone = (val: string) => {
+    if (!val.trim()) return ""; // optional
     const digits = val.replace(/\D/g, "");
     if (digits.length < 10) return "Please enter a valid 10-digit phone number";
     return "";
@@ -156,13 +157,13 @@ export default function Onboarding() {
   const handleSubmit = () => {
     const err = validatePhone(phone);
     if (err) { setPhoneError(err); return; }
-    if (!smsConsent) { toast.error("Please agree to receive SMS briefings to continue."); return; }
+    if (phone.trim() && !smsConsent) { toast.error("Please agree to receive SMS briefings to continue."); return; }
     if (!userRole || !teamSize || !inboxChallenge) return;
 
     const finalBusiness = businessType === "Other" ? customBusiness || "Other" : businessType;
 
     completeMutation.mutate({
-      phone: phone.replace(/\D/g, ""),
+      phone: phone.trim() ? phone.replace(/\D/g, "") : undefined,
       businessType: finalBusiness,
       userRole,
       teamSize,
@@ -405,11 +406,11 @@ export default function Onboarding() {
                 <div className="mb-4">
                   <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    Your mobile number for SMS briefings
+                    Your mobile number for SMS briefings <span className="text-muted-foreground font-normal">(optional — add later in Settings)</span>
                   </label>
                   <Input
                     type="tel"
-                    placeholder="+1 (555) 000-0000"
+                    placeholder="+1 (555) 000-0000 — skip to add later"
                     value={phone}
                     onChange={(e) => {
                       setPhone(e.target.value);
