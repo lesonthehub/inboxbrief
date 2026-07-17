@@ -44,7 +44,7 @@ type CouponDuration = "once" | "repeating" | "forever";
 
 export default function AdminTools() {
   const [, navigate] = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const utils = trpc.useUtils();
 
   // ── Coupon form state ──────────────────────────────────────────────────────
@@ -145,10 +145,19 @@ export default function AdminTools() {
   }
 
   // ── Auth guard ─────────────────────────────────────────────────────────────
-  if (!isAuthenticated || (user?.role !== "admin" && user?.role !== "owner")) {
+  if (authLoading) return null;
+  if (!isAuthenticated) {
+    navigate("/");
+    return null;
+  }
+  if (user?.role !== "admin" && user?.role !== "owner") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Access denied.</p>
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-foreground mb-2">Access Denied</h1>
+          <p className="text-muted-foreground mb-4">Admin or owner access required.</p>
+          <button className="text-primary underline" onClick={() => navigate("/dashboard")}>Back to Dashboard</button>
+        </div>
       </div>
     );
   }

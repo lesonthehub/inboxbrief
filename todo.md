@@ -643,3 +643,18 @@
 - [x] OwnerDashboard.tsx: add PageFooter
 - [x] TypeScript: 0 errors after all changes
 - [x] All 65 tests pass
+
+## Round 33 — Admin Guards + Hide Trial Copy for Logged-In Users
+
+- [x] server/_core/trpc.ts: Fix adminProcedure to allow both admin AND owner roles (was admin-only)
+- [x] AdminAnnouncements.tsx: Improve auth guard — handle authLoading, redirect unauthenticated to /, show Access Denied UI for non-admin/owner
+- [x] AdminCustomers.tsx: Improve auth guard — handle authLoading, redirect unauthenticated to /, show Access Denied UI for non-admin/owner
+- [x] AdminTools.tsx: Improve auth guard — handle authLoading, redirect unauthenticated to /, show Access Denied UI for non-admin/owner
+- [x] OwnerDashboard.tsx: Already had owner-only guard with proper UI (no change needed)
+- [x] server/routers.ts: Add trialUsed field to subscription.getStatus response
+- [x] Home.tsx: Hide trial pill, No credit card badge, and bottom CTA section for any logged-in user
+- [x] Home.tsx: Remove dependency on auth.me for trialUsed — now uses subStatus.trialUsed from getStatus
+- [x] Pricing.tsx: Fetch subStatus for logged-in users; hide trial pill and Free Trial Banner for logged-in users
+- [x] Contact.tsx: Start Free Trial button already only shown to unauthenticated users (no change needed)
+- [x] TypeScript: 0 errors after all changes
+- [x] All 65 tests pass

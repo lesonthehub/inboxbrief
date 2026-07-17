@@ -74,7 +74,7 @@ function timeAgo(date: Date): string {
 
 export default function AdminCustomers() {
   const [, navigate] = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const utils = trpc.useUtils();
 
   const [search, setSearch] = useState("");
@@ -112,9 +112,21 @@ export default function AdminCustomers() {
     onError: (e) => toast.error(e.message),
   });
 
-  if (isAuthenticated && !isAuthorized) {
-    navigate("/dashboard");
+  if (authLoading) return null;
+  if (!isAuthenticated) {
+    navigate("/");
     return null;
+  }
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-foreground mb-2">Access Denied</h1>
+          <p className="text-muted-foreground mb-4">Admin or owner access required.</p>
+          <button className="text-primary underline" onClick={() => navigate("/dashboard")}>Back to Dashboard</button>
+        </div>
+      </div>
+    );
   }
 
   function openModal(u: AdminUser, type: ModalType) {

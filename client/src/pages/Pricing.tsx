@@ -230,6 +230,11 @@ export default function Pricing() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [tosModalPlan, setTosModalPlan] = useState<PlanId | null>(null);
 
+  // Hide trial marketing for any logged-in user
+  const { data: subStatus } = trpc.subscription.getStatus.useQuery(undefined, { enabled: isAuthenticated });
+  const hideTrialCopy = isAuthenticated;
+  const trialAlreadyUsed = !!(subStatus?.trialUsed) && !(subStatus?.isActive);
+
   const acceptTos = trpc.legal.acceptTos.useMutation();
 
   const createCheckout = trpc.subscription.createCheckout.useMutation({
@@ -301,6 +306,10 @@ export default function Pricing() {
             <Button size="sm" className="bg-primary hover:bg-primary/90 text-white border-0" onClick={() => navigate("/dashboard")}>
               Dashboard
             </Button>
+          ) : trialAlreadyUsed ? (
+            <Button size="sm" className="bg-primary hover:bg-primary/90 text-white border-0" onClick={() => navigate("/pricing")}>
+              Choose a Plan
+            </Button>
           ) : (
             <Button size="sm" variant="outline" className="border-border/60 text-foreground" onClick={handleStartTrial}>
               Start Free Trial
@@ -312,10 +321,12 @@ export default function Pricing() {
       {/* Header */}
       <section className="pt-14 pb-8 px-4 text-center">
         <div className="container max-w-3xl mx-auto">
+          {!hideTrialCopy && (
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-sm font-medium mb-6">
             <Star className="w-3.5 h-3.5 fill-current" />
             <span>7-day free trial — full access, no card required</span>
           </div>
+          )}
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
             Simple, transparent pricing
           </h1>
@@ -325,7 +336,8 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* Free Trial Banner */}
+      {/* Free Trial Banner — hidden for logged-in users */}
+      {!hideTrialCopy && (
       <div className="px-4 mb-10">
         <div className="container max-w-4xl mx-auto">
           <div className="bg-card border border-primary/30 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-primary/10">
@@ -351,6 +363,7 @@ export default function Pricing() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Pricing Cards */}
       <section className="px-4 pb-10">

@@ -88,9 +88,11 @@ export default function Home() {
   const { data: subStatus } = trpc.subscription.getStatus.useQuery(undefined, {
     enabled: isAuthenticated,
   });
-  const { data: meData } = trpc.auth.me.useQuery(undefined, { enabled: isAuthenticated });
   const isActive = subStatus?.isActive ?? false;
-  const trialAlreadyUsed = !!(meData as { trialUsed?: boolean } | undefined)?.trialUsed && !isActive;
+  // trialAlreadyUsed: user has used the trial but doesn't have an active plan
+  const trialAlreadyUsed = !!(subStatus?.trialUsed) && !isActive;
+  // hideTrialCopy: any logged-in user (active or not) should not see trial marketing
+  const hideTrialCopy = isAuthenticated;
 
   const handleGetStarted = () => {
     if (isAuthenticated) {
@@ -169,10 +171,12 @@ export default function Home() {
       {/* Hero */}
       <section className="pt-24 sm:pt-32 pb-16 sm:pb-20 px-4">
         <div className="container text-center max-w-4xl mx-auto">
+          {!hideTrialCopy && (
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8">
             <Star className="w-3.5 h-3.5 fill-current flex-shrink-0" />
             <span>1 week free — full access, no card required</span>
           </div>
+          )}
           <h1
             className="text-4xl sm:text-5xl md:text-7xl font-bold leading-tight mb-5 sm:mb-6"
             style={{ fontFamily: "Space Grotesk, sans-serif", letterSpacing: "-0.02em" }}
@@ -216,7 +220,7 @@ export default function Home() {
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /><span>AES-256-GCM Encrypted</span></div>
-            <div className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /><span>No credit card for trial</span></div>
+            {!hideTrialCopy && <div className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /><span>No credit card for trial</span></div>}
             <div className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /><span>8 languages supported</span></div>
           </div>
           {!isAuthenticated && (
@@ -498,6 +502,7 @@ export default function Home() {
       </section>
 
       {/* CTA */}
+      {!hideTrialCopy && (
       <section className="py-16 sm:py-24 px-4">
         <div className="container max-w-2xl mx-auto text-center">
           <div className="bg-card border border-primary/20 rounded-2xl p-8 sm:p-10 shadow-xl shadow-primary/10">
@@ -523,6 +528,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
 
       {/* Footer */}
       <PageFooter />

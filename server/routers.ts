@@ -160,6 +160,7 @@ const subscriptionRouter = router({
       planDetails: sub?.plan ? PLANS[sub.plan] : null,
       phoneVerified: user?.phoneVerified ?? false,
       phone: user?.phone ?? null,
+      trialUsed: user?.trialUsed ?? false,
     };
   }),
 

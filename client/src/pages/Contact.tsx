@@ -95,6 +95,7 @@ export default function Contact() {
                 <Button size="sm" className="bg-primary hover:bg-primary/90 text-white border-0" onClick={() => { loginWithWarmUp("/onboarding"); }}>Start Free Trial</Button>
               </>
             )}
+            {/* Note: Start Free Trial is only shown to unauthenticated users */}
           </div>
         </div>
       </nav>
