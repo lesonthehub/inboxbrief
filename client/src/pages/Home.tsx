@@ -138,10 +138,11 @@ export default function Home() {
               </Button>
             ) : (
               <>
+                {/* Log In — visible on all screen sizes for quick access */}
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="text-muted-foreground hover:text-foreground hidden sm:inline-flex text-xs"
+                  className="text-muted-foreground hover:text-foreground text-xs border border-border/40 hover:border-border/70 px-3"
                   onClick={() => { googleLoginWithWarmUp("/dashboard"); }}
                 >
                   Log In
