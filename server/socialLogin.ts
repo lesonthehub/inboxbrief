@@ -11,9 +11,12 @@
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
 import * as db from "./db";
+import { getDb } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { sdk } from "./_core/sdk";
 import { ENV } from "./_core/env";
+import { users } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
 import axios from "axios";
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
@@ -124,17 +127,50 @@ export function registerGoogleLoginRoutes(app: Express) {
         return;
       }
 
-      const openId = buildSocialOpenId("google", sub);
+      // ── Email-based account merge ──────────────────────────────────────────
+      // If a user with this email already exists (e.g., the original owner account
+      // created via Manus OAuth), log them into THAT account instead of creating
+      // a new one. This prevents duplicate accounts for the same person.
+      let resolvedOpenId = buildSocialOpenId("google", sub);
+      let resolvedName = name || email || "Google User";
+
+      if (email) {
+        const database = await getDb();
+        if (database) {
+          const existing = await database
+            .select()
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1);
+          if (existing.length > 0 && existing[0].openId !== resolvedOpenId) {
+            // Use the pre-existing account — update its loginMethod and lastSignedIn
+            resolvedOpenId = existing[0].openId;
+            resolvedName = existing[0].name || resolvedName;
+            await database
+              .update(users)
+              .set({
+                loginMethod: "google",
+                lastSignedIn: new Date(),
+                // Auto-verify email for the owner and for Google-verified emails
+                emailVerified: true,
+              })
+              .where(eq(users.openId, resolvedOpenId));
+            await finishSocialLogin(res, req, resolvedOpenId, resolvedName, returnPath);
+            return;
+          }
+        }
+      }
 
       await db.upsertUser({
-        openId,
-        name: name || email || "Google User",
+        openId: resolvedOpenId,
+        name: resolvedName,
         email: email || null,
         loginMethod: "google",
         lastSignedIn: new Date(),
+        emailVerified: true, // Google has already verified this email
       });
 
-      await finishSocialLogin(res, req, openId, name || email || "Google User", returnPath);
+      await finishSocialLogin(res, req, resolvedOpenId, resolvedName, returnPath);
     } catch (err: unknown) {
       const detail = (err as any)?.response?.data ?? (err as any)?.message ?? String(err);
       console.error("[GoogleLogin] Callback failed", JSON.stringify(detail));
@@ -230,17 +266,46 @@ export function registerMicrosoftLoginRoutes(app: Express) {
 
       const email = mail || userPrincipalName || null;
       const name = displayName || email || "Outlook User";
-      const openId = buildSocialOpenId("microsoft", id);
+
+      // ── Email-based account merge ──────────────────────────────────────────
+      let resolvedOpenId = buildSocialOpenId("microsoft", id);
+      let resolvedName = name;
+
+      if (email) {
+        const database = await getDb();
+        if (database) {
+          const existing = await database
+            .select()
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1);
+          if (existing.length > 0 && existing[0].openId !== resolvedOpenId) {
+            resolvedOpenId = existing[0].openId;
+            resolvedName = existing[0].name || resolvedName;
+            await database
+              .update(users)
+              .set({
+                loginMethod: "microsoft",
+                lastSignedIn: new Date(),
+                emailVerified: true,
+              })
+              .where(eq(users.openId, resolvedOpenId));
+            await finishSocialLogin(res, req, resolvedOpenId, resolvedName, returnPath);
+            return;
+          }
+        }
+      }
 
       await db.upsertUser({
-        openId,
-        name,
+        openId: resolvedOpenId,
+        name: resolvedName,
         email,
         loginMethod: "microsoft",
         lastSignedIn: new Date(),
+        emailVerified: true, // Microsoft has already verified this email
       });
 
-      await finishSocialLogin(res, req, openId, name, returnPath);
+      await finishSocialLogin(res, req, resolvedOpenId, resolvedName, returnPath);
     } catch (err: unknown) {
       const detail = (err as any)?.response?.data ?? (err as any)?.message ?? String(err);
       console.error("[MicrosoftLogin] Callback failed", JSON.stringify(detail));

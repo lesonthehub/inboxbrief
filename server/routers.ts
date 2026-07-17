@@ -1318,13 +1318,54 @@ const adminToolsRouter = router({
     const activeSubscriptions = activeSubs.filter(s => s.status === "active").length;
     const briefingsTodayCount = todayBriefings.length;
 
-    // MRR estimate from active subscriptions
-    const planPrices: Record<string, number> = { starter: 19, pro: 39, business: 99 };
-    const mrr = activeSubs
-      .filter(s => s.status === "active")
-      .reduce((sum, s) => sum + (planPrices[s.plan ?? ""] ?? 0), 0);
+    // Real MRR from Stripe — sum of all active subscription amounts
+    let mrr = 0;
+    let mrrSource: "stripe" | "estimate" = "estimate";
+    try {
+      const stripe = getStripe();
+      // Fetch all active subscriptions from Stripe (paginate up to 500)
+      let hasMore = true;
+      let startingAfter: string | undefined;
+      while (hasMore) {
+        const page = await stripe.subscriptions.list({
+          status: "active",
+          limit: 100,
+          expand: ["data.items.data.price"],
+          ...(startingAfter ? { starting_after: startingAfter } : {}),
+        } as Parameters<typeof stripe.subscriptions.list>[0]);
+        for (const sub of page.data) {
+          for (const item of sub.items.data) {
+            const price = item.price;
+            if (price?.unit_amount) {
+              // Normalize to monthly: annual prices divide by 12
+              const isAnnual = price.recurring?.interval === "year";
+              const monthly = isAnnual
+                ? Math.round(price.unit_amount / 12)
+                : price.unit_amount;
+              mrr += monthly * (item.quantity ?? 1);
+            }
+          }
+        }
+        hasMore = page.has_more;
+        if (hasMore && page.data.length > 0) {
+          startingAfter = page.data[page.data.length - 1].id;
+        } else {
+          hasMore = false;
+        }
+      }
+      mrr = Math.round(mrr / 100); // convert cents to dollars
+      mrrSource = "stripe";
+    } catch (stripeErr) {
+      // Fallback to local estimate if Stripe is unavailable
+      const planPrices: Record<string, number> = { solo: 9, starter: 19, pro: 39, business: 99, enterprise: 299 };
+      mrr = activeSubs
+        .filter(s => s.status === "active")
+        .reduce((sum, s) => sum + (planPrices[s.plan ?? ""] ?? 0), 0);
+      mrrSource = "estimate";
+      console.warn("[Stats] Stripe MRR fetch failed, using local estimate:", stripeErr);
+    }
 
-    return { totalUsers, activeUsers, newUsersToday, activeSubscriptions, mrr, briefingsTodayCount };
+    return { totalUsers, activeUsers, newUsersToday, activeSubscriptions, mrr, mrrSource, briefingsTodayCount };
   }),
 
   // ─── Coupon Management ────────────────────────────────────────────────────

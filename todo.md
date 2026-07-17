@@ -671,3 +671,14 @@
 - [ ] Server: before sending grace briefing, check lastGraceBriefingAt < 7 days ago AND user is not owner
 - [ ] Server: update lastGraceBriefingAt after sending grace briefing
 - [ ] Test all anti-abuse and grace briefing cap logic
+
+## Round 36 — Duplicate Account Fix, Email-Merge Login, Real Stripe MRR
+
+- [x] socialLogin.ts: Add email-merge logic to Google callback — if a new Google login shares an email with an existing account, update the existing account's openId instead of creating a duplicate
+- [x] socialLogin.ts: Add email-merge logic to Microsoft callback — same pattern as Google
+- [x] DB: Delete duplicate owner account (ID 6660016), auto-verify original owner account (ID 1, lesantoineiii@gmail.com)
+- [x] routers.ts: Replace hardcoded MRR estimate in adminTools.getStats with real Stripe API call (paginated subscription list, annual/monthly normalization, cents→dollars conversion)
+- [x] routers.ts: Add mrrSource field to getStats response ("stripe" | "estimate") — falls back to local estimate if Stripe API is unavailable
+- [x] AdminTools.tsx: Show "live" (green) or "~est" (amber) badge next to MRR value based on mrrSource field
+- [x] TypeScript: 0 errors after all changes
+- [x] All 65 tests pass

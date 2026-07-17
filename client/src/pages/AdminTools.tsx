@@ -194,16 +194,29 @@ export default function AdminTools() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {[
-              { label: "Total Users", value: stats?.totalUsers ?? "—", icon: Users, color: "text-blue-400" },
-              { label: "Active Users", value: stats?.activeUsers ?? "—", icon: Users, color: "text-green-400" },
-              { label: "New Today", value: stats?.newUsersToday ?? "—", icon: TrendingUp, color: "text-indigo-400" },
-              { label: "Subscribers", value: stats?.activeSubscriptions ?? "—", icon: Crown, color: "text-amber-400" },
-              { label: "MRR", value: stats?.mrr !== undefined ? `$${stats.mrr}` : "—", icon: DollarSign, color: "text-emerald-400" },
-              { label: "Briefings Sent", value: stats?.briefingsTodayCount ?? "—", icon: MessageSquare, color: "text-purple-400" },
-            ].map(({ label, value, icon: Icon, color }) => (
+              { label: "Total Users", value: stats?.totalUsers ?? "—", icon: Users, color: "text-blue-400", badge: null },
+              { label: "Active Users", value: stats?.activeUsers ?? "—", icon: Users, color: "text-green-400", badge: null },
+              { label: "New Today", value: stats?.newUsersToday ?? "—", icon: TrendingUp, color: "text-indigo-400", badge: null },
+              { label: "Subscribers", value: stats?.activeSubscriptions ?? "—", icon: Crown, color: "text-amber-400", badge: null },
+              {
+                label: "MRR",
+                value: stats?.mrr !== undefined ? `$${stats.mrr}` : "—",
+                icon: DollarSign,
+                color: "text-emerald-400",
+                badge: stats?.mrrSource === "stripe" ? "live" : stats?.mrrSource === "estimate" ? "~est" : null,
+              },
+              { label: "Briefings Sent", value: stats?.briefingsTodayCount ?? "—", icon: MessageSquare, color: "text-purple-400", badge: null },
+            ].map(({ label, value, icon: Icon, color, badge }) => (
               <div key={label} className="bg-card border border-border/40 rounded-xl p-4 flex flex-col gap-1">
                 <Icon className={`w-4 h-4 ${color}`} />
-                <p className="text-xl font-bold text-foreground">{value}</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-xl font-bold text-foreground">{value}</p>
+                  {badge && (
+                    <span className={`text-[10px] font-semibold px-1 py-0.5 rounded ${
+                      badge === "live" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"
+                    }`}>{badge}</span>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">{label}</p>
               </div>
             ))}
