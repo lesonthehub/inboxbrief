@@ -99,6 +99,11 @@ export default function OwnerDashboard() {
   // Set role state
   const [roleTarget, setRoleTarget] = useState<AdminUser | null>(null);
   const [newRole, setNewRole] = useState<"user" | "admin" | "owner">("admin");
+  const [roleChangeTotpCode, setRoleChangeTotpCode] = useState("");
+  // Grant owner role to new user (not yet in admins list)
+  const [grantOwnerUserId, setGrantOwnerUserId] = useState("");
+  const [grantOwnerTotpCode, setGrantOwnerTotpCode] = useState("");
+  const [showGrantOwnerForm, setShowGrantOwnerForm] = useState(false);
 
   // Activity log search
   const [logSearch, setLogSearch] = useState("");
@@ -190,6 +195,19 @@ export default function OwnerDashboard() {
     onSuccess: () => {
       toast.success("Role updated");
       setRoleTarget(null);
+      setRoleChangeTotpCode("");
+      refetchAdmins();
+      refetchLog();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const grantOwnerRoleMut = trpc.owner.setAdminRole.useMutation({
+    onSuccess: () => {
+      toast.success("Owner role granted successfully");
+      setShowGrantOwnerForm(false);
+      setGrantOwnerUserId("");
+      setGrantOwnerTotpCode("");
       refetchAdmins();
       refetchLog();
     },
@@ -496,9 +514,19 @@ export default function OwnerDashboard() {
             <div className="bg-card border border-border rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-foreground">Admin Accounts</h2>
-                <Button size="sm" variant="ghost" onClick={() => refetchAdmins()}>
-                  <RefreshCw className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs gap-1 border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                    onClick={() => setShowGrantOwnerForm(true)}
+                  >
+                    <Crown className="w-3.5 h-3.5" /> Grant Owner
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => refetchAdmins()}>
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 To promote a user to admin, find their account in the{" "}
@@ -506,6 +534,7 @@ export default function OwnerDashboard() {
                   Customer Manager
                 </button>{" "}
                 and change their role there. Use the controls below to demote or re-assign existing admins.
+                To grant the <strong>Owner</strong> role to any user (including those not yet admins), use the <strong>Grant Owner</strong> button above — TOTP verification is always required.
               </p>
               {adminsLoading ? (
                 <p className="text-muted-foreground text-sm">Loading...</p>
@@ -868,10 +897,11 @@ export default function OwnerDashboard() {
             <DialogTitle>Change Role for {roleTarget?.email}</DialogTitle>
             <DialogDescription>
               Select the new role. Setting to "user" removes admin privileges immediately.
+              Promoting to <strong>Owner</strong> requires TOTP verification.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-2">
-            <Select value={newRole} onValueChange={(v) => setNewRole(v as typeof newRole)}>
+          <div className="py-2 space-y-3">
+            <Select value={newRole} onValueChange={(v) => { setNewRole(v as typeof newRole); setRoleChangeTotpCode(""); }}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -887,17 +917,95 @@ export default function OwnerDashboard() {
                 </SelectItem>
               </SelectContent>
             </Select>
+            {newRole === "owner" && (
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">
+                  <span className="text-amber-400 font-semibold">⚠ TOTP Required</span> — Enter your 6-digit authenticator code to confirm
+                </label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={roleChangeTotpCode}
+                  onChange={(e) => setRoleChangeTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  className="font-mono tracking-widest text-center text-lg"
+                  autoComplete="one-time-code"
+                />
+                <p className="text-xs text-muted-foreground mt-1">This action is irreversible without another owner account. Verify carefully.</p>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setRoleTarget(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => { setRoleTarget(null); setRoleChangeTotpCode(""); }}>Cancel</Button>
             <Button
-              disabled={setAdminRoleMut.isPending}
+              disabled={setAdminRoleMut.isPending || (newRole === "owner" && roleChangeTotpCode.length !== 6)}
+              variant={newRole === "owner" ? "destructive" : "default"}
               onClick={() => {
                 if (!roleTarget) return;
-                setAdminRoleMut.mutate({ userId: roleTarget.id, role: newRole });
+                setAdminRoleMut.mutate({
+                  userId: roleTarget.id,
+                  role: newRole,
+                  totpCode: newRole === "owner" ? roleChangeTotpCode : undefined,
+                });
               }}
             >
-              {setAdminRoleMut.isPending ? "Saving..." : "Update Role"}
+              {setAdminRoleMut.isPending ? "Saving..." : newRole === "owner" ? "Promote to Owner" : "Update Role"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Grant Owner Role to new user dialog */}
+      <Dialog open={showGrantOwnerForm} onOpenChange={(o) => { if (!o) { setShowGrantOwnerForm(false); setGrantOwnerUserId(""); setGrantOwnerTotpCode(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Crown className="w-5 h-5 text-yellow-500" /> Grant Owner Role</DialogTitle>
+            <DialogDescription>
+              Promote any user to Owner by their User ID. This grants full platform control.
+              <strong className="text-amber-400 block mt-1">⚠ TOTP verification required.</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2 space-y-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">User ID</label>
+              <Input
+                type="number"
+                min={1}
+                placeholder="Enter user ID"
+                value={grantOwnerUserId}
+                onChange={(e) => setGrantOwnerUserId(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Your TOTP Code (6 digits)</label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="000000"
+                value={grantOwnerTotpCode}
+                onChange={(e) => setGrantOwnerTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                className="font-mono tracking-widest text-center text-lg"
+                autoComplete="one-time-code"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setShowGrantOwnerForm(false); setGrantOwnerUserId(""); setGrantOwnerTotpCode(""); }}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={grantOwnerRoleMut.isPending || !grantOwnerUserId || grantOwnerTotpCode.length !== 6}
+              onClick={() => {
+                if (!grantOwnerUserId) return;
+                grantOwnerRoleMut.mutate({
+                  userId: Number(grantOwnerUserId),
+                  role: "owner",
+                  totpCode: grantOwnerTotpCode,
+                });
+              }}
+            >
+              {grantOwnerRoleMut.isPending ? "Granting..." : "Grant Owner Role"}
             </Button>
           </DialogFooter>
         </DialogContent>
