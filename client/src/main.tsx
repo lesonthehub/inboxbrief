@@ -5,7 +5,7 @@ import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
-import { getLoginUrl, loginWithWarmUp } from "./const";
+import { googleLoginWithWarmUp } from "./const";
 import "./index.css";
 
 const queryClient = new QueryClient();
@@ -18,7 +18,7 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  loginWithWarmUp();
+  googleLoginWithWarmUp();
 };
 
 queryClient.getQueryCache().subscribe(event => {

@@ -37,6 +37,25 @@ export const googleLoginWithWarmUp = async (returnPath?: string): Promise<void> 
   window.location.href = `/api/auth/google/login?${params.toString()}`;
 };
 
+/**
+ * Redirect to Microsoft / Outlook Sign-In (native account login, not Outlook briefing connection).
+ * Warms up the server first to avoid cold-start issues.
+ */
+export const outlookLoginWithWarmUp = async (returnPath?: string): Promise<void> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    await fetch("/api/health", { signal: controller.signal });
+    clearTimeout(timeoutId);
+  } catch {
+    // Ignore — proceed regardless
+  }
+  const params = new URLSearchParams();
+  if (returnPath) params.set("returnPath", returnPath);
+  window.location.href = `/api/auth/microsoft/login?${params.toString()}`;
+};
+
+/** @deprecated Use googleLoginWithWarmUp or outlookLoginWithWarmUp instead. Kept for compatibility. */
 export const loginWithWarmUp = async (returnPath?: string): Promise<void> => {
   const loginUrl = getLoginUrl(returnPath);
   try {

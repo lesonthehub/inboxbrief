@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl, loginWithWarmUp } from "@/const";
+import { googleLoginWithWarmUp } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -249,7 +249,7 @@ export default function Pricing() {
 
   const handleSelectPlan = (planId: PlanId) => {
     if (!isAuthenticated) {
-      loginWithWarmUp("/pricing");
+      googleLoginWithWarmUp("/pricing");
       return;
     }
     setTosModalPlan(planId);
@@ -268,7 +268,7 @@ export default function Pricing() {
 
   const handleStartTrial = () => {
     if (!isAuthenticated) {
-      loginWithWarmUp("/onboarding");
+      googleLoginWithWarmUp("/onboarding");
     } else {
       navigate("/onboarding");
     }

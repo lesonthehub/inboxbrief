@@ -1,4 +1,4 @@
-import { getLoginUrl, loginWithWarmUp } from "@/const";
+import { googleLoginWithWarmUp } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
@@ -9,7 +9,7 @@ type UseAuthOptions = {
 };
 
 export function useAuth(options?: UseAuthOptions) {
-  const { redirectOnUnauthenticated = false, redirectPath = getLoginUrl() } =
+  const { redirectOnUnauthenticated = false, redirectPath = "/" } =
     options ?? {};
   const utils = trpc.useUtils();
 
@@ -67,7 +67,7 @@ export function useAuth(options?: UseAuthOptions) {
     if (typeof window === "undefined") return;
     if (window.location.pathname === redirectPath) return;
 
-    loginWithWarmUp();
+    googleLoginWithWarmUp();
   }, [
     redirectOnUnauthenticated,
     redirectPath,

@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl, loginWithWarmUp } from "@/const";
+import { googleLoginWithWarmUp } from "@/const";
 import { PageFooter } from "@/components/PageFooter";
 
 function ConsentBox({
@@ -91,8 +91,8 @@ export default function Contact() {
               <Button size="sm" className="bg-primary hover:bg-primary/90 text-white border-0" onClick={() => navigate("/dashboard")}>Dashboard</Button>
             ) : (
               <>
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground hidden sm:inline-flex" onClick={() => { loginWithWarmUp("/dashboard"); }}>Log In</Button>
-                <Button size="sm" className="bg-primary hover:bg-primary/90 text-white border-0" onClick={() => { loginWithWarmUp("/onboarding"); }}>Start Free Trial</Button>
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground hidden sm:inline-flex" onClick={() => googleLoginWithWarmUp("/dashboard")}>Log In</Button>
+                <Button size="sm" className="bg-primary hover:bg-primary/90 text-white border-0" onClick={() => googleLoginWithWarmUp("/onboarding")}>Start Free Trial</Button>
               </>
             )}
             {/* Note: Start Free Trial is only shown to unauthenticated users */}

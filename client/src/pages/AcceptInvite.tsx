@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { MessageSquare, CheckCircle, XCircle, Loader2, Users } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl, loginWithWarmUp } from "@/const";
+import { SocialLoginButtons } from "@/components/SocialLoginButtons";
 import { PageFooter } from "@/components/PageFooter";
 import { toast } from "sonner";
 
@@ -135,14 +135,7 @@ export default function AcceptInvite() {
               <p className="text-sm text-muted-foreground bg-primary/5 border border-primary/20 rounded-lg p-3">
                 You'll need to sign in or create an account first. Your invite will be waiting when you return.
               </p>
-              <Button
-                className="w-full bg-primary hover:bg-primary/90 text-white border-0 h-11"
-                onClick={() => {
-                  loginWithWarmUp(`/invite/${token}`);
-                }}
-              >
-                Sign in to Accept Invite
-              </Button>
+              <SocialLoginButtons returnPath={`/invite/${token}`} direction="col" />
             </div>
           ) : (
             <div className="space-y-4">

@@ -11,5 +11,8 @@ export const ENV = {
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
   googleLoginRedirectUri: process.env.GOOGLE_LOGIN_REDIRECT_URI ?? "",
-  // Future providers: add MICROSOFT_LOGIN_CLIENT_ID, APPLE_LOGIN_CLIENT_ID here
+  // Microsoft / Outlook Sign-In (account sign-in only — separate from Outlook briefing connection)
+  microsoftClientId: process.env.MICROSOFT_CLIENT_ID ?? "",
+  microsoftClientSecret: process.env.MICROSOFT_CLIENT_SECRET ?? "",
+  microsoftLoginRedirectUri: process.env.MICROSOFT_LOGIN_REDIRECT_URI ?? "",
 };

@@ -19,7 +19,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { getLoginUrl, loginWithWarmUp } from "@/const";
+import { SocialLoginButtons } from "@/components/SocialLoginButtons";
 import { useIsMobile } from "@/hooks/useMobile";
 import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
@@ -68,15 +68,7 @@ export default function DashboardLayout({
               Access to this dashboard requires authentication. Continue to launch the login flow.
             </p>
           </div>
-          <Button
-            onClick={() => {
-              loginWithWarmUp();
-            }}
-            size="lg"
-            className="w-full shadow-lg hover:shadow-xl transition-all"
-          >
-            Sign in
-          </Button>
+          <SocialLoginButtons returnPath="/dashboard" direction="col" />
         </div>
       </div>
     );

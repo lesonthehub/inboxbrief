@@ -143,6 +143,108 @@ export function registerGoogleLoginRoutes(app: Express) {
   });
 }
 
-// Future providers:
-// export function registerMicrosoftLoginRoutes(app: Express) { ... }
-// export function registerAppleLoginRoutes(app: Express) { ... }
+// ─── Microsoft / Outlook Sign-In ─────────────────────────────────────────────
+
+const MICROSOFT_AUTH_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+const MICROSOFT_TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+const MICROSOFT_USERINFO_URL = "https://graph.microsoft.com/v1.0/me";
+
+export function getMicrosoftLoginUrl(redirectUri: string, returnPath = "/"): string {
+  const params = new URLSearchParams({
+    client_id: ENV.microsoftClientId,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: "openid email profile User.Read",
+    response_mode: "query",
+    prompt: "select_account",
+    state: Buffer.from(JSON.stringify({ returnPath })).toString("base64"),
+  });
+  return `${MICROSOFT_AUTH_URL}?${params.toString()}`;
+}
+
+export function registerMicrosoftLoginRoutes(app: Express) {
+  // Step 1 — Redirect to Microsoft
+  app.get("/api/auth/microsoft/login", (req: Request, res: Response) => {
+    const returnPath = typeof req.query.returnPath === "string" ? req.query.returnPath : "/";
+    const redirectUri =
+      ENV.microsoftLoginRedirectUri ||
+      `${req.protocol}://${req.get("host")}/api/auth/microsoft/callback`;
+    const url = getMicrosoftLoginUrl(redirectUri, returnPath);
+    res.redirect(302, url);
+  });
+
+  // Step 2 — Handle Microsoft callback
+  app.get("/api/auth/microsoft/callback", async (req: Request, res: Response) => {
+    const code = typeof req.query.code === "string" ? req.query.code : null;
+    const state = typeof req.query.state === "string" ? req.query.state : null;
+    const error = typeof req.query.error === "string" ? req.query.error : null;
+
+    if (error) {
+      console.error("[MicrosoftLogin] User denied access:", error);
+      res.redirect(302, "/?login_error=access_denied");
+      return;
+    }
+
+    if (!code) {
+      res.status(400).json({ error: "Missing authorization code" });
+      return;
+    }
+
+    let returnPath = "/";
+    try {
+      if (state) {
+        const decoded = JSON.parse(Buffer.from(state, "base64").toString("utf8"));
+        if (decoded?.returnPath?.startsWith("/")) returnPath = decoded.returnPath;
+      }
+    } catch { /* use default */ }
+
+    try {
+      const redirectUri =
+        ENV.microsoftLoginRedirectUri ||
+        `${req.protocol}://${req.get("host")}/api/auth/microsoft/callback`;
+
+      const tokenRes = await axios.post(
+        MICROSOFT_TOKEN_URL,
+        new URLSearchParams({
+          code,
+          client_id: ENV.microsoftClientId,
+          client_secret: ENV.microsoftClientSecret,
+          redirect_uri: redirectUri,
+          grant_type: "authorization_code",
+        }),
+        { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+      );
+
+      const { access_token } = tokenRes.data;
+
+      const userInfoRes = await axios.get(MICROSOFT_USERINFO_URL, {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+
+      const profile = userInfoRes.data as { id: string; displayName?: string; mail?: string; userPrincipalName?: string };
+      const { id, displayName, mail, userPrincipalName } = profile;
+      if (!id) {
+        res.status(400).json({ error: "Microsoft did not return a user ID" });
+        return;
+      }
+
+      const email = mail || userPrincipalName || null;
+      const name = displayName || email || "Outlook User";
+      const openId = buildSocialOpenId("microsoft", id);
+
+      await db.upsertUser({
+        openId,
+        name,
+        email,
+        loginMethod: "microsoft",
+        lastSignedIn: new Date(),
+      });
+
+      await finishSocialLogin(res, req, openId, name, returnPath);
+    } catch (err: unknown) {
+      const detail = (err as any)?.response?.data ?? (err as any)?.message ?? String(err);
+      console.error("[MicrosoftLogin] Callback failed", JSON.stringify(detail));
+      res.redirect(302, "/?login_error=microsoft_failed");
+    }
+  });
+}

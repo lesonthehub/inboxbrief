@@ -16,7 +16,7 @@ import {
   securityResponseHeaders,
 } from "../security";
 import { registerEmailOAuthRoutes } from "../emailOAuthRoutes";
-import { registerGoogleLoginRoutes } from "../socialLogin";
+import { registerGoogleLoginRoutes, registerMicrosoftLoginRoutes } from "../socialLogin";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -87,8 +87,9 @@ async function startServer() {
   registerOAuthRoutes(app);
   // Email provider OAuth routes (Gmail, Outlook)
   registerEmailOAuthRoutes(app);
-  // Social login routes (Google Sign-In for account access)
+  // Social login routes (Google + Microsoft Sign-In for account access)
   registerGoogleLoginRoutes(app);
+  registerMicrosoftLoginRoutes(app);
   // tRPC API
   app.use(
     "/api/trpc",
