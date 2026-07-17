@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { PageFooter } from "@/components/PageFooter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -451,6 +452,7 @@ export default function AdminTools() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <PageFooter />
     </div>
   );
 }

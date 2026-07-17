@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { PageFooter } from "@/components/PageFooter";
 
 const EFFECTIVE_DATE = "July 15, 2026";
 const CONTACT_EMAIL = "support@inboxbrief.org";
@@ -20,6 +21,7 @@ export default function Privacy() {
   const [, navigate] = useLocation();
 
   return (
+    <>
     <div className="min-h-screen bg-background text-foreground">
       <nav className="sticky top-0 z-50 border-b border-border/40 bg-background/90 backdrop-blur-xl">
         <div className="container flex items-center justify-between h-14">
@@ -217,16 +219,9 @@ export default function Privacy() {
           </Section>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-border text-xs text-muted-foreground flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <span>© {new Date().getFullYear()} InboxBrief. All rights reserved.</span>
-          <div className="flex items-center gap-4">
-            <a href="/terms" className="hover:text-foreground transition-colors underline underline-offset-2">Terms of Service</a>
-            <a href="/sms-opt-in" className="hover:text-foreground transition-colors underline underline-offset-2">SMS Terms</a>
-            <a href="/data-usage" className="hover:text-foreground transition-colors underline underline-offset-2">Data Usage</a>
-            <a href="/contact" className="hover:text-foreground transition-colors underline underline-offset-2">Contact</a>
-          </div>
-        </div>
       </div>
     </div>
+    <PageFooter />
+    </>
   );
 }

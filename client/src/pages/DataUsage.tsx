@@ -10,11 +10,13 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShieldCheck, Mail, Smartphone, Lock, Trash2, ExternalLink } from "lucide-react";
+import { PageFooter } from "@/components/PageFooter";
 
 export default function DataUsage() {
   const [, navigate] = useLocation();
 
   return (
+    <>
     <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}
       <nav className="sticky top-0 z-50 border-b border-border/40 bg-background/90 backdrop-blur-xl">
@@ -272,17 +274,9 @@ export default function DataUsage() {
           </section>
         </div>
 
-        {/* Footer */}
-        <div className="mt-10 pt-6 border-t border-border text-xs text-muted-foreground flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <span>© {new Date().getFullYear()} InboxBrief. All rights reserved.</span>
-          <div className="flex items-center gap-4">
-            <a href="/privacy" className="hover:text-foreground transition-colors underline underline-offset-2">Privacy Policy</a>
-            <a href="/terms" className="hover:text-foreground transition-colors underline underline-offset-2">Terms of Service</a>
-            <a href="/sms-opt-in" className="hover:text-foreground transition-colors underline underline-offset-2">SMS Terms</a>
-            <a href="/contact" className="hover:text-foreground transition-colors underline underline-offset-2">Contact</a>
-          </div>
-        </div>
       </div>
     </div>
+    <PageFooter />
+    </>
   );
 }

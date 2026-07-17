@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { MessageSquare, Check, Shield, Clock, Phone } from "lucide-react";
+import { PageFooter } from "@/components/PageFooter";
 
 export default function SmsOptIn() {
   const [checked, setChecked] = useState(false);
@@ -161,13 +162,8 @@ export default function SmsOptIn() {
           </div>
         </div>
 
-        {/* Footer links */}
-        <div className="text-center text-xs text-muted-foreground space-x-4">
-          <a href="/privacy" className="hover:text-foreground transition-colors underline underline-offset-2">Privacy Policy</a>
-          <a href="/terms" className="hover:text-foreground transition-colors underline underline-offset-2">Terms of Service</a>
-          <a href="mailto:support@inboxbrief.org" className="hover:text-foreground transition-colors underline underline-offset-2">support@inboxbrief.org</a>
-        </div>
       </main>
+      <PageFooter />
     </div>
   );
 }

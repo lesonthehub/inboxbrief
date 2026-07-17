@@ -7,6 +7,7 @@ import { MessageSquare, CheckCircle, XCircle, Loader2, Users } from "lucide-reac
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl, loginWithWarmUp } from "@/const";
+import { PageFooter } from "@/components/PageFooter";
 import { toast } from "sonner";
 
 export default function AcceptInvite() {
@@ -179,6 +180,7 @@ export default function AcceptInvite() {
           )}
         </div>
       </div>
+      <PageFooter />
     </div>
   );
 }

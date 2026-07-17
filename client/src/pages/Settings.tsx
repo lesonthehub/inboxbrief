@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Shield, MessageSquare, ArrowLeft, User, Bell, CreditCard, Lock, CheckCircle, Phone, Mail, Trash2, AlertTriangle } from "lucide-react";
 import { PhoneVerificationModal } from "@/components/PhoneVerificationModal";
+import { PageFooter } from "@/components/PageFooter";
 
 const TIMEZONES = [
   "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
@@ -554,19 +555,8 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Legal */}
-        <div className="bg-card border border-border/40 rounded-xl p-5 sm:p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Shield className="w-4 h-4 text-primary" />
-            <h2 className="font-semibold text-foreground" style={{ fontFamily: "Space Grotesk, sans-serif" }}>Legal</h2>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <a href="/terms" className="text-sm text-primary hover:underline">Terms of Service</a>
-            <span className="text-muted-foreground">·</span>
-            <a href="/privacy" className="text-sm text-primary hover:underline">Privacy Policy</a>
-          </div>
-        </div>
       </div>
+      <PageFooter />
     </div>
   );
 }

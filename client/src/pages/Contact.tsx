@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl, loginWithWarmUp } from "@/const";
+import { PageFooter } from "@/components/PageFooter";
 
 function ConsentBox({
   checked,
@@ -283,17 +284,7 @@ export default function Contact() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border/40 py-6 px-4">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-          <span>© {new Date().getFullYear()} InboxBrief. All rights reserved.</span>
-          <div className="flex items-center gap-4">
-            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
-            <Link href="/sms-opt-in" className="hover:text-foreground transition-colors">SMS Terms</Link>
-          </div>
-        </div>
-      </footer>
+      <PageFooter />
     </div>
   );
 }

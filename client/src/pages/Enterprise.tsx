@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MessageSquare, ArrowLeft, CheckCircle, Shield, Users, Zap, Lock, BarChart3, Headphones } from "lucide-react";
+import { PageFooter } from "@/components/PageFooter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -240,16 +241,7 @@ export default function Enterprise() {
         </div>
       </div>
 
-      <footer className="border-t border-border/40 py-6 px-4 mt-8">
-        <div className="container flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-          <span className="text-sm text-muted-foreground text-center sm:text-left">© {new Date().getFullYear()} InboxBrief. All rights reserved.</span>
-          <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
-            <button onClick={() => navigate("/terms")} className="hover:text-foreground transition-colors">Terms</button>
-            <button onClick={() => navigate("/privacy")} className="hover:text-foreground transition-colors">Privacy</button>
-            <button onClick={() => navigate("/pricing")} className="hover:text-foreground transition-colors">Pricing</button>
-          </div>
-        </div>
-      </footer>
+      <PageFooter />
     </div>
   );
 }

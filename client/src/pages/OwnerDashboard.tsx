@@ -43,6 +43,7 @@ import {
   Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { PageFooter } from "@/components/PageFooter";
 
 type ActivityEntry = {
   id: number;
@@ -823,6 +824,7 @@ export default function OwnerDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    <PageFooter />
     </div>
   );
 }

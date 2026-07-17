@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Shield, ArrowLeft, MessageSquare } from "lucide-react";
+import { PageFooter } from "@/components/PageFooter";
 
 const TOS_VERSION = "4.0";
 const EFFECTIVE_DATE = "May 20, 2026";
@@ -169,16 +170,7 @@ export default function Terms() {
         </div>
       </div>
 
-      <footer className="border-t border-border/40 py-6 px-4">
-        <div className="container flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm text-muted-foreground">© 2026 InboxBrief. All rights reserved.</span>
-          <div className="flex gap-4 text-xs text-muted-foreground">
-            <button onClick={() => navigate("/terms")} className="hover:text-foreground transition-colors">Terms</button>
-            <button onClick={() => navigate("/privacy")} className="hover:text-foreground transition-colors">Privacy</button>
-            <button onClick={() => navigate("/enterprise")} className="hover:text-foreground transition-colors">Enterprise</button>
-          </div>
-        </div>
-      </footer>
+      <PageFooter />
     </div>
   );
 }

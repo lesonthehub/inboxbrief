@@ -10,6 +10,7 @@ import {
   Shield, MessageSquare, ChevronRight, ChevronLeft, Check,
   Building2, Users, Inbox, Phone, Gift, Globe
 } from "lucide-react";
+import { PageFooter } from "@/components/PageFooter";
 
 type UserRole = "solo_owner" | "team_lead" | "executive" | "operations" | "other";
 type TeamSize = "just_me" | "2_5" | "6_15" | "16_plus";
@@ -526,6 +527,7 @@ export default function Onboarding() {
           </div>
         </div>
       </div>
+      <PageFooter />
     </div>
   );
 }

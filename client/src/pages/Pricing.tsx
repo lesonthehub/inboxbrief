@@ -9,6 +9,7 @@ import {
   Shield, MessageSquare, Check, Star, Zap, ArrowLeft, Users,
   ChevronDown, ChevronUp, Phone, Mail, X
 } from "lucide-react";
+import { PageFooter } from "@/components/PageFooter";
 
 type PlanId = "solo" | "pro" | "business";
 
@@ -525,22 +526,7 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border/40 py-8 px-4">
-        <div className="container flex flex-col items-center gap-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <Shield className="w-3.5 h-3.5 text-green-400" />
-            <span>All data encrypted at rest with AES-256-GCM</span>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <span>© 2026 InboxBrief</span>
-            <span className="text-border">·</span>
-            <button onClick={() => navigate("/terms")} className="hover:text-foreground transition-colors">Terms</button>
-            <span className="text-border">·</span>
-            <button onClick={() => navigate("/privacy")} className="hover:text-foreground transition-colors">Privacy</button>
-          </div>
-        </div>
-      </footer>
+      <PageFooter />
     </div>
   );
 }

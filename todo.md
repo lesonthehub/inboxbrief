@@ -620,3 +620,26 @@
 - [x] Pricing: Solo plan feature line already says "Gmail integration" (correct); Pro/Business say "Gmail & Outlook integration" (correct) — Enterprise updated from "Custom email integrations" to "Gmail & Outlook integrations"
 - [x] Home.tsx: Step 1 copy already says "Gmail or Outlook" — verified, no other providers mentioned anywhere
 - [x] Ensure all email provider UI is readable on 320px–1440px screens — Dashboard uses grid-cols-1 sm:grid-cols-2, all text truncates safely, SmsOptIn consent copy updated to reflect optional phone
+
+## Round 32 — Shared PageFooter on Every Page
+
+- [x] Create shared PageFooter component (client/src/components/PageFooter.tsx) with all 7 links: Pricing, Enterprise, Contact, Terms, Privacy, SMS Terms, Data Usage + AES-256-GCM badge
+- [x] Home.tsx: replace inline footer with PageFooter
+- [x] Contact.tsx: replace partial inline footer (Privacy, Terms, SMS Terms only) with PageFooter
+- [x] Enterprise.tsx: replace partial inline footer (Terms, Privacy, Pricing only) with PageFooter
+- [x] Terms.tsx: replace partial inline footer (Terms, Privacy, Enterprise only) with PageFooter
+- [x] Pricing.tsx: replace partial inline footer (Terms, Privacy only) with PageFooter
+- [x] Privacy.tsx: replace inline bottom-links block with PageFooter
+- [x] DataUsage.tsx: replace inline bottom-links block with PageFooter
+- [x] SmsOptIn.tsx: replace inline footer links with PageFooter
+- [x] Dashboard.tsx: add PageFooter (had no footer before)
+- [x] Settings.tsx: replace Legal card section with PageFooter
+- [x] Onboarding.tsx: add PageFooter (had no footer before)
+- [x] AcceptInvite.tsx: add PageFooter (had no footer before)
+- [x] NotFound.tsx: add PageFooter (had no footer before)
+- [x] AdminAnnouncements.tsx: add PageFooter
+- [x] AdminCustomers.tsx: add PageFooter
+- [x] AdminTools.tsx: add PageFooter
+- [x] OwnerDashboard.tsx: add PageFooter
+- [x] TypeScript: 0 errors after all changes
+- [x] All 65 tests pass

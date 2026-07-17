@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { PhoneVerificationModal } from "@/components/PhoneVerificationModal";
+import { PageFooter } from "@/components/PageFooter";
 import {
   Shield, MessageSquare, Settings, LogOut, Plus, Trash2,
   Clock, CheckCircle, XCircle, AlertCircle, Zap, Mail,
@@ -1070,6 +1071,7 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      <PageFooter />
     </div>
   );
 }

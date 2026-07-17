@@ -9,6 +9,7 @@ import {
   Star, CheckCircle, Globe, Users, Gift, RefreshCw,
   Plug, BrainCircuit, Smartphone, ArrowRight
 } from "lucide-react";
+import { PageFooter } from "@/components/PageFooter";
 
 const FEATURES = [
   {
@@ -524,61 +525,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/40 py-6 sm:py-8 px-4">
-        <div className="container flex flex-col items-center gap-4 sm:flex-row sm:justify-between sm:gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground text-center sm:text-left">© {new Date().getFullYear()} InboxBrief. All rights reserved.</span>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-            <button
-              onClick={() => navigate("/pricing")}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Pricing
-            </button>
-            <button
-              onClick={() => navigate("/enterprise")}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Enterprise
-            </button>
-            <button
-              onClick={() => navigate("/contact")}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Contact
-            </button>
-            <button
-              onClick={() => navigate("/terms")}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Terms
-            </button>
-            <button
-              onClick={() => navigate("/privacy")}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Privacy
-            </button>
-            <button
-              onClick={() => navigate("/sms-opt-in")}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              SMS Terms
-            </button>
-            <button
-              onClick={() => navigate("/data-usage")}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Data Usage
-            </button>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Shield className="w-3.5 h-3.5 text-green-400" />
-              <span>AES-256-GCM Encrypted</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <PageFooter />
     </div>
   );
 }
