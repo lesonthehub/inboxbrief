@@ -188,17 +188,17 @@ export default function Home() {
             InboxBrief reads your Gmail or Outlook, filters out the noise, and texts you a natural-sounding briefing — encrypted end-to-end, delivered on your schedule, in your language.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-8 sm:mb-12 w-full max-w-sm sm:max-w-none mx-auto">
-            {!trialAlreadyUsed ? (
+            {isAuthenticated ? (
+              // Logged-in users always go to Dashboard — never see trial CTA
               <Button
                 size="lg"
                 className="bg-primary hover:bg-primary/90 text-white border-0 text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30 rounded-xl"
-                onClick={handleGetStarted}
-                disabled={loading}
+                onClick={() => navigate("/dashboard")}
               >
-                💬 Start Free — 7 Days Full Access
+                Go to Dashboard
                 <ChevronRight className="w-4 h-4 ml-1 flex-shrink-0" />
               </Button>
-            ) : (
+            ) : trialAlreadyUsed ? (
               <Button
                 size="lg"
                 className="bg-primary hover:bg-primary/90 text-white border-0 text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30 rounded-xl"
@@ -208,7 +208,18 @@ export default function Home() {
                 💬 Choose a Plan
                 <ChevronRight className="w-4 h-4 ml-1 flex-shrink-0" />
               </Button>
+            ) : (
+              <Button
+                size="lg"
+                className="bg-primary hover:bg-primary/90 text-white border-0 text-sm sm:text-base px-6 sm:px-8 py-5 sm:py-6 h-auto w-full sm:w-auto shadow-lg shadow-primary/30 rounded-xl"
+                onClick={handleGetStarted}
+                disabled={loading}
+              >
+                💬 Start Free — 7 Days Full Access
+                <ChevronRight className="w-4 h-4 ml-1 flex-shrink-0" />
+              </Button>
             )}
+            {!isAuthenticated && (
             <Button
               size="lg"
               variant="outline"
@@ -217,6 +228,7 @@ export default function Home() {
             >
               View Plans
             </Button>
+            )}
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /><span>AES-256-GCM Encrypted</span></div>
