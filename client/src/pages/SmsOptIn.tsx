@@ -118,7 +118,7 @@ export default function SmsOptIn() {
         <div className="bg-card border-2 border-primary/30 rounded-2xl p-6 mb-6">
           <h2 className="font-semibold text-base mb-1">How Users Consent</h2>
           <p className="text-sm text-muted-foreground mb-5">
-            During account creation at <a href="https://inboxbrief.org/onboarding" className="text-primary underline underline-offset-2">inboxbrief.org/onboarding</a>, every user must check the following checkbox before their account is activated. No SMS is sent without this explicit opt-in.
+            During account setup at <a href="https://inboxbrief.org/onboarding" className="text-primary underline underline-offset-2">inboxbrief.org/onboarding</a>, users who provide a mobile number must check the following checkbox before any SMS is sent. Providing a phone number is optional — users who skip it can add one later in Settings and will be shown the same consent checkbox at that time. No SMS is ever sent without this explicit opt-in.
           </p>
 
           {/* Live consent checkbox demo */}
@@ -147,7 +147,7 @@ export default function SmsOptIn() {
           </div>
 
           <p className="text-xs text-muted-foreground mt-4">
-            This checkbox is required. The "Start Free Trial" button is blocked until the user checks it. Consent is recorded server-side at the time of account creation.
+            This checkbox is shown whenever a user enters a phone number — during onboarding or later in Settings. The "Finish Setup" button is blocked until the user checks it if a phone number has been entered. Consent is recorded server-side at the time it is given.
           </p>
         </div>
 

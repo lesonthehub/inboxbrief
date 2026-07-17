@@ -612,3 +612,11 @@
 - [x] client/src/const.ts: add googleLoginWithWarmUp() helper (mirrors loginWithWarmUp but redirects to /api/auth/google/login)
 - [x] client/src/pages/Home.tsx: import googleLoginWithWarmUp; replace Manus login with Google Sign-In for nav Log In button; add prominent "Sign in with Google" button below hero CTAs; update "Log in here" link to use Google Sign-In
 - [x] All 65 tests pass
+
+## Round 31 — Gmail & Outlook Only UI + Responsive Polish
+
+- [x] Dashboard: Replace connect buttons with branded Gmail (red) and Outlook (blue) cards — each with logo, name, description, and connect/connected state; responsive 2-column grid on mobile
+- [x] Dashboard: Show provider logo icon next to connected account email address
+- [x] Pricing: Solo plan feature line already says "Gmail integration" (correct); Pro/Business say "Gmail & Outlook integration" (correct) — Enterprise updated from "Custom email integrations" to "Gmail & Outlook integrations"
+- [x] Home.tsx: Step 1 copy already says "Gmail or Outlook" — verified, no other providers mentioned anywhere
+- [x] Ensure all email provider UI is readable on 320px–1440px screens — Dashboard uses grid-cols-1 sm:grid-cols-2, all text truncates safely, SmsOptIn consent copy updated to reflect optional phone

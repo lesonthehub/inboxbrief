@@ -469,7 +469,7 @@ export default function Pricing() {
                 {[
                   "Unlimited team members",
                   "Unlimited emails & SMS",
-                  "Custom email integrations",
+                  "Gmail & Outlook integrations",
                   "Dedicated account manager",
                   "Custom onboarding",
                   "SLA & priority support",

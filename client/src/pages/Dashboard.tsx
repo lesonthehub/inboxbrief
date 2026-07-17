@@ -557,68 +557,138 @@ export default function Dashboard() {
 
         {/* Email Accounts */}
         <div className="bg-card border border-border/40 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-primary" />
-              <h2 className="font-semibold text-foreground text-sm" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
-                Connected Accounts
-              </h2>
-            </div>
+          <div className="flex items-center gap-2 mb-4">
+            <Mail className="w-4 h-4 text-primary" />
+            <h2 className="font-semibold text-foreground text-sm" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+              Connected Accounts
+            </h2>
           </div>
 
-          {emailAccounts && emailAccounts.length > 0 ? (
-            <div className="space-y-2 mb-3">
-              {emailAccounts.map((acc) => (
-                <div key={acc.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/40">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${acc.isActive ? "bg-green-400" : "bg-muted-foreground"}`} />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{acc.emailAddress}</p>
-                      <p className="text-xs text-muted-foreground capitalize">{acc.provider}</p>
+          {/* Provider cards — Gmail and Outlook only */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Gmail card */}
+            {(() => {
+              const gmailAcc = emailAccounts?.find(a => a.provider === "gmail");
+              return (
+                <div className={`relative rounded-xl border p-4 flex flex-col gap-3 transition-colors ${
+                  gmailAcc ? "border-green-500/40 bg-green-950/20" : "border-border/40 bg-muted/20"
+                }`}>
+                  {/* Header */}
+                  <div className="flex items-center gap-3">
+                    {/* Gmail logo */}
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-white shadow-sm">
+                      <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.907 1.528-1.148C21.69 2.28 24 3.434 24 5.457z" fill="#EA4335"/>
+                      </svg>
                     </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-foreground">Gmail</p>
+                      {gmailAcc ? (
+                        <p className="text-xs text-muted-foreground truncate">{gmailAcc.emailAddress}</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Not connected</p>
+                      )}
+                    </div>
+                    {gmailAcc && (
+                      <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-400/10 text-green-400 border border-green-400/30">
+                        <CheckCircle className="w-3 h-3" /> Active
+                      </span>
+                    )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-red-400 flex-shrink-0 p-1.5"
-                    onClick={() => disconnectAccount.mutate({ accountId: acc.id })}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
+                  {/* Action */}
+                  {gmailAcc ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs text-muted-foreground hover:text-red-400 hover:bg-red-950/30 border border-border/40 rounded-lg h-8"
+                      onClick={() => disconnectAccount.mutate({ accountId: gmailAcc.id })}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Disconnect
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="w-full text-xs bg-red-600 hover:bg-red-700 text-white border-0 rounded-lg h-8"
+                      onClick={() => { window.location.href = "/api/oauth/gmail/start"; }}
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1.5" /> Connect Gmail
+                    </Button>
+                  )}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground mb-3">No email accounts connected yet.</p>
-          )}
+              );
+            })()}
 
+            {/* Outlook card */}
+            {(() => {
+              const outlookAcc = emailAccounts?.find(a => a.provider === "outlook");
+              const isLocked = isSoloPlan;
+              return (
+                <div className={`relative rounded-xl border p-4 flex flex-col gap-3 transition-colors ${
+                  outlookAcc ? "border-green-500/40 bg-green-950/20" : isLocked ? "border-border/20 bg-muted/10 opacity-60" : "border-border/40 bg-muted/20"
+                }`}>
+                  {/* Header */}
+                  <div className="flex items-center gap-3">
+                    {/* Outlook logo */}
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-white shadow-sm">
+                      <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7.88 12.04q0 .45-.11.87-.1.41-.33.74-.22.33-.58.52-.37.2-.87.2t-.85-.2q-.35-.21-.57-.55-.22-.33-.33-.75-.1-.42-.1-.86t.1-.87q.1-.43.34-.76.22-.34.59-.54.36-.2.87-.2t.86.2q.35.21.57.55.22.34.31.77.1.43.1.88zM24 12v9.38q0 .46-.33.8-.33.32-.8.32H7.13q-.46 0-.8-.33-.32-.33-.32-.8V18H1q-.41 0-.7-.3-.3-.29-.3-.7V7q0-.41.3-.7Q.58 6 1 6h6.5V2.55q0-.44.3-.75.3-.3.75-.3h12.9q.44 0 .75.3.3.3.3.75V12zm-7.85-3.93h-4.45v6.2h4.45V8.07zm-4.45 7.3v1.1h4.45v-1.1h-4.45zm4.45-9.5h-4.45v1.1h4.45V5.87zm2.2 0v1.1h1.1V5.87h-1.1zm0 2.2v1.1h1.1V8.07h-1.1zm0 2.2v1.1h1.1v-1.1h-1.1zm0 2.2v1.1h1.1v-1.1h-1.1zm0 2.2v1.1h1.1v-1.1h-1.1z" fill="#0078D4"/>
+                      </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-foreground">Outlook</p>
+                      {outlookAcc ? (
+                        <p className="text-xs text-muted-foreground truncate">{outlookAcc.emailAddress}</p>
+                      ) : isLocked ? (
+                        <p className="text-xs text-muted-foreground">Pro plan required</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Not connected</p>
+                      )}
+                    </div>
+                    {outlookAcc && (
+                      <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-400/10 text-green-400 border border-green-400/30">
+                        <CheckCircle className="w-3 h-3" /> Active
+                      </span>
+                    )}
+                  </div>
+                  {/* Action */}
+                  {outlookAcc ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs text-muted-foreground hover:text-red-400 hover:bg-red-950/30 border border-border/40 rounded-lg h-8"
+                      onClick={() => disconnectAccount.mutate({ accountId: outlookAcc.id })}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Disconnect
+                    </Button>
+                  ) : isLocked ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full text-xs border-border/40 text-muted-foreground rounded-lg h-8 cursor-not-allowed"
+                      onClick={() => navigate("/pricing")}
+                    >
+                      Upgrade to Pro
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="w-full text-xs bg-[#0078D4] hover:bg-[#006BBE] text-white border-0 rounded-lg h-8"
+                      onClick={() => { window.location.href = "/api/oauth/outlook/start"; }}
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1.5" /> Connect Outlook
+                    </Button>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Solo plan note */}
           {isSoloPlan && (
-            <div className="mb-3 p-2.5 rounded-lg bg-blue-950/40 border border-blue-500/20">
-              <p className="text-xs text-blue-300">Solo plan includes <strong>Gmail only</strong>. Upgrade to Pro or above to connect Outlook.</p>
+            <div className="mt-3 p-2.5 rounded-lg bg-blue-950/40 border border-blue-500/20">
+              <p className="text-xs text-blue-300 leading-relaxed">Solo plan includes <strong>Gmail only</strong>. <button className="underline font-medium" onClick={() => navigate("/pricing")}>Upgrade to Pro</button> to also connect Outlook.</p>
             </div>
           )}
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-border/60 text-foreground hover:border-primary/50 flex-1 text-xs"
-              onClick={() => { window.location.href = "/api/oauth/gmail/start"; }}
-            >
-              <Plus className="w-3.5 h-3.5 mr-1.5" />
-              Connect Gmail
-            </Button>
-            {!isSoloPlan && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-border/60 text-foreground hover:border-primary/50 flex-1 text-xs"
-                onClick={() => { window.location.href = "/api/oauth/outlook/start"; }}
-              >
-                <Plus className="w-3.5 h-3.5 mr-1.5" />
-                Connect Outlook
-              </Button>
-            )}
-          </div>
         </div>
 
         {/* Schedule Picker */}
