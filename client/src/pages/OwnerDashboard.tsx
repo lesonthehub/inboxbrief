@@ -227,23 +227,24 @@ export default function OwnerDashboard() {
     <div className="min-h-screen bg-background">
       {/* Nav */}
       <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={() => navigate("/")}
-              className="text-lg font-bold text-foreground hover:text-primary transition-colors"
+              className="text-base font-bold text-foreground hover:text-primary transition-colors shrink-0"
               style={{ fontFamily: "Space Grotesk, sans-serif" }}
             >
               InboxBrief
             </button>
-            <span className="text-muted-foreground">/</span>
-            <span className="text-sm text-muted-foreground font-medium">Owner Dashboard</span>
+            <span className="text-muted-foreground shrink-0">/</span>
+            <span className="text-xs text-muted-foreground font-medium truncate">Owner</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Crown className="w-4 h-4 text-yellow-500" />
-            <span className="text-sm text-muted-foreground">{user.email}</span>
-            <Button size="sm" variant="ghost" onClick={() => navigate("/dashboard")}>
-              <ArrowLeft className="w-4 h-4 mr-1" /> Dashboard
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Crown className="w-3.5 h-3.5 text-yellow-500 hidden sm:block" />
+            <span className="text-xs text-muted-foreground hidden sm:block max-w-[140px] truncate">{user.email}</span>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => navigate("/dashboard")}>
+              <ArrowLeft className="w-3.5 h-3.5 sm:mr-1" />
+              <span className="hidden sm:inline">Dashboard</span>
             </Button>
           </div>
         </div>
@@ -260,34 +261,42 @@ export default function OwnerDashboard() {
         </div>
 
         <Tabs defaultValue="activity">
-          <TabsList className="mb-6">
-            <TabsTrigger value="activity" className="gap-2">
-              <Activity className="w-4 h-4" /> Activity Log
-            </TabsTrigger>
-            <TabsTrigger value="grants" className="gap-2">
-              <Gift className="w-4 h-4" /> Service Grants
-            </TabsTrigger>
-            <TabsTrigger value="admins" className="gap-2">
-              <ShieldCheck className="w-4 h-4" /> Admin Management
-            </TabsTrigger>
-            <TabsTrigger value="enterprise" className="gap-2">
-              <Crown className="w-4 h-4 text-yellow-500" /> Enterprise Plans
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 mb-6">
+            <TabsList className="w-max min-w-full">
+              <TabsTrigger value="activity" className="gap-1.5 text-xs sm:text-sm">
+                <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden xs:inline">Activity</span>
+                <span className="xs:hidden">Log</span>
+              </TabsTrigger>
+              <TabsTrigger value="grants" className="gap-1.5 text-xs sm:text-sm">
+                <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Grants
+              </TabsTrigger>
+              <TabsTrigger value="admins" className="gap-1.5 text-xs sm:text-sm">
+                <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Admin Management</span>
+                <span className="sm:hidden">Admins</span>
+              </TabsTrigger>
+              <TabsTrigger value="enterprise" className="gap-1.5 text-xs sm:text-sm">
+                <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-500" />
+                <span className="hidden sm:inline">Enterprise Plans</span>
+                <span className="sm:hidden">Enterprise</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* ── Activity Log ── */}
           <TabsContent value="activity">
             <div className="bg-card border border-border rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <h2 className="font-semibold text-foreground">Admin Activity Log</h2>
                 <div className="flex items-center gap-2">
-                  <div className="relative">
+                  <div className="relative flex-1 sm:flex-none">
                     <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       placeholder="Search actions, emails..."
                       value={logSearch}
                       onChange={(e) => setLogSearch(e.target.value)}
-                      className="pl-8 w-56 h-8 text-sm"
+                      className="pl-8 w-full sm:w-48 h-8 text-sm"
                     />
                   </div>
                   <Button size="sm" variant="ghost" onClick={() => refetchLog()}>
