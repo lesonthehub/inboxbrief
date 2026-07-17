@@ -255,6 +255,7 @@ export default function AdminCustomers() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/40 bg-card/50">
+                    <th className="text-left px-4 py-3 text-muted-foreground font-medium">ID</th>
                     <th className="text-left px-4 py-3 text-muted-foreground font-medium">User</th>
                     <th className="text-left px-4 py-3 text-muted-foreground font-medium">Phone</th>
                     <th className="text-left px-4 py-3 text-muted-foreground font-medium">Status</th>
@@ -270,6 +271,9 @@ export default function AdminCustomers() {
                       key={u.id}
                       className={`border-b border-border/20 hover:bg-card/30 transition-colors ${!u.isActive ? "opacity-60" : ""} ${i % 2 === 0 ? "" : "bg-card/10"}`}
                     >
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-xs text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded select-all">#{u.id}</span>
+                      </td>
                       <td className="px-4 py-3">
                         <div className="font-medium truncate max-w-[180px]">{u.name ?? "—"}</div>
                         <div className="text-xs text-muted-foreground truncate max-w-[180px]">{u.email ?? "—"}</div>
@@ -312,7 +316,10 @@ export default function AdminCustomers() {
               {filtered.map((u) => (
                 <div key={u.id} className={`p-4 flex items-start justify-between gap-3 ${!u.isActive ? "opacity-60" : ""}`}>
                   <div className="min-w-0">
-                    <div className="font-medium truncate">{u.name ?? "—"}</div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-mono text-xs text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded select-all">#{u.id}</span>
+                      <span className="font-medium truncate">{u.name ?? "—"}</span>
+                    </div>
                     <div className="text-xs text-muted-foreground truncate">{u.email ?? "—"}</div>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                       {u.isActive ? (
