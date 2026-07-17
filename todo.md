@@ -658,3 +658,16 @@
 - [x] Contact.tsx: Start Free Trial button already only shown to unauthenticated users (no change needed)
 - [x] TypeScript: 0 errors after all changes
 - [x] All 65 tests pass
+
+## Round 35 — Login Modal, Trial Anti-Abuse, Grace Briefing Cap
+
+- [ ] Create LoginModal component with Gmail/Outlook choice (dark, matches UI style)
+- [ ] Wire LoginModal to all login/signup entry points (Home nav Log In, Start Free Trial, hero CTA, Contact, Pricing, AcceptInvite)
+- [ ] Add trial anti-abuse: track trial signup IP + email hash in DB, block duplicate email on same IP
+- [ ] Add trial anti-abuse: rate limit trial creation (max 1 per IP per 24h)
+- [ ] Add trial anti-abuse: block disposable/alias email domains from trial
+- [ ] Add owner-only tRPC mutation to re-grant trial to a specific user
+- [ ] Add grace briefing DB column: lastGraceBriefingAt (timestamp) on users table
+- [ ] Server: before sending grace briefing, check lastGraceBriefingAt < 7 days ago AND user is not owner
+- [ ] Server: update lastGraceBriefingAt after sending grace briefing
+- [ ] Test all anti-abuse and grace briefing cap logic

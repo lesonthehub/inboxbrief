@@ -25,7 +25,8 @@ import { users, subscriptions, teamMembers, referralUses, briefingFeedback, brie
 import { eq, and, desc } from "drizzle-orm";
 import { sendVerificationOtp, verifyOtp } from "./phoneVerification";
 import { sendEmailVerificationOTP } from "./emailService";
-import { writeAuditLog } from "./security";
+import { writeAuditLog, getClientIp } from "./security";
+import { createHash } from "crypto";
 import speakeasy from "speakeasy";
 import QRCode from "qrcode";
 
@@ -73,6 +74,45 @@ const onboardingRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      // ── Trial anti-abuse checks ──────────────────────────────────────────────
+      // Skip for owner
+      if (ctx.user.role !== "owner") {
+        // 1. Block disposable/throwaway email domains
+        const DISPOSABLE_DOMAINS = [
+          "mailinator.com", "guerrillamail.com", "tempmail.com", "throwam.com",
+          "yopmail.com", "sharklasers.com", "guerrillamailblock.com", "grr.la",
+          "guerrillamail.info", "guerrillamail.biz", "guerrillamail.de", "guerrillamail.net",
+          "guerrillamail.org", "spam4.me", "trashmail.com", "trashmail.me", "trashmail.net",
+          "dispostable.com", "mailnull.com", "maildrop.cc", "fakeinbox.com",
+          "getairmail.com", "discard.email", "spamgourmet.com", "spamgourmet.net",
+          "spamgourmet.org", "spamgourmet.me", "10minutemail.com", "10minutemail.net",
+          "10minutemail.org", "10minutemail.de", "10minutemail.co.uk", "10minutemail.ru",
+          "tempinbox.com", "tempr.email", "temp-mail.org", "temp-mail.io", "temp-mail.ru",
+          "throwaway.email", "throwam.com", "getnada.com", "mailnesia.com",
+        ];
+        const emailDomain = (ctx.user.email ?? "").split("@")[1]?.toLowerCase();
+        if (emailDomain && DISPOSABLE_DOMAINS.includes(emailDomain)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Disposable email addresses are not allowed. Please sign in with your real Gmail or Outlook account." });
+        }
+
+        // 2. Block same IP from starting a second trial (hash for privacy)
+        const clientIp = getClientIp(ctx.req);
+        if (clientIp && clientIp !== "unknown") {
+          const ipHash = createHash("sha256").update(clientIp + "inboxbrief-trial-salt").digest("hex");
+          const [existingTrialFromIp] = await db
+            .select({ id: users.id })
+            .from(users)
+            .where(and(eq(users.trialSignupIpHash, ipHash), eq(users.trialUsed, true)))
+            .limit(1);
+          if (existingTrialFromIp) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "A free trial has already been used from this device or network. Please choose a plan to continue." });
+          }
+          // Store IP hash for future checks
+          await db.update(users).set({ trialSignupIpHash: ipHash }).where(eq(users.id, ctx.user.id));
+        }
+      }
+      // ── End trial anti-abuse ─────────────────────────────────────────────────
 
       const now = new Date();
       const trialEndsAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -1217,6 +1257,38 @@ const adminUsersRouter = router({
       }).where(eq(users.id, input.userId));
       await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target?.email ?? null, action: "soft_delete", details: input.reason, totpVerified: true });
       return { success: true };
+    }),
+
+  // Owner/admin only: re-grant a fresh 7-day trial to a user
+  regrantTrial: protectedProcedure
+    .input(z.object({
+      userId: z.number(),
+      reason: z.string().min(1).max(500),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [target] = await db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, input.userId)).limit(1);
+      if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      const now = new Date();
+      const trialEndsAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      // Reset trial fields and clear grace briefing so they get a fresh week
+      await db.update(users).set({
+        trialStartedAt: now,
+        trialEndsAt,
+        trialUsed: true,
+        trialNudge5Sent: false,
+        trialNudge6Sent: false,
+        trialEndSent: false,
+        graceBriefingUsed: false,
+        lastGraceBriefingAt: null,
+        trialSignupIpHash: null,
+      }).where(eq(users.id, input.userId));
+      // Re-activate trial subscription
+      await upsertSubscription(input.userId, { plan: "trial", status: "trialing", currentPeriodEnd: trialEndsAt });
+      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target.email ?? null, action: "regrant_trial", details: input.reason, totpVerified: false });
+      return { success: true, trialEndsAt };
     }),
 });
 

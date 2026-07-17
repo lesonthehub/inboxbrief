@@ -128,33 +128,42 @@ export async function runBriefingPipeline(
   let isGraceBriefing = false;
   let upgradePrompted = false;
 
+  // Owner is never subject to grace limits
+  const isOwner = user.role === "owner";
+
   if (isTrialActive) {
     const todayCount = await countBriefingsToday(userId);
 
     if (todayCount >= TRIAL_DAILY_LIMIT) {
-      // Check if grace briefing has been used
-      if (!user.graceBriefingUsed) {
-        // First over-limit: give it for free, mark grace used, send upgrade nudge
-        isGraceBriefing = true;
-        upgradePrompted = true;
-        await db.update(users).set({ graceBriefingUsed: true }).where(eq(users.id, userId));
+      if (isOwner) {
+        // Owner always gets through — no grace tracking
       } else {
-        // Hard block — grace already used
-        // Send an upgrade SMS if we haven't recently
-        await sendSmsBriefing(
-          user.phone,
-          `📬 InboxBrief: You've reached your daily limit of ${TRIAL_DAILY_LIMIT} briefings on the free trial. Upgrade to keep the flow going: ${PRICING_URL}`
-        );
-        return {
-          success: false,
-          smsSent: false,
-          emailsFetched: 0,
-          highPriorityCount: 0,
-          generalCount: 0,
-          ignoredCount: 0,
-          error: `Daily trial limit of ${TRIAL_DAILY_LIMIT} briefings reached. Upgrade your plan to continue.`,
-          upgradePrompted: true,
-        };
+        // Check if grace briefing is available this week (once per 7 days)
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const graceAvailableThisWeek = !user.lastGraceBriefingAt || user.lastGraceBriefingAt < sevenDaysAgo;
+
+        if (graceAvailableThisWeek) {
+          // Give one free briefing this week
+          isGraceBriefing = true;
+          upgradePrompted = true;
+          await db.update(users).set({ graceBriefingUsed: true, lastGraceBriefingAt: new Date() }).where(eq(users.id, userId));
+        } else {
+          // Hard block — grace already used this week
+          await sendSmsBriefing(
+            user.phone,
+            `📬 InboxBrief: You've reached your daily limit of ${TRIAL_DAILY_LIMIT} briefings on the free trial. Upgrade to keep the flow going: ${PRICING_URL}`
+          );
+          return {
+            success: false,
+            smsSent: false,
+            emailsFetched: 0,
+            highPriorityCount: 0,
+            generalCount: 0,
+            ignoredCount: 0,
+            error: `Daily trial limit of ${TRIAL_DAILY_LIMIT} briefings reached. Upgrade your plan to continue.`,
+            upgradePrompted: true,
+          };
+        }
       }
     }
 
@@ -195,25 +204,32 @@ export async function runBriefingPipeline(
     const dailyBriefingLimit = PLANS[currentPlan]?.smsPerDay ?? 3;
 
     if (todayCount >= dailyBriefingLimit) {
-      if (!user.graceBriefingUsed) {
-        isGraceBriefing = true;
-        upgradePrompted = true;
-        await db.update(users).set({ graceBriefingUsed: true }).where(eq(users.id, userId));
+      if (isOwner) {
+        // Owner always gets through
       } else {
-        await sendSmsBriefing(
-          user.phone,
-          `📬 InboxBrief: You've hit your daily briefing limit. Upgrade to a higher plan for more: ${PRICING_URL}`
-        );
-        return {
-          success: false,
-          smsSent: false,
-          emailsFetched: 0,
-          highPriorityCount: 0,
-          generalCount: 0,
-          ignoredCount: 0,
-          error: "Daily briefing limit reached. Upgrade your plan for more briefings.",
-          upgradePrompted: true,
-        };
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const graceAvailableThisWeek = !user.lastGraceBriefingAt || user.lastGraceBriefingAt < sevenDaysAgo;
+
+        if (graceAvailableThisWeek) {
+          isGraceBriefing = true;
+          upgradePrompted = true;
+          await db.update(users).set({ graceBriefingUsed: true, lastGraceBriefingAt: new Date() }).where(eq(users.id, userId));
+        } else {
+          await sendSmsBriefing(
+            user.phone,
+            `📬 InboxBrief: You've hit your daily briefing limit. Upgrade to a higher plan for more: ${PRICING_URL}`
+          );
+          return {
+            success: false,
+            smsSent: false,
+            emailsFetched: 0,
+            highPriorityCount: 0,
+            generalCount: 0,
+            ignoredCount: 0,
+            error: "Daily briefing limit reached. Upgrade your plan for more briefings.",
+            upgradePrompted: true,
+          };
+        }
       }
     }
   }
@@ -273,9 +289,10 @@ export async function runBriefingPipeline(
   // 5. Generate SMS briefing (raw text in-memory only)
   const briefingText = await generateSmsBriefing(highPriority, general, user.name ?? "there");
 
-  // 6. If this is a grace briefing, prepend the "on us" message
+  // 6. If this is a grace briefing, prepend the "on us" message (once per week per user)
+  const userName = user.name ?? "there";
   const finalBriefingText = isGraceBriefing
-    ? `You hit your limit, but we know today is busy. This one's on us. 💙\n\n${briefingText}\n\nUpgrade for unlimited: ${PRICING_URL}`
+    ? `You hit your limit, but we know today is busy. This one's on us. 💙\n\n${briefingText}\n\nUpgrade for unlimited: ${PRICING_URL}\n\nDo not reply. Support: support@inboxbrief.com`
     : briefingText;
 
   // 7. Encrypt summary before storing

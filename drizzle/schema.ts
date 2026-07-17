@@ -64,8 +64,12 @@ export const users = mysqlTable("users", {
   referralCredits: int("referralCredits").default(0).notNull(),
   creditsEarned: int("creditsEarned").default(0).notNull(),
 
-  // Over-limit grace system
+  // Over-limit grace system (weekly cap: once per 7 days, owner excluded)
   graceBriefingUsed: boolean("graceBriefingUsed").default(false).notNull(),
+  lastGraceBriefingAt: timestamp("lastGraceBriefingAt"),
+
+  // Trial anti-abuse: hashed IP at trial start
+  trialSignupIpHash: varchar("trialSignupIpHash", { length: 64 }),
 
   // Security: brute force protection
   failedAuthAttempts: int("failedAuthAttempts").default(0).notNull(),

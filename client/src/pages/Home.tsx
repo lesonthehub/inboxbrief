@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { SocialLoginButtons } from "@/components/SocialLoginButtons";
-import { googleLoginWithWarmUp } from "@/const";
+import { LoginModal } from "@/components/LoginModal";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -95,16 +95,31 @@ export default function Home() {
   // hideTrialCopy: any logged-in user (active or not) should not see trial marketing
   const hideTrialCopy = isAuthenticated;
 
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [loginModalReturn, setLoginModalReturn] = useState("/dashboard");
+
+  const openLoginModal = (returnPath: string) => {
+    setLoginModalReturn(returnPath);
+    setLoginModalOpen(true);
+  };
+
   const handleGetStarted = () => {
     if (isAuthenticated) {
       navigate("/dashboard");
     } else {
-      googleLoginWithWarmUp("/onboarding");
+      openLoginModal("/onboarding");
     }
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Login provider-choice modal */}
+      <LoginModal
+        open={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        returnPath={loginModalReturn}
+        title={loginModalReturn === "/onboarding" ? "Start your free trial" : "Sign in to InboxBrief"}
+      />
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
         <div className="container flex items-center justify-between h-14 sm:h-16">
@@ -143,7 +158,7 @@ export default function Home() {
                   size="sm"
                   variant="ghost"
                   className="text-muted-foreground hover:text-foreground text-xs border border-border/40 hover:border-border/70 px-3"
-                  onClick={() => { googleLoginWithWarmUp("/dashboard"); }}
+                  onClick={() => openLoginModal("/dashboard")}
                 >
                   Log In
                 </Button>
@@ -238,9 +253,14 @@ export default function Home() {
             <div className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" /><span>8 languages supported</span></div>
           </div>
           {!isAuthenticated && (
-            <div className="mt-6 flex flex-col items-center gap-2">
-              <p className="text-xs text-muted-foreground mb-1">Sign in to get started</p>
-              <SocialLoginButtons returnPath="/dashboard" direction="col" />
+            <div className="mt-6">
+              <button
+                type="button"
+                className="text-xs text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors"
+                onClick={() => openLoginModal("/dashboard")}
+              >
+                Already have an account? Sign in
+              </button>
             </div>
           )}
         </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { googleLoginWithWarmUp } from "@/const";
+import { LoginModal } from "@/components/LoginModal";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,9 +117,11 @@ export default function Onboarding() {
     },
   });
 
+  const [loginOpen, setLoginOpen] = useState(true);
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      googleLoginWithWarmUp("/onboarding");
+      setLoginOpen(true);
     }
   }, [isAuthenticated, authLoading]);
 
@@ -187,6 +189,14 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
+      {!isAuthenticated && (
+        <LoginModal
+          open={loginOpen}
+          onClose={() => setLoginOpen(false)}
+          returnPath="/onboarding"
+          title="Start your free trial"
+        />
+      )}
       {/* Header */}
       <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border/40">
         <div className="flex items-center gap-2">

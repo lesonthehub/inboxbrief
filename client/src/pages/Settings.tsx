@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { googleLoginWithWarmUp } from "@/const";
+import { LoginModal } from "@/components/LoginModal";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,9 +148,10 @@ export default function Settings() {
     onError: (err) => toast.error(err.message),
   });
 
+  const [loginOpen, setLoginOpen] = useState(false);
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      googleLoginWithWarmUp("/settings");
+      setLoginOpen(true);
     }
   }, [isAuthenticated, authLoading]);
 
@@ -200,6 +201,12 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <LoginModal
+        open={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        returnPath="/settings"
+        title="Sign in to InboxBrief"
+      />
       {/* Confirmation dialogs */}
       {confirmForgetPhone && (
         <ConfirmDialog

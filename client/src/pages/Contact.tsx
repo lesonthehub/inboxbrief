@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { googleLoginWithWarmUp } from "@/const";
+import { LoginModal } from "@/components/LoginModal";
 import { PageFooter } from "@/components/PageFooter";
 
 function ConsentBox({
@@ -47,6 +47,15 @@ export default function Contact() {
   const [consentPrivacy, setConsentPrivacy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  // Login modal state
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [loginReturn, setLoginReturn] = useState("/dashboard");
+
+  const openLogin = (returnPath: string) => {
+    setLoginReturn(returnPath);
+    setLoginOpen(true);
+  };
+
   const submitMutation = trpc.contact.submit.useMutation({
     onSuccess: () => {
       setSubmitted(true);
@@ -62,7 +71,6 @@ export default function Contact() {
     if (!name.trim()) { toast.error("Please enter your name."); return; }
     if (!email.trim()) { toast.error("Please enter your email address."); return; }
     if (!message.trim() || message.trim().length < 10) { toast.error("Please enter a message (at least 10 characters)."); return; }
-    // consentPrivacy is optional — no longer required to submit
 
     submitMutation.mutate({
       name: name.trim(),
@@ -77,6 +85,13 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <LoginModal
+        open={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        returnPath={loginReturn}
+        title={loginReturn === "/onboarding" ? "Start your free trial" : "Sign in to InboxBrief"}
+      />
+
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
         <div className="container flex items-center justify-between h-14 sm:h-16">
@@ -91,11 +106,10 @@ export default function Contact() {
               <Button size="sm" className="bg-primary hover:bg-primary/90 text-white border-0" onClick={() => navigate("/dashboard")}>Dashboard</Button>
             ) : (
               <>
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground hidden sm:inline-flex" onClick={() => googleLoginWithWarmUp("/dashboard")}>Log In</Button>
-                <Button size="sm" className="bg-primary hover:bg-primary/90 text-white border-0" onClick={() => googleLoginWithWarmUp("/onboarding")}>Start Free Trial</Button>
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground hidden sm:inline-flex" onClick={() => openLogin("/dashboard")}>Log In</Button>
+                <Button size="sm" className="bg-primary hover:bg-primary/90 text-white border-0" onClick={() => openLogin("/onboarding")}>Start Free Trial</Button>
               </>
             )}
-            {/* Note: Start Free Trial is only shown to unauthenticated users */}
           </div>
         </div>
       </nav>
@@ -234,17 +248,14 @@ export default function Contact() {
                   <div className="space-y-4 pt-2 border-t border-border">
                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Consent</p>
 
-                    {/* Non-marketing consent */}
                     <ConsentBox checked={consentNonMarketing} onChange={setConsentNonMarketing}>
                       I agree to receive non-marketing SMS messages from InboxBrief, regarding account setup, onboarding, inbox briefings, scheduling preferences, subscription management, security alerts, billing notifications, technical support, service updates and customer support communications. Message frequency may vary. Reply "HELP" for assistance or "STOP" to unsubscribe. Standard message and data rates may apply.
                     </ConsentBox>
 
-                    {/* Marketing consent */}
                     <ConsentBox checked={consentMarketing} onChange={setConsentMarketing}>
                       I agree to receive marketing SMS messages from InboxBrief, regarding promotional offers, discounts, and related marketing communications. Message frequency may vary. Reply "HELP" for assistance or "STOP" to unsubscribe. Standard message and data rates may apply.
                     </ConsentBox>
 
-                    {/* Privacy + Terms */}
                     <ConsentBox checked={consentPrivacy} onChange={setConsentPrivacy}>
                       By checking this box, I accept the{" "}
                       <Link href="/privacy" className="text-primary underline underline-offset-2 hover:text-primary/80">
@@ -253,8 +264,7 @@ export default function Contact() {
                       and{" "}
                       <Link href="/terms" className="text-primary underline underline-offset-2 hover:text-primary/80">
                         Terms of Services
-                      </Link>
-.
+                      </Link>.
                     </ConsentBox>
                   </div>
 

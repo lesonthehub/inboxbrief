@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { googleLoginWithWarmUp } from "@/const";
+import { LoginModal } from "@/components/LoginModal";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -229,6 +229,13 @@ export default function Pricing() {
   const [, navigate] = useLocation();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [tosModalPlan, setTosModalPlan] = useState<PlanId | null>(null);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [loginReturn, setLoginReturn] = useState("/pricing");
+
+  const openLogin = (returnPath: string) => {
+    setLoginReturn(returnPath);
+    setLoginOpen(true);
+  };
 
   // Hide trial marketing for any logged-in user
   const { data: subStatus } = trpc.subscription.getStatus.useQuery(undefined, { enabled: isAuthenticated });
@@ -249,7 +256,7 @@ export default function Pricing() {
 
   const handleSelectPlan = (planId: PlanId) => {
     if (!isAuthenticated) {
-      googleLoginWithWarmUp("/pricing");
+      openLogin("/pricing");
       return;
     }
     setTosModalPlan(planId);
@@ -268,7 +275,7 @@ export default function Pricing() {
 
   const handleStartTrial = () => {
     if (!isAuthenticated) {
-      googleLoginWithWarmUp("/onboarding");
+      openLogin("/onboarding");
     } else {
       navigate("/onboarding");
     }
@@ -280,6 +287,12 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <LoginModal
+        open={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        returnPath={loginReturn}
+        title={loginReturn === "/onboarding" ? "Start your free trial" : "Sign in to InboxBrief"}
+      />
       {/* ToS Modal */}
       {tosModalPlan && (
         <TosModal
