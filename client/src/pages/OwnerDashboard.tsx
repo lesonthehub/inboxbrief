@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageFooter } from "@/components/PageFooter";
+import { CopyId } from "@/components/CopyId";
 
 type ActivityEntry = {
   id: number;
@@ -111,6 +112,9 @@ export default function OwnerDashboard() {
   const [epTeamMembers, setEpTeamMembers] = useState(10);
   const [epPriceMonthly, setEpPriceMonthly] = useState("");
   const [epPriceAnnual, setEpPriceAnnual] = useState("");
+  const [epDiscountPct, setEpDiscountPct] = useState(""); // percentage off, e.g. "20" for 20%
+  const [epDiscountDuration, setEpDiscountDuration] = useState<"once" | "repeating" | "forever">("once");
+  const [epDiscountMonths, setEpDiscountMonths] = useState("3"); // used when duration=repeating
   const [epNotes, setEpNotes] = useState("");
   const [epAssignUserId, setEpAssignUserId] = useState("");
   const [epShowForm, setEpShowForm] = useState(false);
@@ -141,7 +145,7 @@ export default function OwnerDashboard() {
     onSuccess: () => {
       toast.success("Enterprise plan created");
       setEpShowForm(false);
-      setEpCompanyName(""); setEpContactEmail(""); setEpPriceMonthly(""); setEpPriceAnnual(""); setEpNotes(""); setEpAssignUserId("");
+      setEpCompanyName(""); setEpContactEmail(""); setEpPriceMonthly(""); setEpPriceAnnual(""); setEpDiscountPct(""); setEpDiscountDuration("once"); setEpDiscountMonths("3"); setEpNotes(""); setEpAssignUserId("");
       refetchEnterprisePlans();
       refetchLog();
     },
@@ -448,7 +452,10 @@ export default function OwnerDashboard() {
                         className={`border rounded-lg p-3 text-sm ${grant.isActive ? "border-primary/30 bg-primary/5" : "border-border opacity-60"}`}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-foreground">User #{grant.userId}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium text-foreground">User</span>
+                            <CopyId id={grant.userId} />
+                          </div>
                           <div className="flex items-center gap-2">
                             <Badge variant={grant.isActive ? "default" : "secondary"} className="text-xs">
                               {grant.isActive ? "Active" : "Revoked"}
@@ -520,7 +527,10 @@ export default function OwnerDashboard() {
                       {admins.map((admin) => (
                         <tr key={admin.id} className="border-b border-border/50 hover:bg-muted/20">
                           <td className="py-3 pr-4">
-                            <div className="text-foreground font-medium">{admin.name ?? "—"}</div>
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <CopyId id={admin.id} />
+                              <span className="text-foreground font-medium">{admin.name ?? "—"}</span>
+                            </div>
                             <div className="text-xs text-muted-foreground">{admin.email ?? "—"}</div>
                           </td>
                           <td className="py-3 pr-4">
@@ -621,6 +631,63 @@ export default function OwnerDashboard() {
                     </div>
                   </div>
 
+                  {/* Discount Section */}
+                  <div className="border border-border/40 rounded-lg p-4 bg-muted/10">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Discount / Promo</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">% Off — optional</label>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={epDiscountPct}
+                            onChange={(e) => setEpDiscountPct(e.target.value)}
+                            placeholder="e.g. 20"
+                            className="pr-7"
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Duration</label>
+                        <Select value={epDiscountDuration} onValueChange={(v) => setEpDiscountDuration(v as typeof epDiscountDuration)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="once">Once (first invoice)</SelectItem>
+                            <SelectItem value="repeating">Repeating (N months)</SelectItem>
+                            <SelectItem value="forever">Forever</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {epDiscountDuration === "repeating" && (
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">Months</label>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={120}
+                            value={epDiscountMonths}
+                            onChange={(e) => setEpDiscountMonths(e.target.value)}
+                            placeholder="3"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    {epDiscountPct && (
+                      <p className="text-xs text-amber-400 mt-2">
+                        {epDiscountPct}% off
+                        {epDiscountDuration === "once" && " on the first invoice"}
+                        {epDiscountDuration === "repeating" && ` for ${epDiscountMonths} month${Number(epDiscountMonths) !== 1 ? "s" : ""}`}
+                        {epDiscountDuration === "forever" && " forever"}
+                        {epPriceMonthly && ` → $${(Number(epPriceMonthly) * (1 - Number(epDiscountPct) / 100)).toFixed(0)}/mo effective`}
+                      </p>
+                    )}
+                  </div>
+
                   {/* Estimate Calculator */}
                   {priceEstimate && (
                     <div className="bg-muted/30 border border-border/40 rounded-lg p-4">
@@ -697,7 +764,9 @@ export default function OwnerDashboard() {
                             <td className="py-2 text-muted-foreground">{plan.contactEmail}</td>
                             <td className="py-2 text-muted-foreground">{plan.maxTeamMembers}</td>
                             <td className="py-2 text-muted-foreground">${plan.pricePerMonth}</td>
-                            <td className="py-2 text-muted-foreground">{plan.assignedUserId ?? "—"}</td>
+                            <td className="py-2 text-muted-foreground">
+                              {plan.assignedUserId ? <CopyId id={plan.assignedUserId} /> : "—"}
+                            </td>
                             <td className="py-2">
                               <Badge variant={plan.isActive ? "default" : "secondary"}>
                                 {plan.isActive ? "Active" : "Inactive"}

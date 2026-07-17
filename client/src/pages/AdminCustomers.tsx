@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { PageFooter } from "@/components/PageFooter";
+import { CopyId } from "@/components/CopyId";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -272,7 +273,7 @@ export default function AdminCustomers() {
                       className={`border-b border-border/20 hover:bg-card/30 transition-colors ${!u.isActive ? "opacity-60" : ""} ${i % 2 === 0 ? "" : "bg-card/10"}`}
                     >
                       <td className="px-4 py-3">
-                        <span className="font-mono text-xs text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded select-all">#{u.id}</span>
+                        <CopyId id={u.id} />
                       </td>
                       <td className="px-4 py-3">
                         <div className="font-medium truncate max-w-[180px]">{u.name ?? "—"}</div>
@@ -317,7 +318,7 @@ export default function AdminCustomers() {
                 <div key={u.id} className={`p-4 flex items-start justify-between gap-3 ${!u.isActive ? "opacity-60" : ""}`}>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="font-mono text-xs text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded select-all">#{u.id}</span>
+                      <CopyId id={u.id} />
                       <span className="font-medium truncate">{u.name ?? "—"}</span>
                     </div>
                     <div className="text-xs text-muted-foreground truncate">{u.email ?? "—"}</div>
