@@ -6,7 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Shield, MessageSquare, ArrowLeft, User, Bell, CreditCard, Lock, CheckCircle, Phone, Mail, Trash2, AlertTriangle } from "lucide-react";
+import { Shield, MessageSquare, ArrowLeft, User, Bell, CreditCard, Lock, CheckCircle, Phone, Mail, Trash2, AlertTriangle, KeyRound, QrCode, ShieldCheck, ShieldOff } from "lucide-react";
 import { PhoneVerificationModal } from "@/components/PhoneVerificationModal";
 import { PageFooter } from "@/components/PageFooter";
 
@@ -85,8 +85,31 @@ export default function Settings() {
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
+  // TOTP state
+  const [totpStep, setTotpStep] = useState<"idle" | "scanning" | "verifying" | "disabling">("idle");
+  const [totpQrUrl, setTotpQrUrl] = useState<string | null>(null);
+  const [totpCode, setTotpCode] = useState("");
+  const [totpDisableCode, setTotpDisableCode] = useState("");
+
   const utils = trpc.useUtils();
   const { data: settings } = trpc.settings.get.useQuery(undefined, { enabled: isAuthenticated });
+  const isAdminOrOwner = user?.role === "admin" || user?.role === "owner";
+  const { data: totpStatus, refetch: refetchTotp } = trpc.totp.getStatus.useQuery(undefined, { enabled: isAuthenticated && isAdminOrOwner });
+
+  const totpSetupMut = trpc.totp.setup.useMutation({
+    onSuccess: (data) => { setTotpQrUrl(data.qrCodeDataUrl); setTotpStep("scanning"); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const totpEnableMut = trpc.totp.enable.useMutation({
+    onSuccess: () => { toast.success("Authenticator app enabled!"); setTotpStep("idle"); setTotpCode(""); setTotpQrUrl(null); refetchTotp(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const totpDisableMut = trpc.totp.disable.useMutation({
+    onSuccess: () => { toast.success("Authenticator app disabled."); setTotpStep("idle"); setTotpDisableCode(""); refetchTotp(); },
+    onError: (e) => toast.error(e.message),
+  });
   const { data: subStatus } = trpc.subscription.getStatus.useQuery(undefined, { enabled: isAuthenticated });
   const { data: emailStatus, refetch: refetchEmailStatus } = trpc.emailVerification.getStatus.useQuery(undefined, { enabled: isAuthenticated });
 
@@ -549,6 +572,123 @@ export default function Settings() {
             </div>
           </div>
         </div>
+
+        {/* Authenticator App (admin & owner only) */}
+        {isAdminOrOwner && (
+          <div className="bg-card border border-border rounded-xl p-5 sm:p-6">
+            <div className="flex items-center gap-2 mb-1">
+              <KeyRound className="w-4 h-4 text-primary" />
+              <h2 className="font-semibold text-foreground" style={{ fontFamily: "Space Grotesk, sans-serif" }}>Authenticator App</h2>
+              {totpStatus?.totpEnabled && (
+                <span className="ml-auto flex items-center gap-1 text-xs text-green-400 font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Enabled
+                </span>
+              )}
+              {!totpStatus?.totpEnabled && (
+                <span className="ml-auto flex items-center gap-1 text-xs text-amber-400 font-medium">
+                  <ShieldOff className="w-3.5 h-3.5" /> Not set up
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              As an {user?.role}, you must set up an authenticator app (Google Authenticator, Authy, etc.) before you can perform sensitive actions such as suspending accounts, changing roles, or deleting users.
+            </p>
+
+            {/* Not yet set up — show setup button */}
+            {!totpStatus?.totpEnabled && totpStep === "idle" && (
+              <Button
+                size="sm"
+                onClick={() => totpSetupMut.mutate()}
+                disabled={totpSetupMut.isPending}
+                className="gap-1.5"
+              >
+                <QrCode className="w-4 h-4" />
+                {totpSetupMut.isPending ? "Generating..." : "Set up authenticator"}
+              </Button>
+            )}
+
+            {/* QR code scanning step */}
+            {totpStep === "scanning" && totpQrUrl && (
+              <div className="space-y-4">
+                <div className="flex flex-col items-center gap-3 p-4 bg-white rounded-xl w-fit mx-auto">
+                  <img src={totpQrUrl} alt="TOTP QR Code" className="w-44 h-44" />
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Scan this QR code with your authenticator app, then enter the 6-digit code below to confirm.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="000000"
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className="font-mono tracking-widest text-center text-lg max-w-[140px]"
+                    autoComplete="one-time-code"
+                  />
+                  <Button
+                    disabled={totpCode.length !== 6 || totpEnableMut.isPending}
+                    onClick={() => totpEnableMut.mutate({ code: totpCode })}
+                  >
+                    {totpEnableMut.isPending ? "Verifying..." : "Confirm"}
+                  </Button>
+                  <Button variant="ghost" onClick={() => { setTotpStep("idle"); setTotpQrUrl(null); setTotpCode(""); }}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Already enabled — show disable option */}
+            {totpStatus?.totpEnabled && totpStep === "idle" && (
+              <div className="space-y-3">
+                {totpStatus.totpEnabledAt && (
+                  <p className="text-xs text-muted-foreground">
+                    Enabled on {new Date(totpStatus.totpEnabledAt).toLocaleDateString()}.
+                  </p>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 text-red-400 border-red-500/30 hover:bg-red-500/10 bg-transparent"
+                  onClick={() => setTotpStep("disabling")}
+                >
+                  <ShieldOff className="w-4 h-4" /> Disable authenticator
+                </Button>
+              </div>
+            )}
+
+            {/* Disable confirmation — requires current TOTP code */}
+            {totpStep === "disabling" && (
+              <div className="space-y-3">
+                <p className="text-sm text-amber-400 font-medium">Enter your current 6-digit code to confirm removal:</p>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="000000"
+                    value={totpDisableCode}
+                    onChange={(e) => setTotpDisableCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className="font-mono tracking-widest text-center text-lg max-w-[140px]"
+                    autoComplete="one-time-code"
+                  />
+                  <Button
+                    variant="destructive"
+                    disabled={totpDisableCode.length !== 6 || totpDisableMut.isPending}
+                    onClick={() => totpDisableMut.mutate({ code: totpDisableCode })}
+                  >
+                    {totpDisableMut.isPending ? "Disabling..." : "Disable"}
+                  </Button>
+                  <Button variant="ghost" onClick={() => { setTotpStep("idle"); setTotpDisableCode(""); }}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Danger Zone */}
         <div className="bg-card border border-red-500/20 rounded-xl p-5 sm:p-6">
