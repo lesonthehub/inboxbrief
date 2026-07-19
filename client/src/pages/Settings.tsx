@@ -81,6 +81,10 @@ export default function Settings() {
   const [confirmForgetPhone, setConfirmForgetPhone] = useState(false);
   const [confirmForgetEmail, setConfirmForgetEmail] = useState(false);
 
+  // Delete account state
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
   const utils = trpc.useUtils();
   const { data: settings } = trpc.settings.get.useQuery(undefined, { enabled: isAuthenticated });
   const { data: subStatus } = trpc.subscription.getStatus.useQuery(undefined, { enabled: isAuthenticated });
@@ -117,6 +121,15 @@ export default function Settings() {
       utils.subscription.getStatus.invalidate();
     },
     onError: (err) => { toast.error(err.message); setConfirmForgetPhone(false); },
+  });
+
+  const deleteMyAccount = trpc.settings.deleteMyAccount.useMutation({
+    onSuccess: () => {
+      toast.success("Account deleted. Goodbye!");
+      // Redirect to home after a short delay
+      setTimeout(() => navigate("/"), 1500);
+    },
+    onError: (err) => toast.error(err.message),
   });
 
   const forgetEmail = trpc.settings.forgetEmail.useMutation({
@@ -535,6 +548,57 @@ export default function Settings() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Danger Zone */}
+        <div className="bg-card border border-red-500/20 rounded-xl p-5 sm:p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Trash2 className="w-4 h-4 text-red-400" />
+            <h2 className="font-semibold text-red-400" style={{ fontFamily: "Space Grotesk, sans-serif" }}>Danger Zone</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Permanently delete your account and all associated data. This action is <strong className="text-foreground">irreversible</strong>.
+            Your subscription will be cancelled and all briefing history, email connections, and personal data will be erased.
+          </p>
+          {!showDeleteAccount ? (
+            <Button
+              variant="outline"
+              className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500/60 bg-transparent"
+              onClick={() => setShowDeleteAccount(true)}
+            >
+              <Trash2 className="w-4 h-4 mr-2" /> Delete My Account
+            </Button>
+          ) : (
+            <div className="space-y-3 p-4 rounded-xl bg-red-500/5 border border-red-500/20">
+              <p className="text-sm text-muted-foreground">
+                Type <strong className="text-foreground font-mono">DELETE</strong> to confirm account deletion:
+              </p>
+              <Input
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="Type DELETE here"
+                className="font-mono border-red-500/30 focus:border-red-500/60"
+                autoComplete="off"
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-border/60 text-muted-foreground hover:text-foreground bg-transparent"
+                  onClick={() => { setShowDeleteAccount(false); setDeleteConfirmText(""); }}
+                  disabled={deleteMyAccount.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-red-600 hover:bg-red-500 text-white border-0 font-semibold"
+                  disabled={deleteConfirmText !== "DELETE" || deleteMyAccount.isPending}
+                  onClick={() => deleteMyAccount.mutate({ confirmation: "DELETE" })}
+                >
+                  {deleteMyAccount.isPending ? "Deleting..." : "Confirm Delete"}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Security */}

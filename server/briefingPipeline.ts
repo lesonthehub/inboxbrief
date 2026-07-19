@@ -117,11 +117,24 @@ export async function runBriefingPipeline(
   const isTrialActive = sub?.plan === "trial" && sub?.status === "trialing" && user.trialEndsAt && user.trialEndsAt > now;
   const isPaidActive = sub && isSubscriptionActive(sub.status) && sub.plan !== "trial";
 
-  if (!isTrialActive && !isPaidActive) {
+  // ── Service grant bypass (owner-granted free access) ────────────────────────
+  const { serviceGrants } = await import("../drizzle/schema");
+  const { and: _and, eq: _eq } = await import("drizzle-orm");
+  const [activeGrant] = await db.select().from(serviceGrants)
+    .where(_and(_eq(serviceGrants.userId, userId), _eq(serviceGrants.isActive, true)))
+    .limit(1);
+  const hasServiceGrant = !!activeGrant && (!activeGrant.expiresAt || activeGrant.expiresAt > now);
+
+  // ── Test account bypass ──────────────────────────────────────────────────────
+  const isTestAccount = !!(user as any).isTestAccount;
+
+  if (!isTrialActive && !isPaidActive && !hasServiceGrant && !isTestAccount) {
     return { success: false, smsSent: false, emailsFetched: 0, highPriorityCount: 0, generalCount: 0, ignoredCount: 0, error: "No active subscription. Please subscribe to send briefings." };
   }
 
-  const currentPlan = (sub?.plan ?? "trial") as PlanId;
+  // Effective plan: service grant > test account (business) > paid plan > trial
+  const grantPlan = hasServiceGrant ? activeGrant.plan : isTestAccount ? "business" : null;
+  const currentPlan = (grantPlan ?? sub?.plan ?? "trial") as PlanId;
   const emailLimit = getEmailLimit(currentPlan);
 
   // ── Trial daily limit enforcement ────────────────────────────────────────

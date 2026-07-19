@@ -102,6 +102,9 @@ export const users = mysqlTable("users", {
   suspendedBy: int("suspendedBy"),
   adminNotes: text("adminNotes"),
 
+  // Test account flag — bypasses subscription gate, exercises real pipeline
+  isTestAccount: boolean("isTestAccount").default(false).notNull(),
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

@@ -436,6 +436,60 @@ const settingsRouter = router({
     await writeAuditLog({ userId: ctx.user.id, action: "email_verification_reset", metadata: {} });
     return { success: true };
   }),
+
+  // Self-service account deletion
+  deleteMyAccount: protectedProcedure
+    .input(z.object({ confirmation: z.literal("DELETE") }))
+    .mutation(async ({ ctx }) => {
+      const userId = ctx.user.id;
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      // Prevent owner from self-deleting (must transfer ownership first)
+      if (ctx.user.role === "owner") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Owner accounts cannot be self-deleted. Transfer ownership first." });
+      }
+
+      // Cancel active Stripe subscription if present
+      try {
+        const stripe = getStripe();
+        const [sub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId)).limit(1);
+        if (sub?.stripeSubscriptionId) {
+          await stripe.subscriptions.cancel(sub.stripeSubscriptionId);
+        }
+      } catch (_) { /* non-fatal — proceed with deletion */ }
+
+      // Wipe all user-linked data
+      const { emailAccounts, briefingLogs: bLogs, teamMembers: tMembers, referralUses: rUses, briefingFeedback: bFeedback } = await import("../drizzle/schema");
+      await db.delete(bLogs).where(eq(bLogs.userId, userId));
+      await db.delete(tMembers).where(eq(tMembers.ownerId, userId));
+      await db.delete(rUses).where(eq(rUses.referrerId, userId));
+      await db.delete(bFeedback).where(eq(bFeedback.userId, userId));
+      await db.delete(emailAccounts).where(eq(emailAccounts.userId, userId));
+      await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
+      await db.delete(serviceGrants).where(eq(serviceGrants.userId, userId));
+      // Anonymise the user row instead of hard-deleting (preserves referential integrity)
+      await db.update(users).set({
+        name: "[Deleted User]",
+        email: null,
+        openId: `deleted_${userId}_${Date.now()}`,
+        phone: null,
+        phoneVerified: false,
+        isActive: false,
+        totpSecret: null,
+        totpEnabled: false,
+        adminNotes: `Self-deleted at ${new Date().toISOString()}`,
+      }).where(eq(users.id, userId));
+
+      await writeAuditLog({ userId, action: "self_delete", metadata: { deletedAt: new Date().toISOString() } });
+
+      // Clear session cookie
+      const { COOKIE_NAME: CNAME } = await import("@shared/const");
+      const { getSessionCookieOptions } = await import("./_core/cookies");
+      ctx.res.clearCookie(CNAME, { ...getSessionCookieOptions(ctx.req), maxAge: -1 });
+
+      return { success: true };
+    }),
 });
 
 // ─── Referral Router ───────────────────────────────────────────────────────────────
