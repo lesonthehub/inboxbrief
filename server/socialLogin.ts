@@ -128,9 +128,6 @@ export function registerGoogleLoginRoutes(app: Express) {
       }
 
       // ── Email-based account merge ──────────────────────────────────────────
-      // If a user with this email already exists (e.g., the original owner account
-      // created via Manus OAuth), log them into THAT account instead of creating
-      // a new one. This prevents duplicate accounts for the same person.
       let resolvedOpenId = buildSocialOpenId("google", sub);
       let resolvedName = name || email || "Google User";
 
@@ -141,12 +138,7 @@ export function registerGoogleLoginRoutes(app: Express) {
         const ban = await database
           .select({ id: bannedAccounts.id })
           .from(bannedAccounts)
-          .where(
-            and(
-              eq(bannedAccounts.email, email.toLowerCase()),
-              eq(bannedAccounts.isActive, true)
-            )
-          )
+          .where(and(eq(bannedAccounts.email, email.toLowerCase()), eq(bannedAccounts.isActive, true)))
           .limit(1);
         if (ban.length > 0) {
           res.redirect(302, "/?login_error=account_banned");
@@ -154,25 +146,27 @@ export function registerGoogleLoginRoutes(app: Express) {
         }
       }
 
-      if (email) {
-        if (database) {
-          const existing = await database
-            .select()
-            .from(users)
-            .where(eq(users.email, email))
-            .limit(1);
-          if (existing.length > 0 && existing[0].openId !== resolvedOpenId) {
-            // Use the pre-existing account — update its loginMethod and lastSignedIn
-            resolvedOpenId = existing[0].openId;
-            resolvedName = existing[0].name || resolvedName;
+      if (email && database) {
+        const existing = await database
+          .select()
+          .from(users)
+          .where(eq(users.email, email))
+          .limit(1);
+        if (existing.length > 0) {
+          const existingUser = existing[0];
+          // ── Suspension check: suspended accounts cannot sign in ───────────────
+          // (Deleted accounts no longer have a row, so they fall through to upsert)
+          if (!existingUser.isActive) {
+            res.redirect(302, "/?login_error=account_suspended");
+            return;
+          }
+          if (existingUser.openId !== resolvedOpenId) {
+            // Email-merge: log into the pre-existing account
+            resolvedOpenId = existingUser.openId;
+            resolvedName = existingUser.name || resolvedName;
             await database
               .update(users)
-              .set({
-                loginMethod: "google",
-                lastSignedIn: new Date(),
-                // Auto-verify email for the owner and for Google-verified emails
-                emailVerified: true,
-              })
+              .set({ loginMethod: "google", lastSignedIn: new Date(), emailVerified: true })
               .where(eq(users.openId, resolvedOpenId));
             await finishSocialLogin(res, req, resolvedOpenId, resolvedName, returnPath);
             return;
@@ -297,12 +291,7 @@ export function registerMicrosoftLoginRoutes(app: Express) {
         const ban = await msDatabase
           .select({ id: bannedAccounts.id })
           .from(bannedAccounts)
-          .where(
-            and(
-              eq(bannedAccounts.email, email.toLowerCase()),
-              eq(bannedAccounts.isActive, true)
-            )
-          )
+          .where(and(eq(bannedAccounts.email, email.toLowerCase()), eq(bannedAccounts.isActive, true)))
           .limit(1);
         if (ban.length > 0) {
           res.redirect(302, "/?login_error=account_banned");
@@ -310,23 +299,25 @@ export function registerMicrosoftLoginRoutes(app: Express) {
         }
       }
 
-      if (email) {
-        if (msDatabase) {
-          const existing = await msDatabase
-            .select()
-            .from(users)
-            .where(eq(users.email, email))
-            .limit(1);
-          if (existing.length > 0 && existing[0].openId !== resolvedOpenId) {
-            resolvedOpenId = existing[0].openId;
-            resolvedName = existing[0].name || resolvedName;
+      if (email && msDatabase) {
+        const existing = await msDatabase
+          .select()
+          .from(users)
+          .where(eq(users.email, email))
+          .limit(1);
+        if (existing.length > 0) {
+          const existingUser = existing[0];
+          // ── Suspension check: suspended accounts cannot sign in ───────────────
+          if (!existingUser.isActive) {
+            res.redirect(302, "/?login_error=account_suspended");
+            return;
+          }
+          if (existingUser.openId !== resolvedOpenId) {
+            resolvedOpenId = existingUser.openId;
+            resolvedName = existingUser.name || resolvedName;
             await msDatabase
               .update(users)
-              .set({
-                loginMethod: "microsoft",
-                lastSignedIn: new Date(),
-                emailVerified: true,
-              })
+              .set({ loginMethod: "microsoft", lastSignedIn: new Date(), emailVerified: true })
               .where(eq(users.openId, resolvedOpenId));
             await finishSocialLogin(res, req, resolvedOpenId, resolvedName, returnPath);
             return;

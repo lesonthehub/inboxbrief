@@ -1307,8 +1307,10 @@ const adminUsersRouter = router({
       return { success: true };
     }),
 
-  // Soft-delete a user (clear PII, mark inactive, keep audit trail)
-  // Optional: ban the account so the email/openId cannot re-register
+  // Delete a user account.
+  // Deletion = hard-remove the row so the person can freely re-register.
+  // Optional: ban the account first so the email/openId cannot re-register.
+  // Suspension (separate action) keeps the row and blocks login/briefings.
   softDelete: protectedProcedure
     .input(z.object({
       userId: z.number(),
@@ -1323,21 +1325,11 @@ const adminUsersRouter = router({
       await verifyAdminTotp(ctx.user.id, input.totpCode);
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const [target] = await db.select({ email: users.email, openId: users.openId }).from(users).where(eq(users.id, input.userId)).limit(1);
-      // Anonymize PII, preserve audit trail
-      await db.update(users).set({
-        isActive: false,
-        name: "[Deleted User]",
-        email: null,
-        phone: null,
-        phoneVerified: false,
-        suspendedAt: new Date(),
-        suspendedReason: `DELETED: ${input.reason}`,
-        suspendedBy: ctx.user.id,
-        adminNotes: `Account soft-deleted by ${ctx.user.role} ${ctx.user.id} on ${new Date().toISOString()}. Reason: ${input.reason}${input.banAccount ? " [BANNED]" : ""}`,
-      }).where(eq(users.id, input.userId));
-      // If ban requested, write a ban record keyed to email + openId
-      if (input.banAccount && target?.email) {
+      const [target] = await db.select({ email: users.email, openId: users.openId, name: users.name }).from(users).where(eq(users.id, input.userId)).limit(1);
+      if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+
+      // If ban requested, write the ban record BEFORE deleting the row (so we still have the email/openId)
+      if (input.banAccount && target.email) {
         await db.insert(bannedAccounts).values({
           email: target.email.toLowerCase(),
           openId: target.openId ?? undefined,
@@ -1347,7 +1339,21 @@ const adminUsersRouter = router({
           isActive: true,
         });
       }
-      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target?.email ?? null, action: input.banAccount ? "soft_delete_ban" : "soft_delete", details: input.reason, totpVerified: true });
+
+      // Log before deleting (so targetEmail is still available)
+      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target.email ?? null, action: input.banAccount ? "delete_ban" : "delete", details: input.reason, totpVerified: true });
+
+      // Hard-delete related rows first (FK constraints), then the user row
+      const { briefingLogs, emailAccounts, subscriptions: subsTable, serviceGrants, teamMembers } = await import("../drizzle/schema");
+      await db.delete(briefingLogs).where(eq(briefingLogs.userId, input.userId));
+      await db.delete(emailAccounts).where(eq(emailAccounts.userId, input.userId));
+      await db.delete(subsTable).where(eq(subsTable.userId, input.userId));
+      await db.delete(serviceGrants).where(eq(serviceGrants.userId, input.userId));
+      // Delete team memberships where this user is a member
+      await db.delete(teamMembers).where(eq(teamMembers.memberId, input.userId));
+      // Hard-delete the user row — they can re-register freely
+      await db.delete(users).where(eq(users.id, input.userId));
+
       return { success: true, banned: input.banAccount };
     }),
 

@@ -105,9 +105,10 @@ export default function Home() {
     const loginError = params.get("login_error");
     if (loginError === "account_banned") {
       toast.error("This account has been banned and cannot sign in. Contact support@inboxbrief.org if you believe this is an error.", { duration: 8000 });
-      // Clean the URL so the toast doesn't re-fire on refresh
-      const clean = window.location.pathname;
-      window.history.replaceState({}, "", clean);
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (loginError === "account_suspended") {
+      toast.error("Your account has been suspended. Contact support@inboxbrief.org if you believe this is an error.", { duration: 8000 });
+      window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
 
