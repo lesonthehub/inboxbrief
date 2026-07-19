@@ -1957,7 +1957,9 @@ const ownerRouter = router({
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const target = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
       if (!target[0]) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
-      // Clear the IP hash and trialUsed flag so they can start a fresh trial
+      // Clear the IP hash, trial flags, and full onboarding state so the user sets up from scratch
+      const { emailAccounts } = await import("../drizzle/schema");
+      await db.delete(emailAccounts).where(eq(emailAccounts.userId, input.userId));
       await db.update(users).set({
         trialSignupIpHash: null,
         trialUsed: false,
@@ -1965,6 +1967,13 @@ const ownerRouter = router({
         trialNudge5Sent: false,
         trialNudge6Sent: false,
         trialEndSent: false,
+        onboardingComplete: false,
+        phone: null,
+        phoneVerified: false,
+        businessType: null,
+        scheduleType: "manual",
+        scheduleTimes: "08:00",
+        timezone: "America/Chicago",
       }).where(eq(users.id, input.userId));
       await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target[0].email ?? null, action: "reset_trial", details: "Trial fingerprint and usage reset by owner", totpVerified: false });
       return { success: true };
