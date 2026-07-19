@@ -107,8 +107,13 @@ const onboardingRouter = router({
             const [existingTrialFromIp] = await db
               .select({ id: users.id })
               .from(users)
-              // Exclude the current user — their own hash was cleared by reset, others at same IP still count
-              .where(and(eq(users.trialSignupIpHash, ipHash), eq(users.trialUsed, true), sql`${users.id} != ${ctx.user.id}`))
+              // Exclude the current user and any owner/admin accounts (they share IPs with test accounts)
+              .where(and(
+                eq(users.trialSignupIpHash, ipHash),
+                eq(users.trialUsed, true),
+                sql`${users.id} != ${ctx.user.id}`,
+                sql`${users.role} NOT IN ('owner', 'admin')`
+              ))
               .limit(1);
             if (existingTrialFromIp) {
               throw new TRPCError({ code: "FORBIDDEN", message: "A free trial has already been used from this device or network. Please choose a plan to continue." });
