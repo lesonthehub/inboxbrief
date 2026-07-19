@@ -91,6 +91,7 @@ export default function OwnerDashboard() {
   const [grantPlan, setGrantPlan] = useState<"solo" | "pro" | "business" | "enterprise">("pro");
   const [grantReason, setGrantReason] = useState("");
   const [grantExpiry, setGrantExpiry] = useState("");
+  const [resetTrialUserId, setResetTrialUserId] = useState("");
 
   // Revoke state
   const [revokeTarget, setRevokeTarget] = useState<ServiceGrant | null>(null);
@@ -183,6 +184,15 @@ export default function OwnerDashboard() {
       setGrantReason("");
       setGrantExpiry("");
       refetchGrants();
+      refetchLog();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const resetTrialMut = trpc.owner.resetTrialFingerprint.useMutation({
+    onSuccess: () => {
+      toast.success("Trial reset — user can now start a fresh 7-day trial");
+      setResetTrialUserId("");
       refetchLog();
     },
     onError: (e) => toast.error(e.message),
@@ -462,6 +472,38 @@ export default function OwnerDashboard() {
                     }}
                   >
                     {grantServiceMut.isPending ? "Granting..." : "Grant Access"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Reset Trial card */}
+              <div className="bg-card border border-amber-500/30 rounded-xl p-6">
+                <h2 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 text-amber-400" /> Reset Free Trial
+                </h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Clears the device/network fingerprint and trial-used flag so a specific user can start a fresh 7-day trial. Use for demo or test accounts.
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">User ID</label>
+                    <Input
+                      placeholder="e.g. 42"
+                      value={resetTrialUserId}
+                      onChange={(e) => setResetTrialUserId(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    className="w-full bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40"
+                    variant="outline"
+                    disabled={!resetTrialUserId || resetTrialMut.isPending}
+                    onClick={() => {
+                      const uid = parseInt(resetTrialUserId);
+                      if (isNaN(uid)) { toast.error("Enter a valid numeric user ID"); return; }
+                      resetTrialMut.mutate({ userId: uid });
+                    }}
+                  >
+                    {resetTrialMut.isPending ? "Resetting..." : "Reset Trial"}
                   </Button>
                 </div>
               </div>

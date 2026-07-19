@@ -1948,6 +1948,28 @@ const ownerRouter = router({
       return { success: true };
     }),
 
+  // Reset trial fingerprint for a specific user (owner only — for demo/test accounts)
+  resetTrialFingerprint: protectedProcedure
+    .input(z.object({ userId: z.number().int() }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const target = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
+      if (!target[0]) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      // Clear the IP hash and trialUsed flag so they can start a fresh trial
+      await db.update(users).set({
+        trialSignupIpHash: null,
+        trialUsed: false,
+        trialEndsAt: null,
+        trialNudge5Sent: false,
+        trialNudge6Sent: false,
+        trialEndSent: false,
+      }).where(eq(users.id, input.userId));
+      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target[0].email ?? null, action: "reset_trial", details: "Trial fingerprint and usage reset by owner", totpVerified: false });
+      return { success: true };
+    }),
+
   // List all admins and owners (owner only)
   listAdmins: protectedProcedure.query(async ({ ctx }) => {
     if (ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
