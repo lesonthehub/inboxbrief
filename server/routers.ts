@@ -107,10 +107,12 @@ const onboardingRouter = router({
             const [existingTrialFromIp] = await db
               .select({ id: users.id })
               .from(users)
-              // Exclude the current user and any owner/admin accounts (they share IPs with test accounts)
+              // Exclude: current user, owner/admin accounts, deleted accounts, inactive accounts
               .where(and(
                 eq(users.trialSignupIpHash, ipHash),
                 eq(users.trialUsed, true),
+                eq(users.isDeleted, false),
+                eq(users.isActive, true),
                 sql`${users.id} != ${ctx.user.id}`,
                 sql`${users.role} NOT IN ('owner', 'admin')`
               ))
