@@ -459,7 +459,8 @@ const settingsRouter = router({
         }
       } catch (_) { /* non-fatal — proceed with deletion */ }
 
-      // Wipe all user-linked data
+      // Wipe all user-linked data then hard-delete the user row
+      // (deleted users should not appear as suspended in admin views)
       const { emailAccounts, briefingLogs: bLogs, teamMembers: tMembers, referralUses: rUses, briefingFeedback: bFeedback } = await import("../drizzle/schema");
       await db.delete(bLogs).where(eq(bLogs.userId, userId));
       await db.delete(tMembers).where(eq(tMembers.ownerId, userId));
@@ -468,18 +469,9 @@ const settingsRouter = router({
       await db.delete(emailAccounts).where(eq(emailAccounts.userId, userId));
       await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
       await db.delete(serviceGrants).where(eq(serviceGrants.userId, userId));
-      // Anonymise the user row instead of hard-deleting (preserves referential integrity)
-      await db.update(users).set({
-        name: "[Deleted User]",
-        email: null,
-        openId: `deleted_${userId}_${Date.now()}`,
-        phone: null,
-        phoneVerified: false,
-        isActive: false,
-        totpSecret: null,
-        totpEnabled: false,
-        adminNotes: `Self-deleted at ${new Date().toISOString()}`,
-      }).where(eq(users.id, userId));
+      // Hard-delete the user row — they can re-register freely, and will not
+      // appear as "Suspended" in admin Customer Manager
+      await db.delete(users).where(eq(users.id, userId));
 
       await writeAuditLog({ userId, action: "self_delete", metadata: { deletedAt: new Date().toISOString() } });
 
