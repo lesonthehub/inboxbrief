@@ -101,7 +101,10 @@ export async function runBriefingPipeline(
   if (!user.phone) return { success: false, smsSent: false, emailsFetched: 0, highPriorityCount: 0, generalCount: 0, ignoredCount: 0, error: "No phone number configured" };
 
   // ── Account suspension gate ───────────────────────────────────────
-  if (!user.isActive) {
+  // allowBriefingWhileSuspended lets owners/admins keep briefings running for
+  // suspended accounts (e.g. demo/test accounts used for verification recordings)
+  const briefingOverride = !!(user as any).allowBriefingWhileSuspended;
+  if (!user.isActive && !briefingOverride) {
     return { success: false, smsSent: false, emailsFetched: 0, highPriorityCount: 0, generalCount: 0, ignoredCount: 0, error: "Account suspended. Please contact support@inboxbrief.com." };
   }
 

@@ -205,6 +205,7 @@ export async function getAllUsersAdmin(limit = 200, offset = 0) {
       suspendedAt: users.suspendedAt,
       suspendedReason: users.suspendedReason,
       adminNotes: users.adminNotes,
+      allowBriefingWhileSuspended: users.allowBriefingWhileSuspended,
     })
     .from(users)
     .orderBy(desc(users.lastSignedIn))

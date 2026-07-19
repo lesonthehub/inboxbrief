@@ -101,6 +101,8 @@ export const users = mysqlTable("users", {
   suspendedReason: text("suspendedReason"),
   suspendedBy: int("suspendedBy"),
   adminNotes: text("adminNotes"),
+  // Briefing override: allows suspended accounts to still receive briefings (e.g. test/demo accounts)
+  allowBriefingWhileSuspended: boolean("allowBriefingWhileSuspended").default(false).notNull(),
 
   // Test account flag — bypasses subscription gate, exercises real pipeline
   isTestAccount: boolean("isTestAccount").default(false).notNull(),

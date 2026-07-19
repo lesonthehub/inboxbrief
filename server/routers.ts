@@ -1283,6 +1283,30 @@ const adminUsersRouter = router({
       return { success: true };
     }),
 
+  // Toggle briefing access for a suspended account (demo/test override)
+  setBriefingOverride: protectedProcedure
+    .input(z.object({
+      userId: z.number(),
+      allow: z.boolean(),
+      totpCode: z.string().length(6),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+      await verifyAdminTotp(ctx.user.id, input.totpCode);
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
+      await db.update(users).set({ allowBriefingWhileSuspended: input.allow }).where(eq(users.id, input.userId));
+      await logAdminActivity({
+        actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role,
+        targetUserId: input.userId, targetEmail: target?.email ?? null,
+        action: input.allow ? "briefing_override_on" : "briefing_override_off",
+        details: input.allow ? "Briefing access granted despite suspension" : "Briefing override removed",
+        totpVerified: true,
+      });
+      return { success: true };
+    }),
+
   // Soft-delete a user (clear PII, mark inactive, keep audit trail)
   // Optional: ban the account so the email/openId cannot re-register
   softDelete: protectedProcedure

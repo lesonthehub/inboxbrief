@@ -35,6 +35,7 @@ import {
   User,
   RefreshCw,
   AlertTriangle,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -56,9 +57,10 @@ type AdminUser = {
   suspendedAt: Date | null;
   suspendedReason: string | null;
   adminNotes: string | null;
+  allowBriefingWhileSuspended: boolean;
 };
 
-type ModalType = "suspend" | "unsuspend" | "notes" | "delete" | "role" | null;
+type ModalType = "suspend" | "unsuspend" | "notes" | "delete" | "role" | "briefingOverride" | null;
 
 function timeAgo(date: Date): string {
   const now = Date.now();
@@ -100,6 +102,10 @@ export default function AdminCustomers() {
   });
   const unsuspendMutation = trpc.adminUsers.unsuspend.useMutation({
     onSuccess: () => { toast.success("Account reinstated"); closeModal(); utils.adminUsers.list.invalidate(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const briefingOverrideMutation = trpc.adminUsers.setBriefingOverride.useMutation({
+    onSuccess: (_, vars) => { toast.success(vars.allow ? "Briefing access granted" : "Briefing override removed"); closeModal(); utils.adminUsers.list.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
   const notesMutation = trpc.adminUsers.updateNotes.useMutation({
@@ -169,10 +175,12 @@ export default function AdminCustomers() {
       });
     } else if (modalType === "role") {
       roleMutation.mutate({ userId: selectedUser.id, role: newRole, totpCode });
+    } else if (modalType === "briefingOverride") {
+      briefingOverrideMutation.mutate({ userId: selectedUser.id, allow: !selectedUser.allowBriefingWhileSuspended, totpCode });
     }
   }
 
-  const isMutating = suspendMutation.isPending || unsuspendMutation.isPending || notesMutation.isPending || deleteMutation.isPending || roleMutation.isPending;
+  const isMutating = suspendMutation.isPending || unsuspendMutation.isPending || notesMutation.isPending || deleteMutation.isPending || roleMutation.isPending || briefingOverrideMutation.isPending;
 
   const filtered = (data?.users ?? []).filter((u) => {
     const q = search.toLowerCase();
@@ -366,6 +374,7 @@ export default function AdminCustomers() {
               {modalType === "notes" && "Admin Notes"}
               {modalType === "delete" && "Delete Account"}
               {modalType === "role" && "Change Role"}
+              {modalType === "briefingOverride" && (selectedUser?.allowBriefingWhileSuspended ? "Remove Briefing Override" : "Allow Briefings While Suspended")}
             </DialogTitle>
             {selectedUser && (
               <DialogDescription className="text-sm text-muted-foreground">
@@ -392,6 +401,20 @@ export default function AdminCustomers() {
             )}
             {modalType === "unsuspend" && (
               <p className="text-sm text-muted-foreground">This will restore full access to the account immediately.</p>
+            )}
+            {modalType === "briefingOverride" && (
+              <div className="space-y-2">
+                {selectedUser?.allowBriefingWhileSuspended ? (
+                  <p className="text-sm text-muted-foreground">This will remove the briefing override. The account will no longer receive briefings while suspended.</p>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                      <p className="text-sm text-amber-300">This account is currently suspended. Enabling this override allows it to receive briefings despite the suspension — useful for demo or test accounts.</p>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
             {modalType === "notes" && (
               <div>
@@ -490,6 +513,7 @@ export default function AdminCustomers() {
                 modalType === "unsuspend" ? "Reinstate Account" :
                 modalType === "notes" ? "Save Notes" :
                 modalType === "delete" ? "Delete Account" :
+                modalType === "briefingOverride" ? (selectedUser?.allowBriefingWhileSuspended ? "Remove Override" : "Allow Briefings") :
                 "Change Role"
               )}
             </Button>
@@ -535,6 +559,15 @@ function ActionMenu({ user, onAction }: { user: AdminUser; onAction: (u: AdminUs
           <Crown className="w-4 h-4" />
           {user.role === "admin" ? "Remove Admin" : "Make Admin"}
         </DropdownMenuItem>
+        {!user.isActive && (
+          <DropdownMenuItem
+            className="text-amber-400 focus:text-amber-300 gap-2"
+            onClick={() => onAction(user, "briefingOverride")}
+          >
+            <MessageSquare className="w-4 h-4" />
+            {user.allowBriefingWhileSuspended ? "Remove Briefing Override" : "Allow Briefings"}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-red-400 focus:text-red-300 gap-2"
