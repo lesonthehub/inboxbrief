@@ -469,9 +469,21 @@ const settingsRouter = router({
       await db.delete(emailAccounts).where(eq(emailAccounts.userId, userId));
       await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
       await db.delete(serviceGrants).where(eq(serviceGrants.userId, userId));
-      // Hard-delete the user row — they can re-register freely, and will not
-      // appear as "Suspended" in admin Customer Manager
-      await db.delete(users).where(eq(users.id, userId));
+      // Mark the user row as deleted (isDeleted=true, isActive=false)
+      // The row is kept so it shows as "Deleted" in admin views, not "Suspended"
+      // The user can re-register freely (OAuth email-merge skips deleted rows)
+      await db.update(users).set({
+        name: "[Deleted User]",
+        email: null,
+        openId: `deleted_${userId}_${Date.now()}`,
+        phone: null,
+        phoneVerified: false,
+        isActive: false,
+        isDeleted: true,
+        totpSecret: null,
+        totpEnabled: false,
+        adminNotes: `Self-deleted at ${new Date().toISOString()}`,
+      }).where(eq(users.id, userId));
 
       await writeAuditLog({ userId, action: "self_delete", metadata: { deletedAt: new Date().toISOString() } });
 
@@ -1335,16 +1347,27 @@ const adminUsersRouter = router({
       // Log before deleting (so targetEmail is still available)
       await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target.email ?? null, action: input.banAccount ? "delete_ban" : "delete", details: input.reason, totpVerified: true });
 
-      // Hard-delete related rows first (FK constraints), then the user row
+      // Wipe related data, then mark the user row as deleted
       const { briefingLogs, emailAccounts, subscriptions: subsTable, serviceGrants, teamMembers } = await import("../drizzle/schema");
       await db.delete(briefingLogs).where(eq(briefingLogs.userId, input.userId));
       await db.delete(emailAccounts).where(eq(emailAccounts.userId, input.userId));
       await db.delete(subsTable).where(eq(subsTable.userId, input.userId));
       await db.delete(serviceGrants).where(eq(serviceGrants.userId, input.userId));
-      // Delete team memberships where this user is a member
       await db.delete(teamMembers).where(eq(teamMembers.memberId, input.userId));
-      // Hard-delete the user row — they can re-register freely
-      await db.delete(users).where(eq(users.id, input.userId));
+      // Mark as deleted — row is kept so admin views show "Deleted" not "Suspended"
+      // The user can re-register freely (OAuth skips isDeleted rows)
+      await db.update(users).set({
+        name: "[Deleted User]",
+        email: null,
+        openId: `deleted_${input.userId}_${Date.now()}`,
+        phone: null,
+        phoneVerified: false,
+        isActive: false,
+        isDeleted: true,
+        totpSecret: null,
+        totpEnabled: false,
+        adminNotes: `Admin-deleted at ${new Date().toISOString()} by ${ctx.user.email ?? ctx.user.id}. Reason: ${input.reason}`,
+      }).where(eq(users.id, input.userId));
 
       return { success: true, banned: input.banAccount };
     }),

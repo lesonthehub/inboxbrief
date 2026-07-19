@@ -97,6 +97,7 @@ export const users = mysqlTable("users", {
 
   // Account suspension (admin-managed)
   isActive: boolean("isActive").default(true).notNull(),
+  isDeleted: boolean("isDeleted").default(false).notNull(),
   suspendedAt: timestamp("suspendedAt"),
   suspendedReason: text("suspendedReason"),
   suspendedBy: int("suspendedBy"),

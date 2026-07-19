@@ -202,6 +202,7 @@ export async function getAllUsersAdmin(limit = 200, offset = 0) {
       lastSignedIn: users.lastSignedIn,
       loginMethod: users.loginMethod,
       isActive: users.isActive,
+      isDeleted: users.isDeleted,
       suspendedAt: users.suspendedAt,
       suspendedReason: users.suspendedReason,
       adminNotes: users.adminNotes,

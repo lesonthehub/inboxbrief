@@ -58,6 +58,7 @@ type AdminUser = {
   suspendedReason: string | null;
   adminNotes: string | null;
   allowBriefingWhileSuspended: boolean;
+  isDeleted: boolean;
 };
 
 type ModalType = "suspend" | "unsuspend" | "notes" | "delete" | "role" | "briefingOverride" | null;
@@ -303,9 +304,15 @@ export default function AdminCustomers() {
                           <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-xs">Active</Badge>
                         ) : (
                           <div>
-                            <Badge className="bg-red-500/15 text-red-400 border-red-500/30 text-xs">Suspended</Badge>
-                            {u.suspendedReason && (
-                              <div className="text-xs text-muted-foreground mt-0.5 truncate max-w-[140px]">{u.suspendedReason}</div>
+                            {u.isDeleted ? (
+                              <Badge className="bg-zinc-500/15 text-zinc-400 border-zinc-500/30 text-xs">Deleted</Badge>
+                            ) : (
+                              <>
+                                <Badge className="bg-red-500/15 text-red-400 border-red-500/30 text-xs">Suspended</Badge>
+                                {u.suspendedReason && (
+                                  <div className="text-xs text-muted-foreground mt-0.5 truncate max-w-[140px]">{u.suspendedReason}</div>
+                                )}
+                              </>
                             )}
                           </div>
                         )}
@@ -343,6 +350,8 @@ export default function AdminCustomers() {
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                       {u.isActive ? (
                         <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-xs">Active</Badge>
+                      ) : u.isDeleted ? (
+                        <Badge className="bg-zinc-500/15 text-zinc-400 border-zinc-500/30 text-xs">Deleted</Badge>
                       ) : (
                         <Badge className="bg-red-500/15 text-red-400 border-red-500/30 text-xs">Suspended</Badge>
                       )}
