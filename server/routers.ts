@@ -1967,6 +1967,12 @@ const ownerRouter = router({
       const { emailAccounts } = await import("../drizzle/schema");
       await db.delete(emailAccounts).where(eq(emailAccounts.userId, input.userId));
       await db.delete(subscriptions).where(eq(subscriptions.userId, input.userId));
+      // Also wipe the IP hash from ALL accounts sharing the same IP (including owner)
+      // so the IP-based anti-abuse check doesn't block the reset account from re-trialing
+      const [targetUser] = await db.select({ trialSignupIpHash: users.trialSignupIpHash }).from(users).where(eq(users.id, input.userId)).limit(1);
+      if (targetUser?.trialSignupIpHash) {
+        await db.update(users).set({ trialSignupIpHash: null }).where(eq(users.trialSignupIpHash, targetUser.trialSignupIpHash));
+      }
       await db.update(users).set({
         trialSignupIpHash: null,
         trialUsed: false,
@@ -1974,6 +1980,8 @@ const ownerRouter = router({
         trialNudge5Sent: false,
         trialNudge6Sent: false,
         trialEndSent: false,
+        graceBriefingUsed: false,
+        lastGraceBriefingAt: null,
         onboardingComplete: false,
         phone: null,
         phoneVerified: false,
