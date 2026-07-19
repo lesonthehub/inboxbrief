@@ -22,7 +22,7 @@ import { PLANS, isSubscriptionActive, getDisplayPlans, INTERNATIONAL_SMS_SURCHAR
 import { processBriefingFeedback, SUPPORTED_LANGUAGES } from "./grok";
 import { notifyOwner } from "./_core/notification";
 import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs, announcements, adminActivityLog, serviceGrants, enterprisePlans, bannedAccounts } from "../drizzle/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { sendVerificationOtp, verifyOtp } from "./phoneVerification";
 import { sendEmailVerificationOTP } from "./emailService";
 import { writeAuditLog, getClientIp } from "./security";
@@ -97,19 +97,25 @@ const onboardingRouter = router({
         }
 
         // 2. Block same IP from starting a second trial (hash for privacy)
-        const clientIp = getClientIp(ctx.req);
-        if (clientIp && clientIp !== "unknown") {
-          const ipHash = createHash("sha256").update(clientIp + "inboxbrief-trial-salt").digest("hex");
-          const [existingTrialFromIp] = await db
-            .select({ id: users.id })
-            .from(users)
-            .where(and(eq(users.trialSignupIpHash, ipHash), eq(users.trialUsed, true)))
-            .limit(1);
-          if (existingTrialFromIp) {
-            throw new TRPCError({ code: "FORBIDDEN", message: "A free trial has already been used from this device or network. Please choose a plan to continue." });
+        // Skip for test accounts
+        const currentUserRow = await db.select({ isTestAccount: users.isTestAccount }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
+        const isTestAcc = currentUserRow[0]?.isTestAccount;
+        if (!isTestAcc) {
+          const clientIp = getClientIp(ctx.req);
+          if (clientIp && clientIp !== "unknown") {
+            const ipHash = createHash("sha256").update(clientIp + "inboxbrief-trial-salt").digest("hex");
+            const [existingTrialFromIp] = await db
+              .select({ id: users.id })
+              .from(users)
+              // Exclude the current user — their own hash was cleared by reset, others at same IP still count
+              .where(and(eq(users.trialSignupIpHash, ipHash), eq(users.trialUsed, true), sql`${users.id} != ${ctx.user.id}`))
+              .limit(1);
+            if (existingTrialFromIp) {
+              throw new TRPCError({ code: "FORBIDDEN", message: "A free trial has already been used from this device or network. Please choose a plan to continue." });
+            }
+            // Store IP hash for future checks
+            await db.update(users).set({ trialSignupIpHash: ipHash }).where(eq(users.id, ctx.user.id));
           }
-          // Store IP hash for future checks
-          await db.update(users).set({ trialSignupIpHash: ipHash }).where(eq(users.id, ctx.user.id));
         }
       }
       // ── End trial anti-abuse ─────────────────────────────────────────────────
