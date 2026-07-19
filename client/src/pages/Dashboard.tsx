@@ -276,7 +276,7 @@ export default function Dashboard() {
   const isEmailVerifiedFinal = !!emailVerifStatus?.emailVerified;
   const isActive = subStatus?.isActive;
   const phoneVerified = subStatus?.phoneVerified ?? false;
-  const userPhone = subStatus?.phone ?? user?.email ?? "";
+  const userPhone = subStatus?.phone ?? "";
   const planName = subStatus?.plan === "trial" ? "Free Trial" : (subStatus?.planDetails?.name ?? "No Plan");
   const trialDaysLeft = subStatus?.trialEndsAt
     ? Math.max(0, Math.ceil((new Date(subStatus.trialEndsAt).getTime() - Date.now()) / 86400000))
