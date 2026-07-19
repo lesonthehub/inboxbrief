@@ -1963,9 +1963,10 @@ const ownerRouter = router({
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const target = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
       if (!target[0]) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
-      // Clear the IP hash, trial flags, and full onboarding state so the user sets up from scratch
+      // Clear the IP hash, trial flags, full onboarding state, and subscription so the user truly starts fresh
       const { emailAccounts } = await import("../drizzle/schema");
       await db.delete(emailAccounts).where(eq(emailAccounts.userId, input.userId));
+      await db.delete(subscriptions).where(eq(subscriptions.userId, input.userId));
       await db.update(users).set({
         trialSignupIpHash: null,
         trialUsed: false,
