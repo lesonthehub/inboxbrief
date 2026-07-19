@@ -195,7 +195,8 @@ export default function AdminCustomers() {
 
   const totalCount = data?.total ?? 0;
   const activeCount = (data?.users ?? []).filter((u) => u.isActive).length;
-  const suspendedCount = (data?.users ?? []).filter((u) => !u.isActive).length;
+  const suspendedCount = (data?.users ?? []).filter((u) => !u.isActive && !u.isDeleted).length;
+  const deletedCount = (data?.users ?? []).filter((u) => u.isDeleted).length;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -239,11 +240,12 @@ export default function AdminCustomers() {
         </div>
 
         {/* Stats bar */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-4 gap-3 mb-6">
           {[
             { label: "Total", value: totalCount, color: "text-foreground" },
             { label: "Active", value: activeCount, color: "text-emerald-400" },
             { label: "Suspended", value: suspendedCount, color: "text-red-400" },
+            { label: "Deleted", value: deletedCount, color: "text-zinc-400" },
           ].map((s) => (
             <div key={s.label} className="rounded-lg border border-border/40 bg-card/50 p-3 text-center">
               <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
