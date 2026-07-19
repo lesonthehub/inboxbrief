@@ -255,9 +255,11 @@ export default function Dashboard() {
   const [loginOpen, setLoginOpen] = useState(false);
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      setLoginOpen(true);
+      // Redirect to homepage instead of showing the login modal inline.
+      // This gives users a clean exit without being immediately prompted to sign back in.
+      navigate("/");
     }
-  }, [isAuthenticated, authLoading]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   useEffect(() => {
     if (settings?.scheduleTimes) setCustomTimes(settings.scheduleTimes);
@@ -333,12 +335,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <LoginModal
-        open={loginOpen}
-        onClose={() => setLoginOpen(false)}
-        returnPath="/dashboard"
-        title="Sign in to InboxBrief"
-      />
+      {/* LoginModal removed — unauthenticated users are redirected to / */}
       {/* Phone Verification Modal */}
       {showPhoneVerification && userPhone && (
         <PhoneVerificationModal
