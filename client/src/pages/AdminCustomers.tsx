@@ -84,6 +84,8 @@ export default function AdminCustomers() {
   const [modalInput, setModalInput] = useState("");
   const [newRole, setNewRole] = useState<"user" | "admin">("user");
   const [totpCode, setTotpCode] = useState("");
+  const [banAccount, setBanAccount] = useState(false);
+  const [banReason, setBanReason] = useState("");
 
   const isAuthorized = isAuthenticated && (user?.role === "admin" || user?.role === "owner");
 
@@ -142,6 +144,8 @@ export default function AdminCustomers() {
     setSelectedUser(null);
     setModalInput("");
     setTotpCode("");
+    setBanAccount(false);
+    setBanReason("");
   }
 
   function handleConfirm() {
@@ -156,7 +160,13 @@ export default function AdminCustomers() {
       notesMutation.mutate({ userId: selectedUser.id, notes: modalInput, totpCode });
     } else if (modalType === "delete") {
       if (!modalInput.trim()) return toast.error("Reason is required");
-      deleteMutation.mutate({ userId: selectedUser.id, reason: modalInput.trim(), totpCode });
+      deleteMutation.mutate({
+        userId: selectedUser.id,
+        reason: modalInput.trim(),
+        totpCode,
+        banAccount,
+        banReason: banReason.trim() || undefined,
+      });
     } else if (modalType === "role") {
       roleMutation.mutate({ userId: selectedUser.id, role: newRole, totpCode });
     }
@@ -400,7 +410,7 @@ export default function AdminCustomers() {
               <>
                 <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                   <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
-                  <p className="text-sm text-red-300">This will anonymize the user's PII (name, email, phone) and permanently block their account. This cannot be undone.</p>
+                  <p className="text-sm text-red-300">This will anonymize the user's PII (name, email, phone) and permanently deactivate their account. This cannot be undone.</p>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">Reason (required)</label>
@@ -411,6 +421,34 @@ export default function AdminCustomers() {
                     rows={3}
                     maxLength={500}
                   />
+                </div>
+                {/* Ban toggle */}
+                <div className="flex items-start gap-3 p-3 rounded-lg border border-border/40 bg-muted/10">
+                  <button
+                    type="button"
+                    onClick={() => setBanAccount(!banAccount)}
+                    className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                      banAccount ? "bg-red-600 border-red-600" : "border-border/60 bg-transparent"
+                    }`}
+                    aria-checked={banAccount}
+                    role="checkbox"
+                  >
+                    {banAccount && <span className="text-white text-xs font-bold">✓</span>}
+                  </button>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">Ban this account</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Prevents this email address from creating a new account. You can lift the ban later from Owner Dashboard.</p>
+                    {banAccount && (
+                      <Textarea
+                        className="mt-2"
+                        placeholder="Ban reason (optional — defaults to deletion reason)"
+                        value={banReason}
+                        onChange={(e) => setBanReason(e.target.value)}
+                        rows={2}
+                        maxLength={500}
+                      />
+                    )}
+                  </div>
                 </div>
               </>
             )}

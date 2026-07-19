@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { SocialLoginButtons } from "@/components/SocialLoginButtons";
 import { LoginModal } from "@/components/LoginModal";
@@ -11,6 +11,7 @@ import {
   Plug, BrainCircuit, Smartphone, ArrowRight
 } from "lucide-react";
 import { PageFooter } from "@/components/PageFooter";
+import { toast } from "sonner";
 
 const FEATURES = [
   {
@@ -97,6 +98,18 @@ export default function Home() {
 
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [loginModalReturn, setLoginModalReturn] = useState("/dashboard");
+
+  // Show a message if the OAuth redirect included a login_error param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const loginError = params.get("login_error");
+    if (loginError === "account_banned") {
+      toast.error("This account has been banned and cannot sign in. Contact support@inboxbrief.org if you believe this is an error.", { duration: 8000 });
+      // Clean the URL so the toast doesn't re-fire on refresh
+      const clean = window.location.pathname;
+      window.history.replaceState({}, "", clean);
+    }
+  }, []);
 
   const openLoginModal = (returnPath: string) => {
     setLoginModalReturn(returnPath);

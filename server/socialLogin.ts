@@ -15,8 +15,8 @@ import { getDb } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { sdk } from "./_core/sdk";
 import { ENV } from "./_core/env";
-import { users } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { users, bannedAccounts } from "../drizzle/schema";
+import { eq, and } from "drizzle-orm";
 import axios from "axios";
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
@@ -134,8 +134,27 @@ export function registerGoogleLoginRoutes(app: Express) {
       let resolvedOpenId = buildSocialOpenId("google", sub);
       let resolvedName = name || email || "Google User";
 
+      const database = await getDb();
+
+      // ── Ban check ─────────────────────────────────────────────────────────────
+      if (email && database) {
+        const ban = await database
+          .select({ id: bannedAccounts.id })
+          .from(bannedAccounts)
+          .where(
+            and(
+              eq(bannedAccounts.email, email.toLowerCase()),
+              eq(bannedAccounts.isActive, true)
+            )
+          )
+          .limit(1);
+        if (ban.length > 0) {
+          res.redirect(302, "/?login_error=account_banned");
+          return;
+        }
+      }
+
       if (email) {
-        const database = await getDb();
         if (database) {
           const existing = await database
             .select()
@@ -271,10 +290,29 @@ export function registerMicrosoftLoginRoutes(app: Express) {
       let resolvedOpenId = buildSocialOpenId("microsoft", id);
       let resolvedName = name;
 
+      const msDatabase = await getDb();
+
+      // ── Ban check ─────────────────────────────────────────────────────────────
+      if (email && msDatabase) {
+        const ban = await msDatabase
+          .select({ id: bannedAccounts.id })
+          .from(bannedAccounts)
+          .where(
+            and(
+              eq(bannedAccounts.email, email.toLowerCase()),
+              eq(bannedAccounts.isActive, true)
+            )
+          )
+          .limit(1);
+        if (ban.length > 0) {
+          res.redirect(302, "/?login_error=account_banned");
+          return;
+        }
+      }
+
       if (email) {
-        const database = await getDb();
-        if (database) {
-          const existing = await database
+        if (msDatabase) {
+          const existing = await msDatabase
             .select()
             .from(users)
             .where(eq(users.email, email))
@@ -282,7 +320,7 @@ export function registerMicrosoftLoginRoutes(app: Express) {
           if (existing.length > 0 && existing[0].openId !== resolvedOpenId) {
             resolvedOpenId = existing[0].openId;
             resolvedName = existing[0].name || resolvedName;
-            await database
+            await msDatabase
               .update(users)
               .set({
                 loginMethod: "microsoft",

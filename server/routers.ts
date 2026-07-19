@@ -21,7 +21,7 @@ import { sendSmsBriefing, OWNER_EMAIL } from "./sms";
 import { PLANS, isSubscriptionActive, getDisplayPlans, INTERNATIONAL_SMS_SURCHARGE, isInternationalNumber, planAllowsOutlook, getManualBriefingLimit } from "./plans";
 import { processBriefingFeedback, SUPPORTED_LANGUAGES } from "./grok";
 import { notifyOwner } from "./_core/notification";
-import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs, announcements, adminActivityLog, serviceGrants, enterprisePlans } from "../drizzle/schema";
+import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs, announcements, adminActivityLog, serviceGrants, enterprisePlans, bannedAccounts } from "../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { sendVerificationOtp, verifyOtp } from "./phoneVerification";
 import { sendEmailVerificationOTP } from "./emailService";
@@ -1284,11 +1284,14 @@ const adminUsersRouter = router({
     }),
 
   // Soft-delete a user (clear PII, mark inactive, keep audit trail)
+  // Optional: ban the account so the email/openId cannot re-register
   softDelete: protectedProcedure
     .input(z.object({
       userId: z.number(),
       reason: z.string().min(1).max(500),
       totpCode: z.string().length(6),
+      banAccount: z.boolean().default(false),
+      banReason: z.string().max(500).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
@@ -1296,7 +1299,7 @@ const adminUsersRouter = router({
       await verifyAdminTotp(ctx.user.id, input.totpCode);
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
+      const [target] = await db.select({ email: users.email, openId: users.openId }).from(users).where(eq(users.id, input.userId)).limit(1);
       // Anonymize PII, preserve audit trail
       await db.update(users).set({
         isActive: false,
@@ -1307,9 +1310,40 @@ const adminUsersRouter = router({
         suspendedAt: new Date(),
         suspendedReason: `DELETED: ${input.reason}`,
         suspendedBy: ctx.user.id,
-        adminNotes: `Account soft-deleted by admin ${ctx.user.id} on ${new Date().toISOString()}. Reason: ${input.reason}`,
+        adminNotes: `Account soft-deleted by ${ctx.user.role} ${ctx.user.id} on ${new Date().toISOString()}. Reason: ${input.reason}${input.banAccount ? " [BANNED]" : ""}`,
       }).where(eq(users.id, input.userId));
-      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target?.email ?? null, action: "soft_delete", details: input.reason, totpVerified: true });
+      // If ban requested, write a ban record keyed to email + openId
+      if (input.banAccount && target?.email) {
+        await db.insert(bannedAccounts).values({
+          email: target.email.toLowerCase(),
+          openId: target.openId ?? undefined,
+          bannedByUserId: ctx.user.id,
+          bannedByEmail: ctx.user.email ?? undefined,
+          reason: input.banReason ?? input.reason,
+          isActive: true,
+        });
+      }
+      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target?.email ?? null, action: input.banAccount ? "soft_delete_ban" : "soft_delete", details: input.reason, totpVerified: true });
+      return { success: true, banned: input.banAccount };
+    }),
+
+  // List all active bans
+  listBans: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    return db.select().from(bannedAccounts).where(eq(bannedAccounts.isActive, true)).orderBy(desc(bannedAccounts.createdAt));
+  }),
+
+  // Lift a ban
+  liftBan: protectedProcedure
+    .input(z.object({ banId: z.number().int() }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      await db.update(bannedAccounts).set({ isActive: false }).where(eq(bannedAccounts.id, input.banId));
+      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: null, targetEmail: null, action: "lift_ban", details: `banId: ${input.banId}`, totpVerified: false });
       return { success: true };
     }),
 

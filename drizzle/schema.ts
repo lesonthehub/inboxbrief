@@ -352,3 +352,28 @@ export const enterprisePlans = mysqlTable("enterprise_plans", {
 });
 export type EnterprisePlan = typeof enterprisePlans.$inferSelect;
 export type InsertEnterprisePlan = typeof enterprisePlans.$inferInsert;
+
+// ─── Banned Accounts ──────────────────────────────────────────────────────────
+// Records of accounts banned by admins/owners on deletion.
+// Checked at OAuth registration to prevent re-registration.
+
+export const bannedAccounts = mysqlTable("banned_accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  // The email address that is banned (lowercased)
+  email: varchar("email", { length: 320 }).notNull(),
+  // The OAuth openId (Google sub / Microsoft oid) that is banned — optional
+  openId: varchar("openId", { length: 64 }),
+  // Who issued the ban
+  bannedByUserId: int("bannedByUserId").notNull(),
+  bannedByEmail: varchar("bannedByEmail", { length: 320 }),
+  // Why the account was banned (internal note)
+  reason: text("reason"),
+  // Whether the ban is still active
+  isActive: boolean("isActive").default(true).notNull(),
+  // Optional expiry — null means permanent
+  expiresAt: timestamp("expiresAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type BannedAccount = typeof bannedAccounts.$inferSelect;
+export type InsertBannedAccount = typeof bannedAccounts.$inferInsert;

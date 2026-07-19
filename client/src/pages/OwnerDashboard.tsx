@@ -138,6 +138,14 @@ export default function OwnerDashboard() {
   const { data: enterprisePlansData, refetch: refetchEnterprisePlans } =
     trpc.enterprise.listCustomPlans.useQuery({ activeOnly: false });
 
+  const { data: bansData, refetch: refetchBans, isLoading: bansLoading } =
+    trpc.adminUsers.listBans.useQuery();
+
+  const liftBanMut = trpc.adminUsers.liftBan.useMutation({
+    onSuccess: () => { toast.success("Ban lifted — account can now re-register"); refetchBans(); refetchLog(); },
+    onError: (e) => toast.error(e.message),
+  });
+
   // Estimate query — driven by current form values
   const { data: priceEstimate } = trpc.enterprise.estimatePrice.useQuery({
     emailsPerBriefing: epEmailsPerBriefing,
@@ -302,6 +310,14 @@ export default function OwnerDashboard() {
                 <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-500" />
                 <span className="hidden sm:inline">Enterprise Plans</span>
                 <span className="sm:hidden">Enterprise</span>
+              </TabsTrigger>
+              <TabsTrigger value="bans" className="gap-1.5 text-xs sm:text-sm">
+                <ShieldOff className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-400" />
+                <span className="hidden sm:inline">Banned Accounts</span>
+                <span className="sm:hidden">Bans</span>
+                {bansData && bansData.length > 0 && (
+                  <span className="ml-1 bg-red-600 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{bansData.length}</span>
+                )}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -818,6 +834,55 @@ export default function OwnerDashboard() {
                   </div>
                 )}
               </div>
+            </div>
+          </TabsContent>
+          {/* ── Banned Accounts ── */}
+          <TabsContent value="bans">
+            <div className="bg-card border border-border rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="font-semibold text-foreground">Banned Accounts</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">These email addresses are blocked from creating new accounts. Lift a ban to allow re-registration.</p>
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => refetchBans()}>
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </div>
+              {bansLoading ? (
+                <p className="text-sm text-muted-foreground">Loading...</p>
+              ) : !bansData || bansData.length === 0 ? (
+                <div className="text-center py-8">
+                  <ShieldCheck className="w-10 h-10 text-green-500 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No active bans.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {bansData.map((ban) => (
+                    <div key={ban.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-muted/20 border border-border/40">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-sm text-foreground">{ban.email}</span>
+                          {ban.openId && <Badge variant="outline" className="text-[10px]">openId locked</Badge>}
+                        </div>
+                        {ban.reason && <p className="text-xs text-muted-foreground mt-0.5 truncate">Reason: {ban.reason}</p>}
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Banned by {ban.bannedByEmail ?? `User #${ban.bannedByUserId}`} on {new Date(ban.createdAt).toLocaleDateString()}
+                          {ban.expiresAt && ` · Expires ${new Date(ban.expiresAt).toLocaleDateString()}`}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="shrink-0 text-green-400 border-green-500/30 hover:bg-green-500/10"
+                        disabled={liftBanMut.isPending}
+                        onClick={() => liftBanMut.mutate({ banId: ban.id })}
+                      >
+                        <CheckCircle className="w-3.5 h-3.5 mr-1" /> Lift Ban
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
