@@ -36,6 +36,7 @@ import {
   RefreshCw,
   AlertTriangle,
   MessageSquare,
+  Gift,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -65,7 +66,7 @@ type AdminUser = {
   subCurrentPeriodEnd: Date | null;
 };
 
-type ModalType = "suspend" | "unsuspend" | "notes" | "delete" | "role" | "briefingOverride" | null;
+type ModalType = "suspend" | "unsuspend" | "notes" | "delete" | "role" | "briefingOverride" | "grantTrial" | null;
 
 function trialDaysLeft(trialEndsAt: Date | null): number {
   if (!trialEndsAt) return 0;
@@ -172,6 +173,15 @@ export default function AdminCustomers() {
     onSuccess: () => { toast.success("Role updated"); closeModal(); utils.adminUsers.list.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
+  const grantTrialMutation = trpc.adminUsers.regrantTrial.useMutation({
+    onSuccess: (data) => {
+      const ends = new Date(data.trialEndsAt).toLocaleDateString();
+      toast.success(`7-day trial granted — expires ${ends}`);
+      closeModal();
+      utils.adminUsers.list.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   if (authLoading) return null;
   if (!isAuthenticated) {
@@ -208,7 +218,7 @@ export default function AdminCustomers() {
 
   function handleConfirm() {
     if (!selectedUser) return;
-    if (totpCode.length !== 6) return toast.error("Enter your 6-digit authenticator code");
+    if (modalType !== "grantTrial" && totpCode.length !== 6) return toast.error("Enter your 6-digit authenticator code");
     if (modalType === "suspend") {
       if (!modalInput.trim()) return toast.error("Reason is required");
       suspendMutation.mutate({ userId: selectedUser.id, reason: modalInput.trim(), totpCode });
@@ -229,10 +239,12 @@ export default function AdminCustomers() {
       roleMutation.mutate({ userId: selectedUser.id, role: newRole, totpCode });
     } else if (modalType === "briefingOverride") {
       briefingOverrideMutation.mutate({ userId: selectedUser.id, allow: !selectedUser.allowBriefingWhileSuspended, totpCode });
+    } else if (modalType === "grantTrial") {
+      grantTrialMutation.mutate({ userId: selectedUser.id, reason: modalInput.trim() || "Granted by owner" });
     }
   }
 
-  const isMutating = suspendMutation.isPending || unsuspendMutation.isPending || notesMutation.isPending || deleteMutation.isPending || roleMutation.isPending || briefingOverrideMutation.isPending;
+  const isMutating = suspendMutation.isPending || unsuspendMutation.isPending || notesMutation.isPending || deleteMutation.isPending || roleMutation.isPending || briefingOverrideMutation.isPending || grantTrialMutation.isPending;
 
   const filtered = (data?.users ?? []).filter((u) => {
     const q = search.toLowerCase();
@@ -442,6 +454,7 @@ export default function AdminCustomers() {
               {modalType === "delete" && "Delete Account"}
               {modalType === "role" && "Change Role"}
               {modalType === "briefingOverride" && (selectedUser?.allowBriefingWhileSuspended ? "Remove Briefing Override" : "Allow Briefings While Suspended")}
+              {modalType === "grantTrial" && "Grant Free Trial"}
             </DialogTitle>
             {selectedUser && (
               <DialogDescription className="text-sm text-muted-foreground">
@@ -542,15 +555,32 @@ export default function AdminCustomers() {
                 </div>
               </>
             )}
-            {modalType === "role" && selectedUser && (
+              {modalType === "role" && selectedUser && (
               <p className="text-sm text-muted-foreground">
                 Change <strong>{selectedUser.name ?? selectedUser.email}</strong> from <strong>{selectedUser.role}</strong> to <strong>{newRole}</strong>?
                 {newRole === "admin" && " This grants full admin access to all admin pages."}
               </p>
             )}
+            {modalType === "grantTrial" && selectedUser && (
+              <div className="space-y-3">
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <Gift className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
+                  <p className="text-sm text-blue-300">This will give <strong>{selectedUser.name ?? selectedUser.email}</strong> a fresh 7-day trial starting now, regardless of their current plan or trial history.</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Reason (optional)</label>
+                  <Input
+                    placeholder="e.g. Demo account, customer request…"
+                    value={modalInput}
+                    onChange={(e) => setModalInput(e.target.value)}
+                    maxLength={500}
+                  />
+                </div>
+              </div>
+            )}
 
-            {/* TOTP gate — always required */}
-            <div className="pt-2 border-t border-border">
+            {/* TOTP gate — not required for grantTrial */}
+            <div className={`pt-2 border-t border-border ${modalType === "grantTrial" ? "hidden" : ""}`}>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Authenticator code (required)</label>
               <Input
                 placeholder="6-digit code from your app"
@@ -581,6 +611,7 @@ export default function AdminCustomers() {
                 modalType === "notes" ? "Save Notes" :
                 modalType === "delete" ? "Delete Account" :
                 modalType === "briefingOverride" ? (selectedUser?.allowBriefingWhileSuspended ? "Remove Override" : "Allow Briefings") :
+                modalType === "grantTrial" ? "Grant 7-Day Trial" :
                 "Change Role"
               )}
             </Button>
@@ -635,6 +666,10 @@ function ActionMenu({ user, onAction }: { user: AdminUser; onAction: (u: AdminUs
             {user.allowBriefingWhileSuspended ? "Remove Briefing Override" : "Allow Briefings"}
           </DropdownMenuItem>
         )}
+        <DropdownMenuItem className="gap-2 text-blue-400 focus:text-blue-300" onClick={() => onAction(user, "grantTrial")}>
+          <Gift className="w-4 h-4" />
+          Grant Trial
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-red-400 focus:text-red-300 gap-2"
