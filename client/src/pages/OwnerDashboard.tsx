@@ -157,6 +157,29 @@ export default function OwnerDashboard() {
     maxTeamMembers: epTeamMembers,
   }, { enabled: epShowForm });
 
+  const [epEditPlanId, setEpEditPlanId] = useState<number | null>(null);
+  const [epEditCompany, setEpEditCompany] = useState("");
+  const [epEditEmail, setEpEditEmail] = useState("");
+  const [epEditSeats, setEpEditSeats] = useState(10);
+  const [epEditPrice, setEpEditPrice] = useState(500);
+  const [epEditActive, setEpEditActive] = useState(true);
+  const [epEditNotes, setEpEditNotes] = useState("");
+  const [epInvoicePlanId, setEpInvoicePlanId] = useState<number | null>(null);
+  const [epInvoiceDays, setEpInvoiceDays] = useState(30);
+
+  const updateEnterprisePlanMut = trpc.enterprise.updateCustomPlan.useMutation({
+    onSuccess: () => { toast.success("Plan updated"); setEpEditPlanId(null); refetchEnterprisePlans(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteEnterprisePlanMut = trpc.enterprise.deleteCustomPlan.useMutation({
+    onSuccess: () => { toast.success("Plan deleted"); refetchEnterprisePlans(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const sendInvoiceMut = trpc.enterprise.sendInvoice.useMutation({
+    onSuccess: (data) => { toast.success(`Invoice sent! ID: ${data.invoiceId}`); setEpInvoicePlanId(null); },
+    onError: (e) => toast.error(e.message),
+  });
+
   const createEnterprisePlanMut = trpc.enterprise.createCustomPlan.useMutation({
     onSuccess: () => {
       toast.success("Enterprise plan created");
@@ -879,14 +902,20 @@ export default function OwnerDashboard() {
                               </Badge>
                             </td>
                             <td className="py-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-xs h-7"
-                                onClick={() => { setEpAssignPlanId(plan.id); setEpAssignTarget(""); }}
-                              >
-                                Assign User
-                              </Button>
+                              <div className="flex items-center gap-1 flex-wrap">
+                                <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => { setEpAssignPlanId(plan.id); setEpAssignTarget(""); }}>Assign</Button>
+                                <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => {
+                                  setEpEditPlanId(plan.id);
+                                  setEpEditCompany(plan.companyName ?? "");
+                                  setEpEditEmail(plan.contactEmail ?? "");
+                                  setEpEditSeats(plan.maxTeamMembers ?? 10);
+                                  setEpEditPrice(Number(plan.pricePerMonth) || 0);
+                                  setEpEditActive(plan.isActive ?? true);
+                                  setEpEditNotes(plan.notes ?? "");
+                                }}>Edit</Button>
+                                <Button size="sm" variant="outline" className="text-xs h-7 text-green-400 border-green-500/30 hover:bg-green-500/10" onClick={() => { setEpInvoicePlanId(plan.id); setEpInvoiceDays(30); }}>Invoice</Button>
+                                <Button size="sm" variant="outline" className="text-xs h-7 text-red-400 border-red-500/30 hover:bg-red-500/10" disabled={deleteEnterprisePlanMut.isPending} onClick={() => { if (confirm(`Delete plan for ${plan.companyName}?`)) deleteEnterprisePlanMut.mutate({ planId: plan.id }); }}>Delete</Button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -895,6 +924,46 @@ export default function OwnerDashboard() {
                   </div>
                 )}
               </div>
+
+              {/* Edit Plan Dialog */}
+              <Dialog open={epEditPlanId !== null} onOpenChange={(o) => { if (!o) setEpEditPlanId(null); }}>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Edit Enterprise Plan</DialogTitle></DialogHeader>
+                  <div className="space-y-3 py-2">
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Company Name</label><Input value={epEditCompany} onChange={(e) => setEpEditCompany(e.target.value)} /></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Contact Email</label><Input type="email" value={epEditEmail} onChange={(e) => setEpEditEmail(e.target.value)} /></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Seats</label><Input type="number" min={1} value={epEditSeats} onChange={(e) => setEpEditSeats(Number(e.target.value))} /></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Monthly Price ($)</label><Input type="number" min={0} value={epEditPrice} onChange={(e) => setEpEditPrice(Number(e.target.value))} /></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Notes</label><Textarea value={epEditNotes} onChange={(e) => setEpEditNotes(e.target.value)} rows={2} /></div>
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" id="epEditActive" checked={epEditActive} onChange={(e) => setEpEditActive(e.target.checked)} />
+                      <label htmlFor="epEditActive" className="text-sm text-foreground">Active</label>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setEpEditPlanId(null)}>Cancel</Button>
+                    <Button disabled={updateEnterprisePlanMut.isPending} onClick={() => epEditPlanId && updateEnterprisePlanMut.mutate({ planId: epEditPlanId, companyName: epEditCompany, contactEmail: epEditEmail, maxTeamMembers: epEditSeats, pricePerMonth: epEditPrice, notes: epEditNotes, isActive: epEditActive })}>
+                      {updateEnterprisePlanMut.isPending ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Send Invoice Dialog */}
+              <Dialog open={epInvoicePlanId !== null} onOpenChange={(o) => { if (!o) setEpInvoicePlanId(null); }}>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Send Stripe Invoice</DialogTitle><DialogDescription>Creates and emails a Stripe invoice to the plan contact for the monthly amount.</DialogDescription></DialogHeader>
+                  <div className="space-y-3 py-2">
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Days Until Due</label><Input type="number" min={1} max={90} value={epInvoiceDays} onChange={(e) => setEpInvoiceDays(Number(e.target.value))} /></div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setEpInvoicePlanId(null)}>Cancel</Button>
+                    <Button disabled={sendInvoiceMut.isPending} onClick={() => epInvoicePlanId && sendInvoiceMut.mutate({ planId: epInvoicePlanId, daysUntilDue: epInvoiceDays })}>
+                      {sendInvoiceMut.isPending ? "Sending..." : "Send Invoice"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </TabsContent>
           {/* ── Banned Accounts ── */}

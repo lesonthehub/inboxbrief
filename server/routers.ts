@@ -868,6 +868,72 @@ const enterpriseRouter = router({
 
       return { success: true };
     }),
+
+  deleteCustomPlan: protectedProcedure
+    .input(z.object({ planId: z.number().int() }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "owner" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [plan] = await db.select().from(enterprisePlans).where(eq(enterprisePlans.id, input.planId)).limit(1);
+      if (!plan) throw new TRPCError({ code: "NOT_FOUND", message: "Plan not found" });
+      if (plan.assignedUserId) {
+        await db.update(users).set({ enterprisePlanId: null }).where(eq(users.id, plan.assignedUserId));
+      }
+      await db.delete(enterprisePlans).where(eq(enterprisePlans.id, input.planId));
+      await logAdminActivity({
+        actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role,
+        targetUserId: null, targetEmail: plan.contactEmail ?? null,
+        action: "delete_enterprise_plan",
+        details: JSON.stringify({ planId: input.planId, companyName: plan.companyName }),
+      });
+      return { success: true };
+    }),
+
+  sendInvoice: protectedProcedure
+    .input(z.object({
+      planId: z.number().int(),
+      daysUntilDue: z.number().int().min(1).max(90).default(30),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "owner" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [plan] = await db.select().from(enterprisePlans).where(eq(enterprisePlans.id, input.planId)).limit(1);
+      if (!plan) throw new TRPCError({ code: "NOT_FOUND", message: "Plan not found" });
+      if (!plan.contactEmail) throw new TRPCError({ code: "BAD_REQUEST", message: "Plan has no contact email" });
+      if (!plan.pricePerMonth || Number(plan.pricePerMonth) <= 0) throw new TRPCError({ code: "BAD_REQUEST", message: "Plan has no price set" });
+      const stripe = getStripe();
+      const existing = await stripe.customers.list({ email: plan.contactEmail, limit: 1 });
+      const customer = existing.data[0] ?? await stripe.customers.create({
+        email: plan.contactEmail,
+        name: plan.companyName ?? undefined,
+        metadata: { enterprisePlanId: String(plan.id) },
+      });
+      const invoice = await stripe.invoices.create({
+        customer: customer.id,
+        collection_method: "send_invoice",
+        days_until_due: input.daysUntilDue,
+        description: `InboxBrief Enterprise Plan — ${plan.companyName ?? "Custom"} (${plan.maxTeamMembers} seats)`,
+        metadata: { enterprisePlanId: String(plan.id) },
+      });
+      await stripe.invoiceItems.create({
+        customer: customer.id,
+        invoice: invoice.id,
+        amount: Math.round(Number(plan.pricePerMonth) * 100),
+        currency: "usd",
+        description: `InboxBrief Enterprise — ${plan.companyName ?? "Custom"} (${plan.maxTeamMembers} seats, monthly)`,
+      });
+      const finalized = await stripe.invoices.finalizeInvoice(invoice.id);
+      await stripe.invoices.sendInvoice(finalized.id);
+      await logAdminActivity({
+        actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role,
+        targetUserId: plan.assignedUserId ?? null, targetEmail: plan.contactEmail,
+        action: "send_enterprise_invoice",
+        details: JSON.stringify({ planId: plan.id, invoiceId: finalized.id, amount: plan.pricePerMonth }),
+      });
+      return { success: true, invoiceId: finalized.id, invoiceUrl: finalized.hosted_invoice_url };
+    }),
 });
 
 // ─── Legal Router ──────────────────────────────────────────────────────────────
