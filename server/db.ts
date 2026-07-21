@@ -207,8 +207,12 @@ export async function getAllUsersAdmin(limit = 200, offset = 0) {
       suspendedReason: users.suspendedReason,
       adminNotes: users.adminNotes,
       allowBriefingWhileSuspended: users.allowBriefingWhileSuspended,
+      subPlan: subscriptions.plan,
+      subStatus: subscriptions.status,
+      subCurrentPeriodEnd: subscriptions.currentPeriodEnd,
     })
     .from(users)
+    .leftJoin(subscriptions, eq(subscriptions.userId, users.id))
     .orderBy(desc(users.lastSignedIn))
     .limit(limit)
     .offset(offset);

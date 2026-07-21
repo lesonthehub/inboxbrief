@@ -47,6 +47,7 @@ type AdminUser = {
   role: "user" | "admin";
   onboardingComplete: boolean;
   trialUsed: boolean;
+  trialStartedAt: Date | null;
   trialEndsAt: Date | null;
   referralCode: string | null;
   referralCredits: number;
@@ -59,9 +60,59 @@ type AdminUser = {
   adminNotes: string | null;
   allowBriefingWhileSuspended: boolean;
   isDeleted: boolean;
+  subPlan: string | null;
+  subStatus: string | null;
+  subCurrentPeriodEnd: Date | null;
 };
 
 type ModalType = "suspend" | "unsuspend" | "notes" | "delete" | "role" | "briefingOverride" | null;
+
+function trialDaysLeft(trialEndsAt: Date | null): number {
+  if (!trialEndsAt) return 0;
+  const diff = new Date(trialEndsAt).getTime() - Date.now();
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
+
+function PlanBadge({ user }: { user: AdminUser }) {
+  const now = new Date();
+  const isTrialActive =
+    user.subPlan === "trial" &&
+    user.subStatus === "trialing" &&
+    user.trialEndsAt &&
+    new Date(user.trialEndsAt) > now;
+  const isPaidActive =
+    user.subPlan &&
+    user.subPlan !== "trial" &&
+    (user.subStatus === "active" || user.subStatus === "past_due");
+
+  if (isTrialActive) {
+    const daysLeft = trialDaysLeft(user.trialEndsAt);
+    return (
+      <div className="flex flex-col gap-0.5">
+        <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/30 text-xs">Trial</Badge>
+        <span className="text-xs text-muted-foreground">{daysLeft}d left</span>
+      </div>
+    );
+  }
+  if (isPaidActive) {
+    const planLabel = (user.subPlan ?? "").charAt(0).toUpperCase() + (user.subPlan ?? "").slice(1);
+    return (
+      <div className="flex flex-col gap-0.5">
+        <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-xs">{planLabel}</Badge>
+        {user.subCurrentPeriodEnd && (
+          <span className="text-xs text-muted-foreground">renews {new Date(user.subCurrentPeriodEnd).toLocaleDateString()}</span>
+        )}
+      </div>
+    );
+  }
+  if (user.trialUsed && !user.subPlan) {
+    return <Badge className="bg-zinc-500/15 text-zinc-400 border-zinc-500/30 text-xs">Trial Ended</Badge>;
+  }
+  if (!user.onboardingComplete) {
+    return <span className="text-xs text-muted-foreground">No trial</span>;
+  }
+  return <span className="text-xs text-muted-foreground">—</span>;
+}
 
 function timeAgo(date: Date): string {
   const now = Date.now();
@@ -281,6 +332,7 @@ export default function AdminCustomers() {
                     <th className="text-left px-4 py-3 text-muted-foreground font-medium">User</th>
                     <th className="text-left px-4 py-3 text-muted-foreground font-medium">Phone</th>
                     <th className="text-left px-4 py-3 text-muted-foreground font-medium">Status</th>
+                    <th className="text-left px-4 py-3 text-muted-foreground font-medium">Plan</th>
                     <th className="text-left px-4 py-3 text-muted-foreground font-medium">Role</th>
                     <th className="text-left px-4 py-3 text-muted-foreground font-medium">Last Login</th>
                     <th className="text-left px-4 py-3 text-muted-foreground font-medium">Joined</th>
@@ -318,6 +370,9 @@ export default function AdminCustomers() {
                             )}
                           </div>
                         )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <PlanBadge user={u as AdminUser} />
                       </td>
                       <td className="px-4 py-3">
                         {u.role === "owner" ? (
@@ -364,6 +419,7 @@ export default function AdminCustomers() {
                         ) : (
                           <Badge variant="outline" className="text-xs"><User className="w-3 h-3 mr-1" />User</Badge>
                         )}
+                      <PlanBadge user={u as AdminUser} />
                       <span className="text-xs text-muted-foreground">Last: {timeAgo(u.lastSignedIn)}</span>
                     </div>
                   </div>
