@@ -1437,6 +1437,27 @@ const adminUsersRouter = router({
       await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target.email ?? null, action: "regrant_trial", details: input.reason, totpVerified: false });
       return { success: true, trialEndsAt };
     }),
+
+  revokeTrial: protectedProcedure
+    .input(z.object({ userId: z.number(), reason: z.string().min(1).max(500) }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
+      if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      const [sub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, input.userId)).limit(1);
+      if (sub?.stripeSubscriptionId) {
+        try {
+          const stripe = getStripe();
+          await stripe.subscriptions.cancel(sub.stripeSubscriptionId);
+        } catch (e) { console.warn("[revokeTrial] Stripe cancel failed:", e); }
+      }
+      await db.update(users).set({ trialUsed: true, trialEndsAt: new Date(), trialSignupIpHash: null }).where(eq(users.id, input.userId));
+      await db.update(subscriptions).set({ status: "canceled" }).where(eq(subscriptions.userId, input.userId));
+      await logAdminActivity({ actorId: ctx.user.id, actorEmail: ctx.user.email, actorRole: ctx.user.role, targetUserId: input.userId, targetEmail: target.email ?? null, action: "revoke_trial", details: input.reason, totpVerified: false });
+      return { success: true };
+    }),
 });
 
 // ─── Admin Tools Router ────────────────────────────────────────────────────
@@ -1690,6 +1711,37 @@ const adminToolsRouter = router({
       return { totalDollars: 0, chargeCount: 0, source: "unavailable" as const };
     }
   }),
+
+  // ─── Per-User Lifetime Revenue ────────────────────────────────────────────
+  getUserLifetimeRevenue: protectedProcedure
+    .input(z.object({ stripeCustomerId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+      try {
+        const stripe = getStripe();
+        let totalCents = 0;
+        let hasMore = true;
+        let startingAfter: string | undefined;
+        while (hasMore) {
+          const page = await stripe.charges.list({
+            customer: input.stripeCustomerId,
+            limit: 100,
+            ...(startingAfter ? { starting_after: startingAfter } : {}),
+          });
+          for (const charge of page.data) {
+            if (charge.paid && charge.status === "succeeded") {
+              totalCents += charge.amount - (charge.amount_refunded ?? 0);
+            }
+          }
+          hasMore = page.has_more;
+          if (hasMore && page.data.length > 0) startingAfter = page.data[page.data.length - 1].id;
+          else hasMore = false;
+        }
+        return { totalDollars: Math.round(totalCents / 100) };
+      } catch (e) {
+        return { totalDollars: 0 };
+      }
+    }),
 
   // ─── Onboarding Analytics Breakdown ───────────────────────────────────────
   getOnboardingBreakdown: protectedProcedure.query(async ({ ctx }) => {

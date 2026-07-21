@@ -210,6 +210,7 @@ export async function getAllUsersAdmin(limit = 200, offset = 0) {
       subPlan: subscriptions.plan,
       subStatus: subscriptions.status,
       subCurrentPeriodEnd: subscriptions.currentPeriodEnd,
+      stripeCustomerId: subscriptions.stripeCustomerId,
     })
     .from(users)
     .leftJoin(subscriptions, eq(subscriptions.userId, users.id))

@@ -64,9 +64,10 @@ type AdminUser = {
   subPlan: string | null;
   subStatus: string | null;
   subCurrentPeriodEnd: Date | null;
+  stripeCustomerId: string | null;
 };
 
-type ModalType = "suspend" | "unsuspend" | "notes" | "delete" | "role" | "briefingOverride" | "grantTrial" | null;
+type ModalType = "suspend" | "unsuspend" | "notes" | "delete" | "role" | "briefingOverride" | "grantTrial" | "revokeTrial" | null;
 
 function trialDaysLeft(trialEndsAt: Date | null): number {
   if (!trialEndsAt) return 0;
@@ -173,6 +174,10 @@ export default function AdminCustomers() {
     onSuccess: () => { toast.success("Role updated"); closeModal(); utils.adminUsers.list.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
+  const revokeTrialMutation = trpc.adminUsers.revokeTrial.useMutation({
+    onSuccess: () => { toast.success("Trial revoked"); closeModal(); utils.adminUsers.list.invalidate(); },
+    onError: (e) => toast.error(e.message),
+  });
   const grantTrialMutation = trpc.adminUsers.regrantTrial.useMutation({
     onSuccess: (data) => {
       const ends = new Date(data.trialEndsAt).toLocaleDateString();
@@ -239,12 +244,14 @@ export default function AdminCustomers() {
       roleMutation.mutate({ userId: selectedUser.id, role: newRole, totpCode });
     } else if (modalType === "briefingOverride") {
       briefingOverrideMutation.mutate({ userId: selectedUser.id, allow: !selectedUser.allowBriefingWhileSuspended, totpCode });
+    } else if (modalType === "revokeTrial") {
+      revokeTrialMutation.mutate({ userId: selectedUser.id, reason: modalInput.trim() || "Revoked by owner" });
     } else if (modalType === "grantTrial") {
       grantTrialMutation.mutate({ userId: selectedUser.id, reason: modalInput.trim() || "Granted by owner" });
     }
   }
 
-  const isMutating = suspendMutation.isPending || unsuspendMutation.isPending || notesMutation.isPending || deleteMutation.isPending || roleMutation.isPending || briefingOverrideMutation.isPending || grantTrialMutation.isPending;
+  const isMutating = suspendMutation.isPending || unsuspendMutation.isPending || notesMutation.isPending || deleteMutation.isPending || roleMutation.isPending || briefingOverrideMutation.isPending || grantTrialMutation.isPending || revokeTrialMutation.isPending;
 
   const filtered = (data?.users ?? []).filter((u) => {
     const q = search.toLowerCase();
@@ -579,8 +586,26 @@ export default function AdminCustomers() {
               </div>
             )}
 
-            {/* TOTP gate — not required for grantTrial */}
-            <div className={`pt-2 border-t border-border ${modalType === "grantTrial" ? "hidden" : ""}`}>
+            {modalType === "revokeTrial" && selectedUser && (
+              <div className="space-y-3">
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+                  <p className="text-sm text-red-300">This will immediately cancel the active trial for <strong>{selectedUser.name ?? selectedUser.email}</strong>. They will lose access to the service.</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Reason (optional)</label>
+                  <Input
+                    placeholder="e.g. Suspected abuse, test account cleanup…"
+                    value={modalInput}
+                    onChange={(e) => setModalInput(e.target.value)}
+                    maxLength={500}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* TOTP gate — not required for grantTrial or revokeTrial */}
+            <div className={`pt-2 border-t border-border ${modalType === "grantTrial" || modalType === "revokeTrial" ? "hidden" : ""}`}>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Authenticator code (required)</label>
               <Input
                 placeholder="6-digit code from your app"
@@ -611,6 +636,7 @@ export default function AdminCustomers() {
                 modalType === "notes" ? "Save Notes" :
                 modalType === "delete" ? "Delete Account" :
                 modalType === "briefingOverride" ? (selectedUser?.allowBriefingWhileSuspended ? "Remove Override" : "Allow Briefings") :
+                modalType === "revokeTrial" ? "Revoke Trial" :
                 modalType === "grantTrial" ? "Grant 7-Day Trial" :
                 "Change Role"
               )}
@@ -670,6 +696,12 @@ function ActionMenu({ user, onAction }: { user: AdminUser; onAction: (u: AdminUs
           <Gift className="w-4 h-4" />
           Grant Trial
         </DropdownMenuItem>
+        {user.subStatus === "trialing" && (
+          <DropdownMenuItem className="gap-2 text-orange-400 focus:text-orange-300" onClick={() => onAction(user, "revokeTrial")}>
+            <ShieldOff className="w-4 h-4" />
+            Revoke Trial
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-red-400 focus:text-red-300 gap-2"
