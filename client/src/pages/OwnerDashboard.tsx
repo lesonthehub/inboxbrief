@@ -41,6 +41,7 @@ import {
   CheckCircle,
   AlertTriangle,
   Clock,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageFooter } from "@/components/PageFooter";
@@ -141,6 +142,7 @@ export default function OwnerDashboard() {
 
   const { data: bansData, refetch: refetchBans, isLoading: bansLoading } =
     trpc.adminUsers.listBans.useQuery();
+  const { data: breakdown } = trpc.adminTools.getOnboardingBreakdown.useQuery();
 
   const liftBanMut = trpc.adminUsers.liftBan.useMutation({
     onSuccess: () => { toast.success("Ban lifted — account can now re-register"); refetchBans(); refetchLog(); },
@@ -321,6 +323,11 @@ export default function OwnerDashboard() {
                 <span className="hidden sm:inline">Enterprise Plans</span>
                 <span className="sm:hidden">Enterprise</span>
               </TabsTrigger>
+              <TabsTrigger value="analytics" className="gap-1.5 text-xs sm:text-sm">
+                <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">User Analytics</span>
+                <span className="sm:hidden">Analytics</span>
+              </TabsTrigger>
               <TabsTrigger value="bans" className="gap-1.5 text-xs sm:text-sm">
                 <ShieldOff className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-400" />
                 <span className="hidden sm:inline">Banned Accounts</span>
@@ -331,6 +338,48 @@ export default function OwnerDashboard() {
               </TabsTrigger>
             </TabsList>
           </div>
+
+          {/* ── User Analytics ── */}
+          <TabsContent value="analytics">
+            <div className="bg-card border border-border rounded-xl p-6">
+              <h2 className="font-semibold text-foreground mb-1 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-primary" /> Onboarding Breakdown
+              </h2>
+              <p className="text-xs text-muted-foreground mb-5">Aggregated from {breakdown?.total ?? 0} users who completed onboarding.</p>
+              {!breakdown || breakdown.total === 0 ? (
+                <p className="text-muted-foreground text-sm text-center py-8">No onboarding data yet.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {([
+                    { title: "Business Type", data: breakdown.businessType, colors: ["bg-blue-500","bg-indigo-500","bg-violet-500","bg-purple-500","bg-fuchsia-500"] },
+                    { title: "User Role", data: breakdown.userRole, colors: ["bg-emerald-500","bg-teal-500","bg-cyan-500","bg-sky-500","bg-blue-500"] },
+                    { title: "Team Size", data: breakdown.teamSize, colors: ["bg-amber-500","bg-orange-500","bg-red-500","bg-rose-500","bg-pink-500"] },
+                    { title: "Inbox Challenge", data: breakdown.inboxChallenge, colors: ["bg-lime-500","bg-green-500","bg-emerald-500","bg-teal-500","bg-cyan-500"] },
+                  ] as const).map(({ title, data, colors }) => (
+                    <div key={title} className="border border-border/40 rounded-xl p-4">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{title}</p>
+                      <div className="space-y-2.5">
+                        {data.map((item, i) => {
+                          const pct = breakdown.total > 0 ? Math.round((item.count / breakdown.total) * 100) : 0;
+                          return (
+                            <div key={item.label}>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span className="text-foreground truncate max-w-[70%]">{item.label}</span>
+                                <span className="text-muted-foreground shrink-0">{item.count} ({pct}%)</span>
+                              </div>
+                              <div className="h-1.5 bg-muted/40 rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${colors[i % colors.length]}`} style={{ width: `${pct}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
 
           {/* ── Activity Log ── */}
           <TabsContent value="activity">

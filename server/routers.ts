@@ -1650,10 +1650,42 @@ const adminToolsRouter = router({
         metadata: { message: input.message.slice(0, 50), targetGroup: input.targetGroup, sent, failed },
       });
 
-      return { success: true, sent, failed, total: eligible.length };
+            return { success: true, sent, failed, total: eligible.length };
     }),
-});
 
+  // ─── Onboarding Analytics Breakdown ───────────────────────────────────────
+  getOnboardingBreakdown: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const rows = await db
+      .select({
+        businessType: users.businessType,
+        userRole: users.userRole,
+        teamSize: users.teamSize,
+        inboxChallenge: users.inboxChallenge,
+      })
+      .from(users)
+      .where(and(eq(users.onboardingComplete, true), eq(users.isDeleted, false)));
+
+    function tally(field: (typeof rows[0])[keyof typeof rows[0]] extends string | null ? keyof typeof rows[0] : never) {
+      const counts: Record<string, number> = {};
+      for (const r of rows) {
+        const val = (r as Record<string, string | null>)[field as string] ?? "unknown";
+        counts[val] = (counts[val] ?? 0) + 1;
+      }
+      return Object.entries(counts).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count);
+    }
+
+    return {
+      total: rows.length,
+      businessType: tally("businessType"),
+      userRole: tally("userRole"),
+      teamSize: tally("teamSize"),
+      inboxChallenge: tally("inboxChallenge"),
+    };
+  }),
+});
 // ─── Contact Router ──────────────────────────────────────────────────────────
 const contactRouter = router({
   submit: publicProcedure

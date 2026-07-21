@@ -68,6 +68,10 @@ export default function AdminTools() {
   const [deleteCouponId, setDeleteCouponId] = useState<string | null>(null);
 
   // ── Queries ────────────────────────────────────────────────────────────────
+  const { data: breakdown } = trpc.adminTools.getOnboardingBreakdown.useQuery(
+    undefined,
+    { enabled: isAuthenticated && (user?.role === "admin" || user?.role === "owner") }
+  );
   const { data: stats, refetch: refetchStats } = trpc.adminTools.getStats.useQuery(undefined, {
     enabled: isAuthenticated && (user?.role === "admin" || user?.role === "owner"),
     refetchInterval: 30000,
@@ -222,6 +226,45 @@ export default function AdminTools() {
             ))}
           </div>
         </section>
+
+        {/* ── Onboarding Breakdown ──────────────────────────────────────── */}
+        {breakdown && breakdown.total > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-4 h-4 text-primary" />
+              <h2 className="font-semibold text-sm" style={{ fontFamily: "Space Grotesk, sans-serif" }}>Onboarding Breakdown</h2>
+              <span className="text-xs text-muted-foreground ml-1">({breakdown.total} users)</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {([
+                { title: "Business Type", data: breakdown.businessType, colors: ["bg-blue-500","bg-indigo-500","bg-violet-500","bg-purple-500","bg-fuchsia-500"] },
+                { title: "User Role", data: breakdown.userRole, colors: ["bg-emerald-500","bg-teal-500","bg-cyan-500","bg-sky-500","bg-blue-500"] },
+                { title: "Team Size", data: breakdown.teamSize, colors: ["bg-amber-500","bg-orange-500","bg-red-500","bg-rose-500","bg-pink-500"] },
+                { title: "Inbox Challenge", data: breakdown.inboxChallenge, colors: ["bg-lime-500","bg-green-500","bg-emerald-500","bg-teal-500","bg-cyan-500"] },
+              ] as const).map(({ title, data, colors }) => (
+                <div key={title} className="bg-card border border-border/40 rounded-xl p-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{title}</p>
+                  <div className="space-y-2">
+                    {data.map((item, i) => {
+                      const pct = breakdown.total > 0 ? Math.round((item.count / breakdown.total) * 100) : 0;
+                      return (
+                        <div key={item.label}>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-foreground truncate max-w-[70%]">{item.label}</span>
+                            <span className="text-muted-foreground shrink-0">{item.count} ({pct}%)</span>
+                          </div>
+                          <div className="h-1.5 bg-muted/40 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${colors[i % colors.length]}`} style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ── Coupon Management ─────────────────────────────────────────────── */}
         <section>
