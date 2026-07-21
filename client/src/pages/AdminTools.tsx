@@ -72,6 +72,10 @@ export default function AdminTools() {
     undefined,
     { enabled: isAuthenticated && (user?.role === "admin" || user?.role === "owner") }
   );
+  const { data: revenue } = trpc.adminTools.getTotalRevenue.useQuery(
+    undefined,
+    { enabled: isAuthenticated && (user?.role === "admin" || user?.role === "owner") }
+  );
   const { data: stats, refetch: refetchStats } = trpc.adminTools.getStats.useQuery(undefined, {
     enabled: isAuthenticated && (user?.role === "admin" || user?.role === "owner"),
     refetchInterval: 30000,
@@ -210,6 +214,13 @@ export default function AdminTools() {
                 badge: stats?.mrrSource === "stripe" ? "live" : stats?.mrrSource === "estimate" ? "~est" : null,
               },
               { label: "Briefings Sent", value: stats?.briefingsTodayCount ?? "—", icon: MessageSquare, color: "text-purple-400", badge: null },
+              {
+                label: "Total Revenue",
+                value: revenue?.totalDollars !== undefined ? `$${revenue.totalDollars.toLocaleString()}` : "—",
+                icon: DollarSign,
+                color: "text-green-400",
+                badge: revenue?.source === "stripe" ? "live" : revenue?.source === "unavailable" ? "err" : null,
+              },
             ].map(({ label, value, icon: Icon, color, badge }) => (
               <div key={label} className="bg-card border border-border/40 rounded-xl p-4 flex flex-col gap-1">
                 <Icon className={`w-4 h-4 ${color}`} />

@@ -1653,6 +1653,44 @@ const adminToolsRouter = router({
             return { success: true, sent, failed, total: eligible.length };
     }),
 
+  // ─── Total Revenue ────────────────────────────────────────────────────────
+  getTotalRevenue: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+    try {
+      const stripe = getStripe();
+      let totalCents = 0;
+      let chargeCount = 0;
+      let hasMore = true;
+      let startingAfter: string | undefined;
+      while (hasMore) {
+        const page = await stripe.charges.list({
+          limit: 100,
+          ...(startingAfter ? { starting_after: startingAfter } : {}),
+        });
+        for (const charge of page.data) {
+          if (charge.paid && !charge.refunded && charge.status === "succeeded") {
+            totalCents += charge.amount - (charge.amount_refunded ?? 0);
+            chargeCount++;
+          }
+        }
+        hasMore = page.has_more;
+        if (hasMore && page.data.length > 0) {
+          startingAfter = page.data[page.data.length - 1].id;
+        } else {
+          hasMore = false;
+        }
+      }
+      return {
+        totalDollars: Math.round(totalCents / 100),
+        chargeCount,
+        source: "stripe" as const,
+      };
+    } catch (err) {
+      console.warn("[Revenue] Stripe fetch failed:", err);
+      return { totalDollars: 0, chargeCount: 0, source: "unavailable" as const };
+    }
+  }),
+
   // ─── Onboarding Analytics Breakdown ───────────────────────────────────────
   getOnboardingBreakdown: protectedProcedure.query(async ({ ctx }) => {
     if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
