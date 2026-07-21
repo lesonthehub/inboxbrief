@@ -223,7 +223,7 @@ export default function AdminCustomers() {
 
   function handleConfirm() {
     if (!selectedUser) return;
-    if (modalType !== "grantTrial" && totpCode.length !== 6) return toast.error("Enter your 6-digit authenticator code");
+    if (totpCode.length !== 6) return toast.error("Enter your 6-digit authenticator code");
     if (modalType === "suspend") {
       if (!modalInput.trim()) return toast.error("Reason is required");
       suspendMutation.mutate({ userId: selectedUser.id, reason: modalInput.trim(), totpCode });
@@ -245,9 +245,9 @@ export default function AdminCustomers() {
     } else if (modalType === "briefingOverride") {
       briefingOverrideMutation.mutate({ userId: selectedUser.id, allow: !selectedUser.allowBriefingWhileSuspended, totpCode });
     } else if (modalType === "revokeTrial") {
-      revokeTrialMutation.mutate({ userId: selectedUser.id, reason: modalInput.trim() || "Revoked by owner" });
+      revokeTrialMutation.mutate({ userId: selectedUser.id, reason: modalInput.trim() || "Revoked by owner", totpCode });
     } else if (modalType === "grantTrial") {
-      grantTrialMutation.mutate({ userId: selectedUser.id, reason: modalInput.trim() || "Granted by owner" });
+      grantTrialMutation.mutate({ userId: selectedUser.id, reason: modalInput.trim() || "Granted by owner", totpCode });
     }
   }
 
@@ -604,8 +604,8 @@ export default function AdminCustomers() {
               </div>
             )}
 
-            {/* TOTP gate — not required for grantTrial or revokeTrial */}
-            <div className={`pt-2 border-t border-border ${modalType === "grantTrial" || modalType === "revokeTrial" ? "hidden" : ""}`}>
+            {/* TOTP gate — required for all actions */}
+            <div className="pt-2 border-t border-border">
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Authenticator code (required)</label>
               <Input
                 placeholder="6-digit code from your app"

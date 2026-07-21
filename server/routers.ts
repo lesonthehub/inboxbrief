@@ -1410,9 +1410,11 @@ const adminUsersRouter = router({
     .input(z.object({
       userId: z.number(),
       reason: z.string().min(1).max(500),
+      totpCode: z.string().length(6),
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+      await verifyAdminTotp(ctx.user.id, input.totpCode);
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [target] = await db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, input.userId)).limit(1);
@@ -1439,9 +1441,10 @@ const adminUsersRouter = router({
     }),
 
   revokeTrial: protectedProcedure
-    .input(z.object({ userId: z.number(), reason: z.string().min(1).max(500) }))
+    .input(z.object({ userId: z.number(), reason: z.string().min(1).max(500), totpCode: z.string().length(6) }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin" && ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN" });
+      await verifyAdminTotp(ctx.user.id, input.totpCode);
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
