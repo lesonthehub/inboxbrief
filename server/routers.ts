@@ -1424,6 +1424,7 @@ const adminUsersRouter = router({
         trialStartedAt: now,
         trialEndsAt,
         trialUsed: true,
+        onboardingComplete: true,
         trialNudge5Sent: false,
         trialNudge6Sent: false,
         trialEndSent: false,
