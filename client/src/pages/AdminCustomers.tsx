@@ -135,6 +135,7 @@ export default function AdminCustomers() {
   const utils = trpc.useUtils();
 
   const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<"all" | "deleted">("all");
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [modalType, setModalType] = useState<ModalType>(null);
   const [modalInput, setModalInput] = useState("");
@@ -253,7 +254,9 @@ export default function AdminCustomers() {
 
   const isMutating = suspendMutation.isPending || unsuspendMutation.isPending || notesMutation.isPending || deleteMutation.isPending || roleMutation.isPending || briefingOverrideMutation.isPending || grantTrialMutation.isPending || revokeTrialMutation.isPending;
 
-  const filtered = (data?.users ?? []).filter((u) => {
+  const allUsers = data?.users ?? [];
+  const tabFiltered = activeTab === "deleted" ? allUsers.filter(u => u.isDeleted) : allUsers.filter(u => !u.isDeleted);
+  const filtered = tabFiltered.filter((u) => {
     const q = search.toLowerCase();
     return (
       !q ||
@@ -324,6 +327,11 @@ export default function AdminCustomers() {
           ))}
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => setActiveTab("all")} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${activeTab === "all" ? "bg-primary text-primary-foreground" : "bg-card/50 text-muted-foreground hover:text-foreground"}`}>Active / Suspended ({allUsers.filter(u => !u.isDeleted).length})</button>
+          <button onClick={() => setActiveTab("deleted")} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${activeTab === "deleted" ? "bg-primary text-primary-foreground" : "bg-card/50 text-muted-foreground hover:text-foreground"}`}>Deleted ({deletedCount})</button>
+        </div>
         {/* Search */}
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -403,7 +411,7 @@ export default function AdminCustomers() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">{timeAgo(u.lastSignedIn)}</td>
-                      <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs"><div>{new Date(u.createdAt).toLocaleDateString()}</div><div className="text-zinc-500">{Math.floor((Date.now() - new Date(u.createdAt).getTime()) / 86400000)}d</div></td>
                       <td className="px-4 py-3">
                         <ActionMenu user={u as AdminUser} onAction={openModal} />
                       </td>

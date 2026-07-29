@@ -158,6 +158,11 @@ export default function OwnerDashboard() {
   }, { enabled: epShowForm });
 
   const [epEditPlanId, setEpEditPlanId] = useState<number | null>(null);
+  const [epTotp, setEpTotp] = useState("");
+  const [epActionNotes, setEpActionNotes] = useState("");
+  const [epDeletePlanId, setEpDeletePlanId] = useState<number | null>(null);
+  const [epInvoiceType, setEpInvoiceType] = useState<"one_time" | "recurring">("one_time");
+  const [epInvoiceEndDate, setEpInvoiceEndDate] = useState("");
   const [epEditCompany, setEpEditCompany] = useState("");
   const [epEditEmail, setEpEditEmail] = useState("");
   const [epEditSeats, setEpEditSeats] = useState(10);
@@ -845,7 +850,7 @@ export default function OwnerDashboard() {
                   <div className="flex justify-end gap-2">
                     <Button variant="ghost" onClick={() => setEpShowForm(false)}>Cancel</Button>
                     <Button
-                      disabled={createEnterprisePlanMut.isPending || !epCompanyName || !epContactEmail}
+                      disabled={createEnterprisePlanMut.isPending || !epCompanyName || !epContactEmail || epTotp.length !== 6}
                       onClick={() => {
                         createEnterprisePlanMut.mutate({
                           companyName: epCompanyName,
@@ -858,6 +863,8 @@ export default function OwnerDashboard() {
                           pricePerYear: epPriceAnnual ? Number(epPriceAnnual) : undefined,
                           notes: epNotes || undefined,
                           assignedUserId: epAssignUserId ? Number(epAssignUserId) : undefined,
+                          totpCode: epTotp,
+                          actionNotes: epActionNotes || undefined,
                         });
                       }}
                     >
@@ -914,7 +921,7 @@ export default function OwnerDashboard() {
                                   setEpEditNotes(plan.notes ?? "");
                                 }}>Edit</Button>
                                 <Button size="sm" variant="outline" className="text-xs h-7 text-green-400 border-green-500/30 hover:bg-green-500/10" onClick={() => { setEpInvoicePlanId(plan.id); setEpInvoiceDays(30); }}>Invoice</Button>
-                                <Button size="sm" variant="outline" className="text-xs h-7 text-red-400 border-red-500/30 hover:bg-red-500/10" disabled={deleteEnterprisePlanMut.isPending} onClick={() => { if (confirm(`Delete plan for ${plan.companyName}?`)) deleteEnterprisePlanMut.mutate({ planId: plan.id }); }}>Delete</Button>
+                                <Button size="sm" variant="outline" className="text-xs h-7 text-red-400 border-red-500/30 hover:bg-red-500/10" disabled={deleteEnterprisePlanMut.isPending} onClick={() => { setEpDeletePlanId(plan.id); setEpTotp(""); setEpActionNotes(""); }}>Delete</Button>
                               </div>
                             </td>
                           </tr>
@@ -939,10 +946,12 @@ export default function OwnerDashboard() {
                       <input type="checkbox" id="epEditActive" checked={epEditActive} onChange={(e) => setEpEditActive(e.target.checked)} />
                       <label htmlFor="epEditActive" className="text-sm text-foreground">Active</label>
                     </div>
+                    <div><label className="text-xs text-muted-foreground mb-1 block">TOTP Code *</label><Input placeholder="6-digit code" maxLength={6} value={epTotp} onChange={(e) => setEpTotp(e.target.value)} /></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Notes (optional)</label><Input placeholder="Reason for change" value={epActionNotes} onChange={(e) => setEpActionNotes(e.target.value)} /></div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setEpEditPlanId(null)}>Cancel</Button>
-                    <Button disabled={updateEnterprisePlanMut.isPending} onClick={() => epEditPlanId && updateEnterprisePlanMut.mutate({ planId: epEditPlanId, companyName: epEditCompany, contactEmail: epEditEmail, maxTeamMembers: epEditSeats, pricePerMonth: epEditPrice, notes: epEditNotes, isActive: epEditActive })}>
+                    <Button disabled={updateEnterprisePlanMut.isPending || epTotp.length !== 6} onClick={() => epEditPlanId && updateEnterprisePlanMut.mutate({ planId: epEditPlanId, companyName: epEditCompany, contactEmail: epEditEmail, maxTeamMembers: epEditSeats, pricePerMonth: epEditPrice, notes: epEditNotes, isActive: epEditActive, totpCode: epTotp, actionNotes: epActionNotes })}>
                       {updateEnterprisePlanMut.isPending ? "Saving..." : "Save Changes"}
                     </Button>
                   </DialogFooter>
@@ -954,11 +963,15 @@ export default function OwnerDashboard() {
                 <DialogContent>
                   <DialogHeader><DialogTitle>Send Stripe Invoice</DialogTitle><DialogDescription>Creates and emails a Stripe invoice to the plan contact for the monthly amount.</DialogDescription></DialogHeader>
                   <div className="space-y-3 py-2">
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Invoice Type</label><select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={epInvoiceType} onChange={(e) => setEpInvoiceType(e.target.value as "one_time" | "recurring")}><option value="one_time">One-Time Invoice</option><option value="recurring">Recurring Subscription</option></select></div>
                     <div><label className="text-xs text-muted-foreground mb-1 block">Days Until Due</label><Input type="number" min={1} max={90} value={epInvoiceDays} onChange={(e) => setEpInvoiceDays(Number(e.target.value))} /></div>
+                    {epInvoiceType === "recurring" && <div><label className="text-xs text-muted-foreground mb-1 block">Subscription End Date (optional)</label><Input type="date" value={epInvoiceEndDate} onChange={(e) => setEpInvoiceEndDate(e.target.value)} /></div>}
+                    <div><label className="text-xs text-muted-foreground mb-1 block">TOTP Code *</label><Input placeholder="6-digit code" maxLength={6} value={epTotp} onChange={(e) => setEpTotp(e.target.value)} /></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Notes (optional)</label><Input placeholder="Invoice notes" value={epActionNotes} onChange={(e) => setEpActionNotes(e.target.value)} /></div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setEpInvoicePlanId(null)}>Cancel</Button>
-                    <Button disabled={sendInvoiceMut.isPending} onClick={() => epInvoicePlanId && sendInvoiceMut.mutate({ planId: epInvoicePlanId, daysUntilDue: epInvoiceDays })}>
+                    <Button disabled={sendInvoiceMut.isPending || epTotp.length !== 6} onClick={() => epInvoicePlanId && sendInvoiceMut.mutate({ planId: epInvoicePlanId, daysUntilDue: epInvoiceDays, invoiceType: epInvoiceType, subscriptionEndDate: epInvoiceEndDate || undefined, totpCode: epTotp, actionNotes: epActionNotes })}>
                       {sendInvoiceMut.isPending ? "Sending..." : "Send Invoice"}
                     </Button>
                   </DialogFooter>
@@ -966,6 +979,24 @@ export default function OwnerDashboard() {
               </Dialog>
             </div>
           </TabsContent>
+
+          {/* Delete Plan Dialog - outside TabsContent */}
+          <Dialog open={epDeletePlanId !== null} onOpenChange={(o) => { if (!o) { setEpDeletePlanId(null); setEpTotp(""); setEpActionNotes(""); } }}>
+            <DialogContent>
+              <DialogHeader><DialogTitle className="text-red-400">Delete Enterprise Plan</DialogTitle><DialogDescription>This will permanently delete the plan and unassign any linked user. This cannot be undone.</DialogDescription></DialogHeader>
+              <div className="space-y-3 py-2">
+                <div><label className="text-xs text-muted-foreground mb-1 block">TOTP Code *</label><Input placeholder="6-digit code" maxLength={6} value={epTotp} onChange={(e) => setEpTotp(e.target.value)} /></div>
+                <div><label className="text-xs text-muted-foreground mb-1 block">Notes (optional)</label><Input placeholder="Reason for deletion" value={epActionNotes} onChange={(e) => setEpActionNotes(e.target.value)} /></div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEpDeletePlanId(null)}>Cancel</Button>
+                <Button variant="destructive" disabled={deleteEnterprisePlanMut.isPending || epTotp.length !== 6} onClick={() => epDeletePlanId && deleteEnterprisePlanMut.mutate({ planId: epDeletePlanId, totpCode: epTotp, actionNotes: epActionNotes })}>
+                  {deleteEnterprisePlanMut.isPending ? "Deleting..." : "Delete Plan"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           {/* ── Banned Accounts ── */}
           <TabsContent value="bans">
             <div className="bg-card border border-border rounded-xl p-6">
@@ -1040,7 +1071,7 @@ export default function OwnerDashboard() {
               disabled={assignEnterprisePlanMut.isPending || !epAssignTarget}
               onClick={() => {
                 if (!epAssignPlanId) return;
-                assignEnterprisePlanMut.mutate({ planId: epAssignPlanId, userId: Number(epAssignTarget) });
+                assignEnterprisePlanMut.mutate({ planId: epAssignPlanId, userId: Number(epAssignTarget), totpCode: epTotp });
               }}
             >
               {assignEnterprisePlanMut.isPending ? "Assigning..." : "Assign"}

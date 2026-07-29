@@ -706,9 +706,12 @@ const enterpriseRouter = router({
       pricePerYear: z.number().min(0).optional(),
       notes: z.string().max(2000).optional(),
       assignedUserId: z.number().int().optional(),
+      totpCode: z.string().length(6),
+      actionNotes: z.string().max(500).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "owner" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      await verifyAdminTotp(ctx.user.id, input.totpCode);
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       await db.insert(enterprisePlans).values({
@@ -760,9 +763,12 @@ const enterpriseRouter = router({
       pricePerYear: z.number().min(0).optional(),
       notes: z.string().max(2000).optional(),
       isActive: z.boolean().optional(),
+      totpCode: z.string().length(6),
+      actionNotes: z.string().max(500).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "owner" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      await verifyAdminTotp(ctx.user.id, input.totpCode);
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const { planId, ...updates } = input;
@@ -788,9 +794,10 @@ const enterpriseRouter = router({
     }),
 
   assignPlanToUser: protectedProcedure
-    .input(z.object({ planId: z.number().int(), userId: z.number().int() }))
+    .input(z.object({ planId: z.number().int(), userId: z.number().int(), totpCode: z.string().length(6) }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "owner" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      await verifyAdminTotp(ctx.user.id, input.totpCode);
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [target] = await db.select({ email: users.email }).from(users).where(eq(users.id, input.userId)).limit(1);
@@ -870,9 +877,10 @@ const enterpriseRouter = router({
     }),
 
   deleteCustomPlan: protectedProcedure
-    .input(z.object({ planId: z.number().int() }))
+    .input(z.object({ planId: z.number().int(), totpCode: z.string().length(6), actionNotes: z.string().max(500).optional() }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "owner" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      await verifyAdminTotp(ctx.user.id, input.totpCode);
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [plan] = await db.select().from(enterprisePlans).where(eq(enterprisePlans.id, input.planId)).limit(1);
@@ -894,9 +902,14 @@ const enterpriseRouter = router({
     .input(z.object({
       planId: z.number().int(),
       daysUntilDue: z.number().int().min(1).max(90).default(30),
+      invoiceType: z.enum(["one_time", "recurring"]).default("one_time"),
+      subscriptionEndDate: z.string().optional(),
+      totpCode: z.string().length(6),
+      actionNotes: z.string().max(500).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "owner" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      await verifyAdminTotp(ctx.user.id, input.totpCode);
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [plan] = await db.select().from(enterprisePlans).where(eq(enterprisePlans.id, input.planId)).limit(1);
@@ -2039,7 +2052,7 @@ const ownerRouter = router({
       search: z.string().max(100).optional(),
     }))
     .query(async ({ ctx, input }) => {
-      if (ctx.user.role !== "owner") throw new TRPCError({ code: "FORBIDDEN", message: "Owner access required" });
+      if (ctx.user.role !== "owner" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Owner or admin access required" });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const { like, or } = await import("drizzle-orm");

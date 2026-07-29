@@ -380,3 +380,21 @@ export const bannedAccounts = mysqlTable("banned_accounts", {
 
 export type BannedAccount = typeof bannedAccounts.$inferSelect;
 export type InsertBannedAccount = typeof bannedAccounts.$inferInsert;
+
+// ─── Payment Logs ─────────────────────────────────────────────────────────────
+export const paymentLogs = mysqlTable("payment_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  stripeCustomerId: varchar("stripeCustomerId", { length: 64 }),
+  stripeInvoiceId: varchar("stripeInvoiceId", { length: 64 }),
+  stripeChargeId: varchar("stripeChargeId", { length: 64 }),
+  userId: int("userId"),
+  userEmail: varchar("userEmail", { length: 320 }),
+  eventType: varchar("eventType", { length: 64 }).notNull(),
+  amountCents: int("amountCents").default(0).notNull(),
+  currency: varchar("currency", { length: 8 }).default("usd").notNull(),
+  description: text("description"),
+  metadata: text("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type PaymentLog = typeof paymentLogs.$inferSelect;
+export type InsertPaymentLog = typeof paymentLogs.$inferInsert;

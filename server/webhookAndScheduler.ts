@@ -9,7 +9,7 @@ import type { Express } from "express";
 import express from "express";
 import Stripe from "stripe";
 import { getDb } from "./db";
-import { subscriptions, users } from "../drizzle/schema";
+import { subscriptions, users, paymentLogs } from "../drizzle/schema";
 import { eq, and, lte } from "drizzle-orm";
 import { runBriefingPipeline } from "./briefingPipeline";
 import { PLANS } from "./plans";
@@ -164,30 +164,34 @@ async function handleStripeEvent(event: Stripe.Event, stripe: Stripe) {
       break;
     }
 
-    case "invoice.payment_failed": {
-      const invoice = event.data.object as Stripe.Invoice;
-      const customerId = invoice.customer as string;
-
-      await db.update(subscriptions)
-        .set({ status: "past_due" })
-        .where(eq(subscriptions.stripeCustomerId, customerId));
-
-      console.log(`[Webhook] Payment failed for customer ${customerId}`);
-      break;
-    }
-
     case "invoice.paid": {
       const invoice = event.data.object as Stripe.Invoice;
       const customerId = invoice.customer as string;
-
-      await db.update(subscriptions)
-        .set({ status: "active" })
-        .where(eq(subscriptions.stripeCustomerId, customerId));
-
+      await db.update(subscriptions).set({ status: "active" }).where(eq(subscriptions.stripeCustomerId, customerId));
+      const [subRow] = await db.select({ userId: subscriptions.userId }).from(subscriptions).where(eq(subscriptions.stripeCustomerId, customerId)).limit(1);
+      const [userRow] = subRow ? await db.select({ email: users.email }).from(users).where(eq(users.id, subRow.userId)).limit(1) : [];
+      await db.insert(paymentLogs).values({ stripeCustomerId: customerId, stripeInvoiceId: invoice.id, userId: subRow?.userId ?? null, userEmail: userRow?.email ?? null, eventType: "payment_succeeded", amountCents: invoice.amount_paid ?? 0, currency: invoice.currency ?? "usd", description: `Invoice paid: ${invoice.id}` });
       console.log(`[Webhook] Invoice paid for customer ${customerId}`);
       break;
     }
-
+    case "invoice.payment_failed": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string;
+      const [subRow2] = await db.select({ userId: subscriptions.userId }).from(subscriptions).where(eq(subscriptions.stripeCustomerId, customerId)).limit(1);
+      const [userRow2] = subRow2 ? await db.select({ email: users.email }).from(users).where(eq(users.id, subRow2.userId)).limit(1) : [];
+      await db.insert(paymentLogs).values({ stripeCustomerId: customerId, stripeInvoiceId: invoice.id, userId: subRow2?.userId ?? null, userEmail: userRow2?.email ?? null, eventType: "payment_failed", amountCents: invoice.amount_due ?? 0, currency: invoice.currency ?? "usd", description: `Invoice payment failed: ${invoice.id}` });
+      console.log(`[Webhook] Invoice payment failed for customer ${customerId}`);
+      break;
+    }
+    case "charge.refunded": {
+      const charge = event.data.object as Stripe.Charge;
+      const customerId = charge.customer as string;
+      const [subRow3] = customerId ? await db.select({ userId: subscriptions.userId }).from(subscriptions).where(eq(subscriptions.stripeCustomerId, customerId)).limit(1) : [];
+      const [userRow3] = subRow3 ? await db.select({ email: users.email }).from(users).where(eq(users.id, subRow3.userId)).limit(1) : [];
+      await db.insert(paymentLogs).values({ stripeCustomerId: customerId ?? null, stripeChargeId: charge.id, userId: subRow3?.userId ?? null, userEmail: userRow3?.email ?? null, eventType: "refund", amountCents: charge.amount_refunded ?? 0, currency: charge.currency ?? "usd", description: `Charge refunded: ${charge.id}` });
+      console.log(`[Webhook] Charge refunded for customer ${customerId}`);
+      break;
+    }
     default:
       console.log(`[Webhook] Unhandled event type: ${event.type}`);
   }
