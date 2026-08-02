@@ -29,7 +29,7 @@ export interface SmsSendResult {
 }
 
 // Outbound-only footer appended to every briefing SMS
-const OUTBOUND_FOOTER = "\n\nDo not reply. Support: support@inboxbrief.com";
+const OUTBOUND_FOOTER = "\n\nDo not reply. Support: support@inboxbrief.org";
 // Max SMS body length (Twilio auto-splits at 160, but we target 500 per plan limit)
 const MAX_SMS_CHARS = 500;
 

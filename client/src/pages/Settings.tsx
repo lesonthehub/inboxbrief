@@ -455,7 +455,7 @@ export default function Settings() {
               </div>
               <div className="mt-2 p-2.5 rounded-lg bg-muted/20 border border-border/30">
                 <p className="text-xs text-muted-foreground">
-                  <strong className="text-foreground">Outbound only.</strong> InboxBrief sends SMS briefings to this number. This number does not accept replies or phone calls. For support, email <a href="mailto:support@inboxbrief.com" className="text-primary hover:underline">support@inboxbrief.com</a>.
+                  <strong className="text-foreground">Outbound only.</strong> InboxBrief sends SMS briefings to this number. This number does not accept replies or phone calls. For support, email <a href="mailto:support@inboxbrief.org" className="text-primary hover:underline">support@inboxbrief.org</a>.
                 </p>
               </div>
               {isInternational && (

@@ -203,10 +203,10 @@ export function LoginModal({
             <p className="text-sm sm:text-xs text-muted-foreground/70 text-center mt-4">
               If the problem persists, contact{" "}
               <a
-                href="mailto:support@inboxbrief.com"
+                href="mailto:support@inboxbrief.org"
                 className="underline hover:text-muted-foreground transition-colors"
               >
-                support@inboxbrief.com
+                support@inboxbrief.org
               </a>
             </p>
           </>

@@ -105,7 +105,7 @@ export async function runBriefingPipeline(
   // suspended accounts (e.g. demo/test accounts used for verification recordings)
   const briefingOverride = !!(user as any).allowBriefingWhileSuspended;
   if (!user.isActive && !briefingOverride) {
-    return { success: false, smsSent: false, emailsFetched: 0, highPriorityCount: 0, generalCount: 0, ignoredCount: 0, error: "Account suspended. Please contact support@inboxbrief.com." };
+    return { success: false, smsSent: false, emailsFetched: 0, highPriorityCount: 0, generalCount: 0, ignoredCount: 0, error: "Account suspended. Please contact support@inboxbrief.org." };
   }
 
   // ── Phone verification gate ──────────────────────────────────────────────
@@ -308,7 +308,7 @@ export async function runBriefingPipeline(
   // 6. If this is a grace briefing, prepend the "on us" message (once per week per user)
   const userName = user.name ?? "there";
   const finalBriefingText = isGraceBriefing
-    ? `You hit your limit, but we know today is busy. This one's on us. 💙\n\n${briefingText}\n\nUpgrade for unlimited: ${PRICING_URL}\n\nDo not reply. Support: support@inboxbrief.com`
+    ? `You hit your limit, but we know today is busy. This one's on us. 💙\n\n${briefingText}\n\nUpgrade for unlimited: ${PRICING_URL}\n\nDo not reply. Support: support@inboxbrief.org`
     : briefingText;
 
   // 7. Encrypt summary before storing

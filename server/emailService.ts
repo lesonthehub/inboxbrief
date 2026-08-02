@@ -99,7 +99,7 @@ export async function sendEmailVerificationOTP(
         <tr><td style="padding:20px 40px;border-top:1px solid #1e1e2e;text-align:center;">
           <p style="margin:0;color:#4a4a6a;font-size:11px;">
             This is an automated message from InboxBrief. Do not reply to this email.<br>
-            For support: <a href="mailto:support@inboxbrief.com" style="color:#6366f1;text-decoration:none;">support@inboxbrief.com</a>
+            For support: <a href="mailto:support@inboxbrief.org" style="color:#6366f1;text-decoration:none;">support@inboxbrief.org</a>
           </p>
         </td></tr>
       </table>
@@ -108,7 +108,7 @@ export async function sendEmailVerificationOTP(
 </body>
 </html>`;
 
-  const text = `Hi ${displayName},\n\nYour InboxBrief email verification code is: ${code}\n\nThis code expires in 15 minutes.\n\nIf you did not request this, ignore this email.\n\n— InboxBrief Team\nDo not reply to this email. For support: support@inboxbrief.com`;
+  const text = `Hi ${displayName},\n\nYour InboxBrief email verification code is: ${code}\n\nThis code expires in 15 minutes.\n\nIf you did not request this, ignore this email.\n\n— InboxBrief Team\nDo not reply to this email. For support: support@inboxbrief.org`;
 
   return sendEmail({
     to: email,

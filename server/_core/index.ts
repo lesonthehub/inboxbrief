@@ -74,7 +74,7 @@ async function startServer() {
   // Auto-reply to any inbound SMS with a support redirect message
   app.post("/api/twilio/sms", express.urlencoded({ extended: false }), (_req, res) => {
     res.set("Content-Type", "text/xml");
-    res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>This number does not accept replies. For help, email support@inboxbrief.com or visit inboxbrief.org</Message></Response>`);
+    res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>This number does not accept replies. For help, email support@inboxbrief.org or visit inboxbrief.org</Message></Response>`);
     console.log("[Twilio] Inbound SMS auto-replied");
   });
 

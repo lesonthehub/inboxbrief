@@ -869,7 +869,7 @@ const enterpriseRouter = router({
           input.message ? `Message: ${input.message}` : null,
           ``,
           `Reply to this inquiry at: sales@inboxbrief.org`,
-          `Customer support: support@inboxbrief.com`,
+          `Customer support: support@inboxbrief.org`,
         ].filter(Boolean).join("\n"),
       });
 
@@ -1076,7 +1076,7 @@ const emailVerificationRouter = router({
         console.log(`[EmailVerification] DEV MODE — code for ${user.email}: ${code}`);
         return { success: true, devCode: code };
       }
-      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Email delivery is not configured. Please contact support@inboxbrief.com." });
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Email delivery is not configured. Please contact support@inboxbrief.org." });
     }
 
     await writeAuditLog({ userId: ctx.user.id, action: "email_otp_sent", metadata: { email: user.email } });
