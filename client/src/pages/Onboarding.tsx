@@ -11,6 +11,7 @@ import {
   Building2, Users, Inbox, Phone, Gift, Globe
 } from "lucide-react";
 import { PageFooter } from "@/components/PageFooter";
+import { getOnboardingSubmissionError } from "@/lib/onboardingValidation";
 
 type UserRole = "solo_owner" | "team_lead" | "executive" | "operations" | "other";
 type TeamSize = "just_me" | "2_5" | "6_15" | "16_plus";
@@ -161,16 +162,17 @@ export default function Onboarding() {
     const err = validatePhone(phone);
     if (err) { setPhoneError(err); return; }
     if (phone.trim() && !smsConsent) { toast.error("Please agree to receive SMS briefings to continue."); return; }
-    if (!userRole || !teamSize || !inboxChallenge) return;
+    const onboardingError = getOnboardingSubmissionError({ businessType, userRole, teamSize, inboxChallenge });
+    if (onboardingError) { toast.error(onboardingError); return; }
 
     const finalBusiness = businessType === "Other" ? customBusiness || "Other" : businessType;
 
     completeMutation.mutate({
       phone: phone.trim() ? phone.replace(/\D/g, "") : undefined,
       businessType: finalBusiness,
-      userRole,
-      teamSize,
-      inboxChallenge,
+      userRole: userRole!,
+      teamSize: teamSize!,
+      inboxChallenge: inboxChallenge!,
       preferredLanguage,
       referralCode: referralCode.toUpperCase() || undefined,
     });
@@ -509,6 +511,7 @@ export default function Onboarding() {
                 </Button>
               ) : (
                 <Button
+                  type="button"
                   onClick={handleSubmit}
                   disabled={completeMutation.isPending}
                   className="bg-primary hover:bg-primary/90 text-white px-6"

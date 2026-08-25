@@ -1,5 +1,7 @@
 # InboxBrief TODO
 
+- [x] Fix Start Free Trial button doing nothing after onboarding submission
+
 ## Phase 1: Setup & Dependencies
 - [x] Install Stripe, Twilio, googleapis dependencies
 - [x] Set up Stripe feature via webdev_add_feature
