@@ -98,7 +98,7 @@ export default function Privacy() {
               No mobile information will be shared with third parties/affiliates for marketing/promotional purposes. Information sharing to subcontractors in support services, such as customer service, is permitted. All other use case categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties.
             </p>
             <p>
-              Email content accessed through Gmail or Microsoft integrations is processed solely to generate your briefing and is not shared with any third party, sold, used for advertising, or used to train AI models.
+              Email content accessed through Gmail or Microsoft integrations is processed solely to generate your requested briefing. To provide this feature, InboxBrief transmits the relevant email content to OpenRouter, an AI inference service, and its selected model provider acting as service providers for InboxBrief. We do not sell this data, share it for marketing or advertising, or permit it to be used to train or improve generalized AI or machine-learning models.
             </p>
           </Section>
 

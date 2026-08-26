@@ -111,7 +111,7 @@ export default function DataUsage() {
               <div>
                 <p className="text-foreground font-medium mb-1">What we do NOT do</p>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>We do not sell or share your Gmail data with any third party</li>
+                  <li>We do not sell Gmail data or share it for advertising or marketing. Gmail data is shared only with OpenRouter and its selected model provider as service providers to generate your requested briefing.</li>
                   <li>We do not use Gmail data to train AI or ML models</li>
                   <li>We do not use Gmail data for advertising or profiling</li>
                   <li>We do not allow any human to read your Gmail data (except as required by law or to investigate security incidents)</li>

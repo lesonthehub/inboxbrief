@@ -1,5 +1,6 @@
 # InboxBrief TODO
 
+- [x] Correct Gmail third-party AI processor disclosure for Google OAuth verification
 - [x] Fix Start Free Trial button doing nothing after onboarding submission
 
 ## Phase 1: Setup & Dependencies
