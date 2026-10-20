@@ -1,5 +1,7 @@
 # InboxBrief
 
+[![CI](https://github.com/lesonthehub/inboxbrief/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lesonthehub/inboxbrief/actions/workflows/ci.yml)
+
 [InboxBrief](https://inboxbrief.org) is a full-stack SaaS application that turns unread Gmail and Outlook messages into concise, actionable SMS briefings. It combines provider OAuth, an AI summarization pipeline, subscription controls, and operational dashboards in a type-safe TypeScript codebase.
 
 > **Portfolio note:** This repository is shared to demonstrate product engineering and system design. It contains no production credentials, customer data, or database exports. External services require independently configured accounts and environment variables.
