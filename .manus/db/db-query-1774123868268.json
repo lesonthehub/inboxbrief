@@ -1,9 +1,0 @@
-{
-  "query": "\nALTER TABLE users \n  ADD COLUMN isActive BOOLEAN NOT NULL DEFAULT TRUE,\n  ADD COLUMN suspendedAt TIMESTAMP NULL,\n  ADD COLUMN suspendedReason TEXT NULL,\n  ADD COLUMN suspendedBy INT NULL,\n  ADD COLUMN adminNotes TEXT NULL;\n",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user w9dq36781ZCdLqY.69818225e846 --database XbAFtDntDvaW6nENwp7sVJ --execute \nALTER TABLE users \n  ADD COLUMN isActive BOOLEAN NOT NULL DEFAULT TRUE,\n  ADD COLUMN suspendedAt TIMESTAMP NULL,\n  ADD COLUMN suspendedReason TEXT NULL,\n  ADD COLUMN suspendedBy INT NULL,\n  ADD COLUMN adminNotes TEXT NULL;\n",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 2998
-}

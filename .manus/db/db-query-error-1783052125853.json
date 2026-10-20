@@ -1,8 +1,0 @@
-{
-  "query": "UPDATE subscriptions SET plan = 'business', status = 'active', currentPeriodEnd = '2099-12-31 23:59:59', cancelAtPeriodEnd = 0, updatedAt = NOW() WHERE userId = 1;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user w9dq36781ZCdLqY.69818225e846 --database XbAFtDntDvaW6nENwp7sVJ --execute UPDATE subscriptions SET plan = 'business', status = 'active', currentPeriodEnd = '2099-12-31 23:59:59', cancelAtPeriodEnd = 0, updatedAt = NOW() WHERE userId = 1;",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1292 (22007) at line 1: Incorrect timestamp value: '?'"
-  ]
-}
