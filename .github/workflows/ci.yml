@@ -12,6 +12,25 @@ jobs:
   verify:
     name: Type check and test
     runs-on: ubuntu-latest
+    # Deliberately non-secret values for tests that validate configuration shape.
+    # Production credentials are never provided to public CI.
+    env:
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      FROM_EMAIL: "test@example.test"
+      GOOGLE_CLIENT_ID: "test-google-client-id"
+      GOOGLE_CLIENT_SECRET: "test-google-secret"
+      GOOGLE_REDIRECT_URI: "https://example.test/api/oauth/gmail/callback"
+      MICROSOFT_CLIENT_ID: "test-microsoft-client-id"
+      MICROSOFT_CLIENT_SECRET: "test-microsoft-secret"
+      MICROSOFT_REDIRECT_URI: "https://example.test/api/oauth/outlook/callback"
+      OPENROUTER_API_KEY: "sk-test-openrouter-placeholder"
+      SMTP_HOST: "smtp.example.test"
+      SMTP_PASS: "test-smtp-password"
+      SMTP_PORT: "587"
+      SMTP_USER: "test-smtp-user"
+      TWILIO_ACCOUNT_SID: "AC00000000000000000000000000000000"
+      TWILIO_AUTH_TOKEN: "test-twilio-auth-token"
+      TWILIO_PHONE_NUMBER: "+15555550100"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
