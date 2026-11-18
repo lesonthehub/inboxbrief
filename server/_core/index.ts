@@ -7,7 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
-import { registerStripeWebhook, startSmsScheduler } from "../webhookAndScheduler.js";
+import { registerStripeWebhook, startSmsScheduler } from "../stripeWebhooksAndScheduler.js";
 import {
   helmetMiddleware,
   globalRateLimit,

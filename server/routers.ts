@@ -19,7 +19,7 @@ import { runBriefingPipeline } from "./briefingPipeline";
 import { createCheckoutSession, createPortalSession, getStripe } from "./stripeProducts";
 import { sendSmsBriefing, OWNER_EMAIL } from "./sms";
 import { PLANS, isSubscriptionActive, getDisplayPlans, INTERNATIONAL_SMS_SURCHARGE, isInternationalNumber, planAllowsOutlook, getManualBriefingLimit } from "./plans";
-import { processBriefingFeedback, SUPPORTED_LANGUAGES } from "./grok";
+import { processBriefingFeedback, SUPPORTED_LANGUAGES } from "./emailIntelligence";
 import { notifyOwner } from "./_core/notification";
 import { users, subscriptions, teamMembers, referralUses, briefingFeedback, briefingLogs, announcements, adminActivityLog, serviceGrants, enterprisePlans, bannedAccounts } from "../drizzle/schema";
 import { eq, and, desc, sql } from "drizzle-orm";

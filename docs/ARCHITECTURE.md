@@ -87,7 +87,7 @@ The system should be described as having encryption at rest for the data it pers
 
 ## Scheduling and background work
 
-`server/webhookAndScheduler.ts` starts an in-process scheduler that evaluates delivery schedules once per minute. It triggers daily morning, daily evening, twice-daily, and custom schedules, then delegates each eligible user to the pipeline. Custom scheduling is currently evaluated on the configured hour boundary.
+`server/stripeWebhooksAndScheduler.ts` starts an in-process scheduler that evaluates delivery schedules once per minute. It triggers daily morning, daily evening, twice-daily, and custom schedules, then delegates each eligible user to the pipeline. Custom scheduling is currently evaluated on the configured hour boundary.
 
 For a horizontally scaled deployment, the scheduler should be replaced or protected by a distributed job lock/queue so multiple application instances cannot trigger the same delivery.
 

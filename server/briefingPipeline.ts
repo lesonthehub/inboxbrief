@@ -16,7 +16,7 @@ import { getDb } from "./db";
 import { emailAccounts, briefingLogs, subscriptions, users } from "../drizzle/schema";
 import { decrypt, encrypt } from "./encryption";
 import { fetchGmailEmails, fetchOutlookEmails } from "./emailProviders";
-import { classifyEmails, generateSmsBriefing } from "./grok";
+import { classifyEmails, generateSmsBriefing } from "./emailIntelligence";
 import { sendSmsBriefing } from "./sms";
 import { getEmailLimit, isSubscriptionActive, getManualBriefingLimit, planAllowsOutlook, PLANS } from "./plans";
 import type { PlanId } from "./plans";

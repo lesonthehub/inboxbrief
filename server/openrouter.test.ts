@@ -3,7 +3,7 @@
  * Validates API key format, truncation logic, and 500-char enforcement.
  */
 import { describe, it, expect } from "vitest";
-import { truncateToSmsLimit } from "./grok";
+import { truncateToSmsLimit } from "./emailIntelligence";
 
 describe("OpenRouter API key", () => {
   it("OPENROUTER_API_KEY is set and non-empty", () => {
