@@ -6,6 +6,34 @@
 
 > **Portfolio note:** This repository is shared to demonstrate product engineering and system design. It contains no production credentials, customer data, or database exports. External services require independently configured accounts and environment variables.
 
+## Screenshots
+
+Captured from the development preview using public screens only. The sample briefing is illustrative, not generated from a customer's inbox. Private dashboards and account records are intentionally excluded.
+
+### Website
+
+The landing page introduces the inbox-to-SMS service and trial signup.
+
+![InboxBrief landing page](docs/screenshots/landing-page.webp)
+
+### SMS briefing and email-processing workflow
+
+The multilingual sample briefing and the connect, classify, and deliver workflow.
+
+![Sample SMS briefing and three-step email-processing workflow](docs/screenshots/briefing-and-workflow.webp)
+
+### Personalized onboarding
+
+The first step of the five-step onboarding flow collects business context for briefing preferences.
+
+![Business-context selection in the onboarding flow](docs/screenshots/onboarding.webp)
+
+### Subscription plans
+
+The pricing interface compares Solo, Pro, and Business features and usage limits.
+
+![Solo, Pro, and Business subscription plan comparison](docs/screenshots/pricing-plans.webp)
+
 ## What it does
 
 1. A user connects a Gmail or Outlook inbox through OAuth.
