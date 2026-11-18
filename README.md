@@ -8,7 +8,7 @@
 
 ## Screenshots
 
-Captured from the development preview using public screens only. The sample briefing is illustrative, not generated from a customer's inbox. Private dashboards and account records are intentionally excluded.
+Public screens are captured from the development preview. Admin, customer, owner, billing, and account-security screens show the existing React interface rendered in an isolated local browser with **fictional demo data and mocked API responses**. Names, account states, revenue figures, and audit events are illustrative—not production records or proof of live payment processing. No real customer data, permissions, payments, invoices, or authentication secrets were accessed or changed. The sample SMS briefing is also illustrative.
 
 ### Website
 
@@ -33,6 +33,58 @@ The first step of the five-step onboarding flow collects business context for br
 The pricing interface compares Solo, Pro, and Business features and usage limits.
 
 ![Solo, Pro, and Business subscription plan comparison](docs/screenshots/pricing-plans.webp)
+
+### Admin dashboard — demo data
+
+Operational statistics, subscription counts, onboarding analytics, and coupon-management controls. Financial figures shown here are fictional fixtures.
+
+![Admin dashboard with demo operational statistics and onboarding analytics](docs/screenshots/admin-dashboard-demo.webp)
+
+### Customer management — demo data
+
+Searchable customer records, paid-versus-trial plan badges, trial days remaining, account age, and separate suspended/deleted states.
+
+![Customer management with fictional accounts, plan status, and trial days remaining](docs/screenshots/customer-management-demo.webp)
+
+### Owner dashboard — demo data
+
+Owner-only administration, service-grant and enterprise navigation, and a searchable activity log with actor, target, and TOTP-verification columns. The displayed events are fixtures, not actions performed during capture.
+
+![Owner control panel with fictional administrative audit events](docs/screenshots/owner-dashboard-demo.webp)
+
+### Enterprise billing — demo data
+
+The invoice dialog supports one-time or recurring billing, a due-date interval, an optional subscription end date, notes, and a required TOTP code. This screenshot shows configuration controls only; no invoice was sent.
+
+![Recurring Stripe invoice configuration with due date, optional end date, and TOTP input](docs/screenshots/recurring-invoice-demo.webp)
+
+<details>
+<summary>View enterprise plan-management controls</summary>
+
+Custom plan pricing, team seats, assignment, editing, invoicing, and deletion controls for a fictional company.
+
+![Enterprise plan management with a fictional company and pricing](docs/screenshots/enterprise-plans-demo.webp)
+
+</details>
+
+### Authentication and authorization
+
+The login interface offers Google and Microsoft OAuth. The implementation is in [`server/socialLogin.ts`](server/socialLogin.ts); API session context and procedure guards are in [`server/_core/context.ts`](server/_core/context.ts) and [`server/_core/trpc.ts`](server/_core/trpc.ts). The screenshot shows provider selection, not a completed OAuth or verification flow.
+
+![Google and Microsoft OAuth login-provider selection](docs/screenshots/oauth-authentication.webp)
+
+<details>
+<summary>View TOTP-protected admin actions and account security — demo data</summary>
+
+Sensitive administrative actions collect an authenticator code; the example below opens the trial-grant dialog without submitting it. Role and TOTP checks are implemented server-side in [`server/routers.ts`](server/routers.ts), not only in the UI.
+
+![Trial-grant dialog with required authenticator code for a fictional customer](docs/screenshots/totp-admin-action-demo.webp)
+
+Account settings expose billing management, authenticator status, and account-deletion controls. The enabled authenticator and active subscription shown below are mocked states; no TOTP seed or real account is displayed.
+
+![Account settings showing mocked subscription and TOTP status](docs/screenshots/account-security-demo.webp)
+
+</details>
 
 ## What it does
 
